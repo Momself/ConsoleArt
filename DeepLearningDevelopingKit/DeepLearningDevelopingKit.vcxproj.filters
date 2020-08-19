@@ -1,0 +1,620 @@
+
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="data">
+      <UniqueIdentifier>{c5e04f29-1c3d-4027-bc55-e70dadf9010e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\test">
+      <UniqueIdentifier>{a6e3d778-9666-43bd-b4d9-e53a517beedb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{8917f690-5a89-4d46-9091-33ac0077ebf1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\RapidJson">
+      <UniqueIdentifier>{572e125d-b8d4-4ee4-88e1-bf8d6eeefc2a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{7e234ec0-0964-4f67-97fc-91cc9f104de0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm">
+      <UniqueIdentifier>{6f36316d-1884-4e74-917b-952eab77be94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\SupportedVectorMachine %28SVM%29">
+      <UniqueIdentifier>{5a4d7be5-acfb-4dce-9665-f755be52f9d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\DataManager">
+      <UniqueIdentifier>{fcd12a39-6f7c-4ac2-9243-49ace177cbed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\MathLib">
+      <UniqueIdentifier>{2559dd14-dc93-4590-bd0e-034265cd1068}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\PythonAPI">
+      <UniqueIdentifier>{9eaf9cb0-fd6c-445b-a6f6-eb49f425f2bb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\UnitTest">
+      <UniqueIdentifier>{71b4e290-eac6-42cf-b509-40f701625bfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Visualizer">
+      <UniqueIdentifier>{06474452-7810-48a2-ade4-92043dd3d469}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Util">
+      <UniqueIdentifier>{c2d77568-f3db-4b58-804e-4b37fe225559}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Util\Json">
+      <UniqueIdentifier>{517366ca-94d3-4274-ade7-cd0a1bc0925b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Util\Timer">
+      <UniqueIdentifier>{747171e8-2ee5-4d45-aea1-515f15e8343b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Util\LogManager">
+      <UniqueIdentifier>{83268b83-ab68-4aa1-a0f0-1d8d990265cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\PythonAPI\Json">
+      <UniqueIdentifier>{8ecb1c15-ef19-41dc-b8d9-29d024d89eed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\PythonAPI\Math">
+      <UniqueIdentifier>{402ebc35-c4bb-4371-81a6-5e56c0380a16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\PythonAPI\Unittest">
+      <UniqueIdentifier>{c57d6673-b137-4b17-a7b2-d1a433a81fe8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\DataManager\Dataset">
+      <UniqueIdentifier>{46e568e3-5509-49a4-b7e8-9b9340a16eb5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\PythonAPI\SaveLoad">
+      <UniqueIdentifier>{016fac86-9a04-46f2-b6fe-2881b5de5541}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\DataManager\Saver">
+      <UniqueIdentifier>{39f3abbf-feda-4562-a6d6-f98d62fc1207}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\RegressionAnalysis %28RA%29">
+      <UniqueIdentifier>{1b4135a8-8ee2-4a9a-beb8-440e6fad7a10}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\RegressionAnalysis %28RA%29\LinearRegression">
+      <UniqueIdentifier>{d8818f89-3243-41ce-acfc-c8b29e00de69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\RegressionAnalysis %28RA%29\LogisticRegression">
+      <UniqueIdentifier>{f27301c6-bc96-409e-b671-c2fcf7401e4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\MatrixAnalysis">
+      <UniqueIdentifier>{8f4dd424-214f-4e66-81b6-eb4a31960138}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\NeuralNetwork %28ANN%29">
+      <UniqueIdentifier>{2a409afc-1ce6-4a93-9058-450c1685adef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\NeuralNetwork %28ANN%29\BackpropagationNeuralNetwork %28BNN%29">
+      <UniqueIdentifier>{54758120-11bd-4a6b-9cd9-653f2b57a475}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29">
+      <UniqueIdentifier>{30e6fa16-0826-4ccd-8c06-cc2a1adfe174}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="log">
+      <UniqueIdentifier>{e0338e69-24f6-46cb-aaab-5bce22cd9da7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\NeuralNetwork %28ANN%29\RecurrentNeuralNetwork %28RNN%29">
+      <UniqueIdentifier>{f877d3a2-8146-4591-b0b9-1a6e82e69cd1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\NeuralNetwork %28ANN%29\Long Short Term Memory %28LSTM%29">
+      <UniqueIdentifier>{0de3b305-8910-4153-be77-036b2a1ee394}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\OpenCV">
+      <UniqueIdentifier>{6f8b504a-cabf-4d00-b9bd-4311a3441e3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Visualizer\OpenCV">
+      <UniqueIdentifier>{e9ffe4f0-65c8-45bc-9755-3d4b883f73da}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example">
+      <UniqueIdentifier>{e698858f-7733-467e-9d32-e6fe246b38c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Visualizer\Plot">
+      <UniqueIdentifier>{51e0ec89-7f53-465d-8528-69c04451d7cc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Algorithm\NeuralNetwork %28ANN%29\Iterator %28Trainer%29">
+      <UniqueIdentifier>{a6a093de-e104-44ef-b7db-1be9c7dfc00a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Example">
+      <UniqueIdentifier>{9beb124d-722f-4fc8-9e73-84ed117412c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example\OpenCV">
+      <UniqueIdentifier>{4ec81e2d-2f59-43ff-a66a-2199ddfdb8e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example\LinearRegression">
+      <UniqueIdentifier>{d867b62d-3bd1-4c51-96fc-39f67371a6b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example\BNN">
+      <UniqueIdentifier>{1c2be155-dcf0-49ac-983c-710799c2e8c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example\JsonParser">
+      <UniqueIdentifier>{cbbe2fd8-08af-4da2-af00-cca4731524a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example\ImageRecognization">
+      <UniqueIdentifier>{716f61d3-f816-4237-a166-0d62da0d5466}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example\ImageRecognization\TrainSet">
+      <UniqueIdentifier>{1cc1946b-11ee-4de0-b01f-1e74bbc2b33b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="data\example\ImageRecognization\TestSet">
+      <UniqueIdentifier>{52455a7d-ab9b-4c5f-b0f4-ffe0fa6d2e40}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" />
+    <None Include="data\test\test.json">
+      <Filter>data\test</Filter>
+    </None>
+    <None Include="src\PythonAPI\Json\__init__.py">
+      <Filter>src\PythonAPI\Json</Filter>
+    </None>
+    <None Include="src\PythonAPI\Json\JsonHandler.py">
+      <Filter>src\PythonAPI\Json</Filter>
+    </None>
+    <None Include="src\PythonAPI\Json\JsonParser.py">
+      <Filter>src\PythonAPI\Json</Filter>
+    </None>
+    <None Include="src\PythonAPI\Math\__init__.py">
+      <Filter>src\PythonAPI\Math</Filter>
+    </None>
+    <None Include="src\PythonAPI\Math\Matrix.py">
+      <Filter>src\PythonAPI\Math</Filter>
+    </None>
+    <None Include="src\PythonAPI\Math\Node.py">
+      <Filter>src\PythonAPI\Math</Filter>
+    </None>
+    <None Include="src\PythonAPI\Math\Vector.py">
+      <Filter>src\PythonAPI\Math</Filter>
+    </None>
+    <None Include="src\PythonAPI\Unittest\JsonHandler_test.py">
+      <Filter>src\PythonAPI\Unittest</Filter>
+    </None>
+    <None Include="src\PythonAPI\Unittest\__init__.py">
+      <Filter>src\PythonAPI\Unittest</Filter>
+    </None>
+    <None Include="src\PythonAPI\__init__.py">
+      <Filter>src\PythonAPI</Filter>
+    </None>
+    <None Include="data\test\test2.json">
+      <Filter>data\test</Filter>
+    </None>
+    <None Include="src\PythonAPI\SaveLoad\__init__.py">
+      <Filter>src\PythonAPI\SaveLoad</Filter>
+    </None>
+    <None Include="src\PythonAPI\SaveLoad\SaveLoad.py">
+      <Filter>src\PythonAPI\SaveLoad</Filter>
+    </None>
+    <None Include="data\Example\LinearRregression\LR.json">
+      <Filter>data\example\LinearRegression</Filter>
+    </None>
+    <None Include="data\Example\LinearRregression\MLR.json">
+      <Filter>data\example\LinearRegression</Filter>
+    </None>
+    <None Include="data\Example\BNN\XOR.json">
+      <Filter>data\example\BNN</Filter>
+    </None>
+    <None Include="data\Example\JsonParser\vector.json">
+      <Filter>data\example\JsonParser</Filter>
+    </None>
+    <None Include="data\Example\ImageRecognization\TrainSet\ImageSet.json">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </None>
+    <None Include="data\Example\ImageRecognization\TestSet\ImageSet.json">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Util\Json\JsonHandler.h">
+      <Filter>src\Util\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Util\Json\JsonParser.h">
+      <Filter>src\Util\Json</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Util\LogManager\Log.h">
+      <Filter>src\Util\LogManager</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\MathLib.h">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\MatrixStatic.h">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\RandomEngine.h">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\ToolFunction.h">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\VectorStatic.h">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\SupportedVectorMachine\SupportedVectorMachine.h">
+      <Filter>src\Algorithm\SupportedVectorMachine %28SVM%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DataManager\Dataset\DataSet.h">
+      <Filter>src\DataManager\Dataset</Filter>
+    </ClInclude>
+    <ClInclude Include="src\DataManager\SaveLoad\Saver.h">
+      <Filter>src\DataManager\Saver</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\RegressionAnalysis\LinearRegression\LinearRegression.h">
+      <Filter>src\Algorithm\RegressionAnalysis %28RA%29\LinearRegression</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\RegressionAnalysis\LogisticRegression\LogisticRegression.h">
+      <Filter>src\Algorithm\RegressionAnalysis %28RA%29\LogisticRegression</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\RegressionAnalysis\RegressionAnalysis.h">
+      <Filter>src\Algorithm\RegressionAnalysis %28RA%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\Vector.hpp">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\Matrix.hpp">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\MathLibError.h">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\MatrixAnalysis\LUD.hpp">
+      <Filter>src\Algorithm\MatrixAnalysis</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\MatrixAnalysis\QRD.hpp">
+      <Filter>src\Algorithm\MatrixAnalysis</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Util\Timer\Time.hpp">
+      <Filter>src\Util\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\ActivationFunction.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\LossFunction.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\NeuralLib.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathLib\MathTool.hpp">
+      <Filter>src\MathLib</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\BackpropagationNeuralNetwork\BNN_Layer.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\BackpropagationNeuralNetwork %28BNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\BackpropagationNeuralNetwork\BNN_Node.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\BackpropagationNeuralNetwork %28BNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Visualizer\OpenCV\OpenCV.hpp">
+      <Filter>src\Visualizer\OpenCV</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Visualizer\Plot\Plot.hpp">
+      <Filter>src\Visualizer\Plot</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Visualizer\Visualize.h">
+      <Filter>src\Visualizer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_PoolingLayer.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_ProcessLayer.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_SerializeLayer.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_ConvolutionalLayer.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_PaddingLayer.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\BackpropagationNeuralNetwork\BNN_Module.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\BackpropagationNeuralNetwork %28BNN%29</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Algorithm\NeuralNetwork\Iterator\Iterator.h">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\Iterator %28Trainer%29</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Util\Json\JsonHandler.cpp">
+      <Filter>src\Util\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Util\Json\JsonParser.cpp">
+      <Filter>src\Util\Json</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\DataSet_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\JsonHandler_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\Layer_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\Module_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\Vector_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\SupportedVectorMachine\SupportedVectorMachine.cpp">
+      <Filter>src\Algorithm\SupportedVectorMachine %28SVM%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DataManager\Dataset\DataSet.cpp">
+      <Filter>src\DataManager\Dataset</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DataManager\SaveLoad\Saver.cpp">
+      <Filter>src\DataManager\Saver</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\LinearRegression_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\RegressionAnalysis\LinearRegression\LinearRegression.cpp">
+      <Filter>src\Algorithm\RegressionAnalysis %28RA%29\LinearRegression</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\RegressionAnalysis\LogisticRegression\LogisticRegression.cpp">
+      <Filter>src\Algorithm\RegressionAnalysis %28RA%29\LogisticRegression</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MathLib\MathLibError.cpp">
+      <Filter>src\MathLib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\Matrix_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\MatrixDecomposition_test.cpp">
+      <Filter>src\MathLib</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\Timer_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\ConvNN_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\NeuralNetwork\BackpropagationNeuralNetwork\BNN_Layer.cpp">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\BackpropagationNeuralNetwork %28BNN%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\NeuralNetwork\BackpropagationNeuralNetwork\BNN_Node.cpp">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\BackpropagationNeuralNetwork %28BNN%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\OpenCV_test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Visualizer\Plot\Plot.cpp">
+      <Filter>src\Visualizer\Plot</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_PoolingLayer.cpp">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_ProcessLayer.cpp">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_SerializeLayer.cpp">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\NeuralNetwork\ConvolutionalNeuralNetwork\CNN_ConvolutionalLayer.cpp">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\ConvolutionalNeuralNetwork %28CNN%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Algorithm\NeuralNetwork\BackpropagationNeuralNetwork\BNN_Module.cpp">
+      <Filter>src\Algorithm\NeuralNetwork %28ANN%29\BackpropagationNeuralNetwork %28BNN%29</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\CNN_ConvolutionalLayer_Test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\CNN_ConvolutionalLayerTest.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\CNN_ImageRecognization.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\CNN_Img_Test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\CNN_PaddingLayerTest.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\CNN_SerializeLayer_Test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\UnitTest\CNN_Test.cpp">
+      <Filter>src\UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Example\ImageRecognization_Example.cpp">
+      <Filter>src\Example</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Example\ImageRecognization_Example_MTD.cpp">
+      <Filter>src\Example</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="log\CNN_debug_output.txt">
+      <Filter>log</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="data\Example\OpenCV\niconi.png">
+      <Filter>data\example\OpenCV</Filter>
+    </Image>
+    <Image Include="data\Example\OpenCV\Rem.jpg">
+      <Filter>data\example\OpenCV</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\0.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\1.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\2.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\3.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\4.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\5.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\6.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\7.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\8.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\9.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\10.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\11.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\12.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\13.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\14.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\15.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\16.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\17.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\18.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\19.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\20.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\21.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\22.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\23.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\24.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\25.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\26.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\27.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\28.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\29.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\30.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\31.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\32.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\33.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\34.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\35.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\36.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\37.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\38.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TrainSet\39.png">
+      <Filter>data\example\ImageRecognization\TrainSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\0.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\1.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\2.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\3.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\4.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\5.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\6.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\7.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\8.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\9.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\10.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\11.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\12.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\13.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\14.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\15.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\16.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\17.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\18.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+    <Image Include="data\Example\ImageRecognization\TestSet\19.png">
+      <Filter>data\example\ImageRecognization\TestSet</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
