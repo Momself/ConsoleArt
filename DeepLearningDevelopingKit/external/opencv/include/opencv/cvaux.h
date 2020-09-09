@@ -1,3 +1,4 @@
+
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
@@ -7,11 +8,10 @@
 //  copy or use the software.
 //
 //
-//                           License Agreement
+//                        Intel License Agreement
 //                For Open Source Computer Vision Library
 //
-// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2000, Intel Corporation, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -24,7 +24,7 @@
 //     this list of conditions and the following disclaimer in the documentation
 //     and/or other materials provided with the distribution.
 //
-//   * The name of the copyright holders may not be used to endorse or promote products
+//   * The name of Intel Corporation may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
 //
 // This software is provided by the copyright holders and contributors "as is" and
@@ -40,21 +40,19 @@
 //
 //M*/
 
-#ifndef OPENCV_OLD_CV_HPP
-#define OPENCV_OLD_CV_HPP
+#ifndef OPENCV_OLD_AUX_H
+#define OPENCV_OLD_AUX_H
 
 //#if defined(__GNUC__)
 //#warning "This is a deprecated opencv header provided for compatibility. Please include a header from a corresponding opencv module"
 //#endif
 
-#include "cv.h"
-#include "opencv2/core.hpp"
-#include "opencv2/imgproc.hpp"
-#include "opencv2/photo.hpp"
-#include "opencv2/video.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/features2d.hpp"
-#include "opencv2/calib3d.hpp"
-#include "opencv2/objdetect.hpp"
+#include "opencv2/core/core_c.h"
+#include "opencv2/imgproc/imgproc_c.h"
+#include "opencv2/photo/photo_c.h"
+#include "opencv2/video/tracking_c.h"
+#include "opencv2/objdetect/objdetect_c.h"
 
 #endif
+
+/* End of file. */

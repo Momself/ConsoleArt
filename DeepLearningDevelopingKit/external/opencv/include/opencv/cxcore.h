@@ -1,3 +1,4 @@
+
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
@@ -40,21 +41,13 @@
 //
 //M*/
 
-#ifndef OPENCV_OLD_CV_HPP
-#define OPENCV_OLD_CV_HPP
+#ifndef OPENCV_OLD_CXCORE_H
+#define OPENCV_OLD_CXCORE_H
 
 //#if defined(__GNUC__)
 //#warning "This is a deprecated opencv header provided for compatibility. Please include a header from a corresponding opencv module"
 //#endif
 
-#include "cv.h"
-#include "opencv2/core.hpp"
-#include "opencv2/imgproc.hpp"
-#include "opencv2/photo.hpp"
-#include "opencv2/video.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/features2d.hpp"
-#include "opencv2/calib3d.hpp"
-#include "opencv2/objdetect.hpp"
+#include "opencv2/core/core_c.h"
 
 #endif
