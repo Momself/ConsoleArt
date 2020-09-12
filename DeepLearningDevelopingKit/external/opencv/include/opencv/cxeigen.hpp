@@ -1,3 +1,4 @@
+
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
@@ -7,7 +8,7 @@
 //  copy or use the software.
 //
 //
-//                           License Agreement
+//                          License Agreement
 //                For Open Source Computer Vision Library
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
@@ -40,14 +41,9 @@
 //
 //M*/
 
-#ifndef OPENCV_OLD_CXCORE_HPP
-#define OPENCV_OLD_CXCORE_HPP
+#ifndef OPENCV_OLD_EIGEN_HPP
+#define OPENCV_OLD_EIGEN_HPP
 
-//#if defined(__GNUC__)
-//#warning "This is a deprecated opencv header provided for compatibility. Please include a header from a corresponding opencv module"
-//#endif
-
-#include "cxcore.h"
-#include "opencv2/core.hpp"
+#include "opencv2/core/eigen.hpp"
 
 #endif
