@@ -8,7 +8,6 @@
 //
 //
 //                        Intel License Agreement
-//                For Open Source Computer Vision Library
 //
 // Copyright (C) 2000, Intel Corporation, all rights reserved.
 // Third party copyrights are property of their respective owners.
@@ -39,10 +38,10 @@
 //
 //M*/
 
-#ifndef OPENCV_OLD_HIGHGUI_H
-#define OPENCV_OLD_HIGHGUI_H
+#ifndef OPENCV_OLD_ML_H
+#define OPENCV_OLD_ML_H
 
 #include "opencv2/core/core_c.h"
-#include "opencv2/highgui/highgui_c.h"
+#include "opencv2/ml.hpp"
 
 #endif
