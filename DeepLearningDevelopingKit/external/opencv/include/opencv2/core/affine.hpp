@@ -316,4 +316,160 @@ namespace cv
     template<typename _Tp>
     struct Depth< Affine3<_Tp> > { enum { value = Depth<_Tp>::value }; };
     template<typename _Tp>
-    struct Type
+    struct Type< Affine3<_Tp> > { enum { value = CV_MAKETYPE(Depth<_Tp>::value, 16) }; };
+    } // namespace
+
+//! @} core
+
+}
+
+//! @cond IGNORED
+
+///////////////////////////////////////////////////////////////////////////////////
+// Implementation
+
+template<typename T> inline
+cv::Affine3<T>::Affine3()
+    : matrix(Mat4::eye())
+{}
+
+template<typename T> inline
+cv::Affine3<T>::Affine3(const Mat4& affine)
+    : matrix(affine)
+{}
+
+template<typename T> inline
+cv::Affine3<T>::Affine3(const Mat3& R, const Vec3& t)
+{
+    rotation(R);
+    translation(t);
+    matrix.val[12] = matrix.val[13] = matrix.val[14] = 0;
+    matrix.val[15] = 1;
+}
+
+template<typename T> inline
+cv::Affine3<T>::Affine3(const Vec3& _rvec, const Vec3& t)
+{
+    rotation(_rvec);
+    translation(t);
+    matrix.val[12] = matrix.val[13] = matrix.val[14] = 0;
+    matrix.val[15] = 1;
+}
+
+template<typename T> inline
+cv::Affine3<T>::Affine3(const cv::Mat& data, const Vec3& t)
+{
+    CV_Assert(data.type() == cv::traits::Type<T>::value);
+    CV_Assert(data.channels() == 1);
+
+    if (data.cols == 4 && data.rows == 4)
+    {
+        data.copyTo(matrix);
+        return;
+    }
+    else if (data.cols == 4 && data.rows == 3)
+    {
+        rotation(data(Rect(0, 0, 3, 3)));
+        translation(data(Rect(3, 0, 1, 3)));
+    }
+    else
+    {
+        rotation(data);
+        translation(t);
+    }
+
+    matrix.val[12] = matrix.val[13] = matrix.val[14] = 0;
+    matrix.val[15] = 1;
+}
+
+template<typename T> inline
+cv::Affine3<T>::Affine3(const float_type* vals) : matrix(vals)
+{}
+
+template<typename T> inline
+cv::Affine3<T> cv::Affine3<T>::Identity()
+{
+    return Affine3<T>(cv::Affine3<T>::Mat4::eye());
+}
+
+template<typename T> inline
+void cv::Affine3<T>::rotation(const Mat3& R)
+{
+    linear(R);
+}
+
+template<typename T> inline
+void cv::Affine3<T>::rotation(const Vec3& _rvec)
+{
+    double theta = norm(_rvec);
+
+    if (theta < DBL_EPSILON)
+        rotation(Mat3::eye());
+    else
+    {
+        double c = std::cos(theta);
+        double s = std::sin(theta);
+        double c1 = 1. - c;
+        double itheta = (theta != 0) ? 1./theta : 0.;
+
+        Point3_<T> r = _rvec*itheta;
+
+        Mat3 rrt( r.x*r.x, r.x*r.y, r.x*r.z, r.x*r.y, r.y*r.y, r.y*r.z, r.x*r.z, r.y*r.z, r.z*r.z );
+        Mat3 r_x( 0, -r.z, r.y, r.z, 0, -r.x, -r.y, r.x, 0 );
+
+        // R = cos(theta)*I + (1 - cos(theta))*r*rT + sin(theta)*[r_x]
+        // where [r_x] is [0 -rz ry; rz 0 -rx; -ry rx 0]
+        Mat3 R = c*Mat3::eye() + c1*rrt + s*r_x;
+
+        rotation(R);
+    }
+}
+
+//Combines rotation methods above. Supports 3x3, 1x3, 3x1 sizes of data matrix;
+template<typename T> inline
+void cv::Affine3<T>::rotation(const cv::Mat& data)
+{
+    CV_Assert(data.type() == cv::traits::Type<T>::value);
+    CV_Assert(data.channels() == 1);
+
+    if (data.cols == 3 && data.rows == 3)
+    {
+        Mat3 R;
+        data.copyTo(R);
+        rotation(R);
+    }
+    else if ((data.cols == 3 && data.rows == 1) || (data.cols == 1 && data.rows == 3))
+    {
+        Vec3 _rvec;
+        data.reshape(1, 3).copyTo(_rvec);
+        rotation(_rvec);
+    }
+    else
+        CV_Assert(!"Input matrix can only be 3x3, 1x3 or 3x1");
+}
+
+template<typename T> inline
+void cv::Affine3<T>::linear(const Mat3& L)
+{
+    matrix.val[0] = L.val[0]; matrix.val[1] = L.val[1];  matrix.val[ 2] = L.val[2];
+    matrix.val[4] = L.val[3]; matrix.val[5] = L.val[4];  matrix.val[ 6] = L.val[5];
+    matrix.val[8] = L.val[6]; matrix.val[9] = L.val[7];  matrix.val[10] = L.val[8];
+}
+
+template<typename T> inline
+void cv::Affine3<T>::translation(const Vec3& t)
+{
+    matrix.val[3] = t[0]; matrix.val[7] = t[1]; matrix.val[11] = t[2];
+}
+
+template<typename T> inline
+typename cv::Affine3<T>::Mat3 cv::Affine3<T>::rotation() const
+{
+    return linear();
+}
+
+template<typename T> inline
+typename cv::Affine3<T>::Mat3 cv::Affine3<T>::linear() const
+{
+    typename cv::Affine3<T>::Mat3 R;
+    R.val[0] = matrix.val[0];  R.val[1] = matrix.val[1];  
