@@ -213,4 +213,107 @@ namespace cv
          * @param data 1-channel matrix.
          *             When it is a 3x3 matrix, it sets the upper left 3x3 part of the current matrix.
          *             When it is a 1x3 or 3x1 matrix, it is used as a rotation vector. The Rodrigues formula
-         *             is used to compute the rota
+         *             is used to compute the rotation matrix and sets the upper left 3x3 part of the current matrix.
+         */
+        void rotation(const Mat& data);
+
+        /**
+         * Copy the 3x3 matrix L to the upper left part of the current matrix
+         *
+         * It sets the upper left 3x3 part of the matrix. The remaining part is unaffected.
+         *
+         * @param L 3x3 matrix.
+         */
+        void linear(const Mat3& L);
+
+        /**
+         * Copy t to the first three elements of the last column of the current matrix
+         *
+         * It sets the upper right 3x1 part of the matrix. The remaining part is unaffected.
+         *
+         * @param t 3x1 translation vector.
+         */
+        void translation(const Vec3& t);
+
+        //! @return the upper left 3x3 part
+        Mat3 rotation() const;
+
+        //! @return the upper left 3x3 part
+        Mat3 linear() const;
+
+        //! @return the upper right 3x1 part
+        Vec3 translation() const;
+
+        //! Rodrigues vector.
+        //! @return a vector representing the upper left 3x3 rotation matrix of the current matrix.
+        //! @warning  Since the mapping between rotation vectors and rotation matrices is many to one,
+        //!           this function returns only one rotation vector that represents the current rotation matrix,
+        //!           which is not necessarily the same one set by `rotation(const Vec3& rvec)`.
+        Vec3 rvec() const;
+
+        //! @return the inverse of the current matrix.
+        Affine3 inv(int method = cv::DECOMP_SVD) const;
+
+        //! a.rotate(R) is equivalent to Affine(R, 0) * a;
+        Affine3 rotate(const Mat3& R) const;
+
+        //! a.rotate(rvec) is equivalent to Affine(rvec, 0) * a;
+        Affine3 rotate(const Vec3& rvec) const;
+
+        //! a.translate(t) is equivalent to Affine(E, t) * a, where E is an identity matrix
+        Affine3 translate(const Vec3& t) const;
+
+        //! a.concatenate(affine) is equivalent to affine * a;
+        Affine3 concatenate(const Affine3& affine) const;
+
+        template <typename Y> operator Affine3<Y>() const;
+
+        template <typename Y> Affine3<Y> cast() const;
+
+        Mat4 matrix;
+
+#if defined EIGEN_WORLD_VERSION && defined EIGEN_GEOMETRY_MODULE_H
+        Affine3(const Eigen::Transform<T, 3, Eigen::Affine, (Eigen::RowMajor)>& affine);
+        Affine3(const Eigen::Transform<T, 3, Eigen::Affine>& affine);
+        operator Eigen::Transform<T, 3, Eigen::Affine, (Eigen::RowMajor)>() const;
+        operator Eigen::Transform<T, 3, Eigen::Affine>() const;
+#endif
+    };
+
+    template<typename T> static
+    Affine3<T> operator*(const Affine3<T>& affine1, const Affine3<T>& affine2);
+
+    //! V is a 3-element vector with member fields x, y and z
+    template<typename T, typename V> static
+    V operator*(const Affine3<T>& affine, const V& vector);
+
+    typedef Affine3<float> Affine3f;
+    typedef Affine3<double> Affine3d;
+
+    static Vec3f operator*(const Affine3f& affine, const Vec3f& vector);
+    static Vec3d operator*(const Affine3d& affine, const Vec3d& vector);
+
+    template<typename _Tp> class DataType< Affine3<_Tp> >
+    {
+    public:
+        typedef Affine3<_Tp>                               value_type;
+        typedef Affine3<typename DataType<_Tp>::work_type> work_type;
+        typedef _Tp                                        channel_type;
+
+        enum { generic_type = 0,
+               channels     = 16,
+               fmt          = traits::SafeFmt<channel_type>::fmt + ((channels - 1) << 8)
+#ifdef OPENCV_TRAITS_ENABLE_DEPRECATED
+               ,depth        = DataType<channel_type>::depth
+               ,type         = CV_MAKETYPE(depth, channels)
+#endif
+             };
+
+        typedef Vec<channel_type, channels> vec_type;
+    };
+
+    namespace traits {
+    template<typename _Tp>
+    struct Depth< Affine3<_Tp> > { enum { value = Depth<_Tp>::value }; };
+    template<typename _Tp>
+    struct Type
