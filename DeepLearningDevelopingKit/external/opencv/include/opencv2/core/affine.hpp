@@ -612,4 +612,67 @@ V cv::operator*(const cv::Affine3<T>& affine, const V& v)
     r.x = m.val[0] * v.x + m.val[1] * v.y + m.val[ 2] * v.z + m.val[ 3];
     r.y = m.val[4] * v.x + m.val[5] * v.y + m.val[ 6] * v.z + m.val[ 7];
     r.z = m.val[8] * v.x + m.val[9] * v.y + m.val[10] * v.z + m.val[11];
-    return 
+    return r;
+}
+
+static inline
+cv::Vec3f cv::operator*(const cv::Affine3f& affine, const cv::Vec3f& v)
+{
+    const cv::Matx44f& m = affine.matrix;
+    cv::Vec3f r;
+    r.val[0] = m.val[0] * v[0] + m.val[1] * v[1] + m.val[ 2] * v[2] + m.val[ 3];
+    r.val[1] = m.val[4] * v[0] + m.val[5] * v[1] + m.val[ 6] * v[2] + m.val[ 7];
+    r.val[2] = m.val[8] * v[0] + m.val[9] * v[1] + m.val[10] * v[2] + m.val[11];
+    return r;
+}
+
+static inline
+cv::Vec3d cv::operator*(const cv::Affine3d& affine, const cv::Vec3d& v)
+{
+    const cv::Matx44d& m = affine.matrix;
+    cv::Vec3d r;
+    r.val[0] = m.val[0] * v[0] + m.val[1] * v[1] + m.val[ 2] * v[2] + m.val[ 3];
+    r.val[1] = m.val[4] * v[0] + m.val[5] * v[1] + m.val[ 6] * v[2] + m.val[ 7];
+    r.val[2] = m.val[8] * v[0] + m.val[9] * v[1] + m.val[10] * v[2] + m.val[11];
+    return r;
+}
+
+
+
+#if defined EIGEN_WORLD_VERSION && defined EIGEN_GEOMETRY_MODULE_H
+
+template<typename T> inline
+cv::Affine3<T>::Affine3(const Eigen::Transform<T, 3, Eigen::Affine, (Eigen::RowMajor)>& affine)
+{
+    cv::Mat(4, 4, cv::traits::Type<T>::value, affine.matrix().data()).copyTo(matrix);
+}
+
+template<typename T> inline
+cv::Affine3<T>::Affine3(const Eigen::Transform<T, 3, Eigen::Affine>& affine)
+{
+    Eigen::Transform<T, 3, Eigen::Affine, (Eigen::RowMajor)> a = affine;
+    cv::Mat(4, 4, cv::traits::Type<T>::value, a.matrix().data()).copyTo(matrix);
+}
+
+template<typename T> inline
+cv::Affine3<T>::operator Eigen::Transform<T, 3, Eigen::Affine, (Eigen::RowMajor)>() const
+{
+    Eigen::Transform<T, 3, Eigen::Affine, (Eigen::RowMajor)> r;
+    cv::Mat hdr(4, 4, cv::traits::Type<T>::value, r.matrix().data());
+    cv::Mat(matrix, false).copyTo(hdr);
+    return r;
+}
+
+template<typename T> inline
+cv::Affine3<T>::operator Eigen::Transform<T, 3, Eigen::Affine>() const
+{
+    return this->operator Eigen::Transform<T, 3, Eigen::Affine, (Eigen::RowMajor)>();
+}
+
+#endif /* defined EIGEN_WORLD_VERSION && defined EIGEN_GEOMETRY_MODULE_H */
+
+//! @endcond
+
+#endif /* __cplusplus */
+
+#endif /* OPENCV_CORE_AFFINE3_HPP */
