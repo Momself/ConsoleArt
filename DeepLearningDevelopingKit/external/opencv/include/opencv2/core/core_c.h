@@ -334,4 +334,99 @@ CV_INLINE  int  cvIncRefData( CvArr* arr )
     {
         CvMatND* mat = (CvMatND*)arr;
         if( mat->refcount != NULL )
-            refcount = ++*
+            refcount = ++*mat->refcount;
+    }
+    return refcount;
+}
+
+
+/** Creates an exact copy of the input matrix (except, may be, step value) */
+CVAPI(CvMat*) cvCloneMat( const CvMat* mat );
+
+
+/** @brief Returns matrix header corresponding to the rectangular sub-array of input image or matrix.
+
+The function returns header, corresponding to a specified rectangle of the input array. In other
+
+words, it allows the user to treat a rectangular part of input array as a stand-alone array. ROI is
+taken into account by the function so the sub-array of ROI is actually extracted.
+@param arr Input array
+@param submat Pointer to the resultant sub-array header
+@param rect Zero-based coordinates of the rectangle of interest
+ */
+CVAPI(CvMat*) cvGetSubRect( const CvArr* arr, CvMat* submat, CvRect rect );
+#define cvGetSubArr cvGetSubRect
+
+/** @brief Returns array row or row span.
+
+The function returns the header, corresponding to a specified row/row span of the input array.
+cvGetRow(arr, submat, row) is a shortcut for cvGetRows(arr, submat, row, row+1).
+@param arr Input array
+@param submat Pointer to the resulting sub-array header
+@param start_row Zero-based index of the starting row (inclusive) of the span
+@param end_row Zero-based index of the ending row (exclusive) of the span
+@param delta_row Index step in the row span. That is, the function extracts every delta_row -th
+row from start_row and up to (but not including) end_row .
+ */
+CVAPI(CvMat*) cvGetRows( const CvArr* arr, CvMat* submat,
+                        int start_row, int end_row,
+                        int delta_row CV_DEFAULT(1));
+
+/** @overload
+@param arr Input array
+@param submat Pointer to the resulting sub-array header
+@param row Zero-based index of the selected row
+*/
+CV_INLINE  CvMat*  cvGetRow( const CvArr* arr, CvMat* submat, int row )
+{
+    return cvGetRows( arr, submat, row, row + 1, 1 );
+}
+
+
+/** @brief Returns one of more array columns.
+
+The function returns the header, corresponding to a specified column span of the input array. That
+
+is, no data is copied. Therefore, any modifications of the submatrix will affect the original array.
+If you need to copy the columns, use cvCloneMat. cvGetCol(arr, submat, col) is a shortcut for
+cvGetCols(arr, submat, col, col+1).
+@param arr Input array
+@param submat Pointer to the resulting sub-array header
+@param start_col Zero-based index of the starting column (inclusive) of the span
+@param end_col Zero-based index of the ending column (exclusive) of the span
+ */
+CVAPI(CvMat*) cvGetCols( const CvArr* arr, CvMat* submat,
+                        int start_col, int end_col );
+
+/** @overload
+@param arr Input array
+@param submat Pointer to the resulting sub-array header
+@param col Zero-based index of the selected column
+*/
+CV_INLINE  CvMat*  cvGetCol( const CvArr* arr, CvMat* submat, int col )
+{
+    return cvGetCols( arr, submat, col, col + 1 );
+}
+
+/** @brief Returns one of array diagonals.
+
+The function returns the header, corresponding to a specified diagonal of the input array.
+@param arr Input array
+@param submat Pointer to the resulting sub-array header
+@param diag Index of the array diagonal. Zero value corresponds to the main diagonal, -1
+corresponds to the diagonal above the main, 1 corresponds to the diagonal below the main, and so
+forth.
+ */
+CVAPI(CvMat*) cvGetDiag( const CvArr* arr, CvMat* submat,
+                            int diag CV_DEFAULT(0));
+
+/** low-level scalar <-> raw data conversion functions */
+CVAPI(void) cvScalarToRawData( const CvScalar* scalar, void* data, int type,
+                              int extend_to_12 CV_DEFAULT(0) );
+
+CVAPI(void) cvRawDataToScalar( const void* data, int type, CvScalar* scalar );
+
+/** @brief Creates a new matrix header but does not allocate the matrix data.
+
+The function allocates a header for a multi-dimensional dense array. The array data can further be
+allocated using cvCreateData or set explicitly to
