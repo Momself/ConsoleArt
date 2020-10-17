@@ -225,4 +225,113 @@ This function is often used to process raw data with OpenCV matrix functions. Fo
 following code computes the matrix product of two matrices, stored as ordinary arrays:
 @code
     double a[] = { 1, 2, 3, 4,
-                   5, 6,
+                   5, 6, 7, 8,
+                   9, 10, 11, 12 };
+
+    double b[] = { 1, 5, 9,
+                   2, 6, 10,
+                   3, 7, 11,
+                   4, 8, 12 };
+
+    double c[9];
+    CvMat Ma, Mb, Mc ;
+
+    cvInitMatHeader(&Ma, 3, 4, CV_64FC1, a);
+    cvInitMatHeader(&Mb, 4, 3, CV_64FC1, b);
+    cvInitMatHeader(&Mc, 3, 3, CV_64FC1, c);
+
+    cvMatMulAdd(&Ma, &Mb, 0, &Mc);
+    // the c array now contains the product of a (3x4) and b (4x3)
+@endcode
+@param mat A pointer to the matrix header to be initialized
+@param rows Number of rows in the matrix
+@param cols Number of columns in the matrix
+@param type Type of the matrix elements, see cvCreateMat .
+@param data Optional: data pointer assigned to the matrix header
+@param step Optional: full row width in bytes of the assigned data. By default, the minimal
+possible step is used which assumes there are no gaps between subsequent rows of the matrix.
+ */
+CVAPI(CvMat*) cvInitMatHeader( CvMat* mat, int rows, int cols,
+                              int type, void* data CV_DEFAULT(NULL),
+                              int step CV_DEFAULT(CV_AUTOSTEP) );
+
+/** @brief Creates a matrix header and allocates the matrix data.
+
+The function call is equivalent to the following code:
+@code
+    CvMat* mat = cvCreateMatHeader(rows, cols, type);
+    cvCreateData(mat);
+@endcode
+@param rows Number of rows in the matrix
+@param cols Number of columns in the matrix
+@param type The type of the matrix elements in the form
+CV_\<bit depth\>\<S|U|F\>C\<number of channels\> , where S=signed, U=unsigned, F=float. For
+example, CV _ 8UC1 means the elements are 8-bit unsigned and the there is 1 channel, and CV _
+32SC2 means the elements are 32-bit signed and there are 2 channels.
+ */
+CVAPI(CvMat*)  cvCreateMat( int rows, int cols, int type );
+
+/** @brief Deallocates a matrix.
+
+The function decrements the matrix data reference counter and deallocates matrix header. If the data
+reference counter is 0, it also deallocates the data. :
+@code
+    if(*mat )
+        cvDecRefData(*mat);
+    cvFree((void**)mat);
+@endcode
+@param mat Double pointer to the matrix
+ */
+CVAPI(void)  cvReleaseMat( CvMat** mat );
+
+/** @brief Decrements an array data reference counter.
+
+The function decrements the data reference counter in a CvMat or CvMatND if the reference counter
+
+pointer is not NULL. If the counter reaches zero, the data is deallocated. In the current
+implementation the reference counter is not NULL only if the data was allocated using the
+cvCreateData function. The counter will be NULL in other cases such as: external data was assigned
+to the header using cvSetData, header is part of a larger matrix or image, or the header was
+converted from an image or n-dimensional matrix header.
+@param arr Pointer to an array header
+ */
+CV_INLINE  void  cvDecRefData( CvArr* arr )
+{
+    if( CV_IS_MAT( arr ))
+    {
+        CvMat* mat = (CvMat*)arr;
+        mat->data.ptr = NULL;
+        if( mat->refcount != NULL && --*mat->refcount == 0 )
+            cvFree( &mat->refcount );
+        mat->refcount = NULL;
+    }
+    else if( CV_IS_MATND( arr ))
+    {
+        CvMatND* mat = (CvMatND*)arr;
+        mat->data.ptr = NULL;
+        if( mat->refcount != NULL && --*mat->refcount == 0 )
+            cvFree( &mat->refcount );
+        mat->refcount = NULL;
+    }
+}
+
+/** @brief Increments array data reference counter.
+
+The function increments CvMat or CvMatND data reference counter and returns the new counter value if
+the reference counter pointer is not NULL, otherwise it returns zero.
+@param arr Array header
+ */
+CV_INLINE  int  cvIncRefData( CvArr* arr )
+{
+    int refcount = 0;
+    if( CV_IS_MAT( arr ))
+    {
+        CvMat* mat = (CvMat*)arr;
+        if( mat->refcount != NULL )
+            refcount = ++*mat->refcount;
+    }
+    else if( CV_IS_MATND( arr ))
+    {
+        CvMatND* mat = (CvMatND*)arr;
+        if( mat->refcount != NULL )
+            refcount = ++*
