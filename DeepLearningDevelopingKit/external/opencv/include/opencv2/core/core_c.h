@@ -429,4 +429,104 @@ CVAPI(void) cvRawDataToScalar( const void* data, int type, CvScalar* scalar );
 /** @brief Creates a new matrix header but does not allocate the matrix data.
 
 The function allocates a header for a multi-dimensional dense array. The array data can further be
-allocated using cvCreateData or set explicitly to
+allocated using cvCreateData or set explicitly to user-allocated data via cvSetData.
+@param dims Number of array dimensions
+@param sizes Array of dimension sizes
+@param type Type of array elements, see cvCreateMat
+ */
+CVAPI(CvMatND*)  cvCreateMatNDHeader( int dims, const int* sizes, int type );
+
+/** @brief Creates the header and allocates the data for a multi-dimensional dense array.
+
+This function call is equivalent to the following code:
+@code
+    CvMatND* mat = cvCreateMatNDHeader(dims, sizes, type);
+    cvCreateData(mat);
+@endcode
+@param dims Number of array dimensions. This must not exceed CV_MAX_DIM (32 by default, but can be
+changed at build time).
+@param sizes Array of dimension sizes.
+@param type Type of array elements, see cvCreateMat .
+ */
+CVAPI(CvMatND*)  cvCreateMatND( int dims, const int* sizes, int type );
+
+/** @brief Initializes a pre-allocated multi-dimensional array header.
+
+@param mat A pointer to the array header to be initialized
+@param dims The number of array dimensions
+@param sizes An array of dimension sizes
+@param type Type of array elements, see cvCreateMat
+@param data Optional data pointer assigned to the matrix header
+ */
+CVAPI(CvMatND*)  cvInitMatNDHeader( CvMatND* mat, int dims, const int* sizes,
+                                    int type, void* data CV_DEFAULT(NULL) );
+
+/** @brief Deallocates a multi-dimensional array.
+
+The function decrements the array data reference counter and releases the array header. If the
+reference counter reaches 0, it also deallocates the data. :
+@code
+    if(*mat )
+        cvDecRefData(*mat);
+    cvFree((void**)mat);
+@endcode
+@param mat Double pointer to the array
+ */
+CV_INLINE  void  cvReleaseMatND( CvMatND** mat )
+{
+    cvReleaseMat( (CvMat**)mat );
+}
+
+/** Creates a copy of CvMatND (except, may be, steps) */
+CVAPI(CvMatND*) cvCloneMatND( const CvMatND* mat );
+
+/** @brief Creates sparse array.
+
+The function allocates a multi-dimensional sparse array. Initially the array contain no elements,
+that is PtrND and other related functions will return 0 for every index.
+@param dims Number of array dimensions. In contrast to the dense matrix, the number of dimensions is
+practically unlimited (up to \f$2^{16}\f$ ).
+@param sizes Array of dimension sizes
+@param type Type of array elements. The same as for CvMat
+ */
+CVAPI(CvSparseMat*)  cvCreateSparseMat( int dims, const int* sizes, int type );
+
+/** @brief Deallocates sparse array.
+
+The function releases the sparse array and clears the array pointer upon exit.
+@param mat Double pointer to the array
+ */
+CVAPI(void)  cvReleaseSparseMat( CvSparseMat** mat );
+
+/** Creates a copy of CvSparseMat (except, may be, zero items) */
+CVAPI(CvSparseMat*) cvCloneSparseMat( const CvSparseMat* mat );
+
+/** @brief Initializes sparse array elements iterator.
+
+The function initializes iterator of sparse array elements and returns pointer to the first element,
+or NULL if the array is empty.
+@param mat Input array
+@param mat_iterator Initialized iterator
+ */
+CVAPI(CvSparseNode*) cvInitSparseMatIterator( const CvSparseMat* mat,
+                                              CvSparseMatIterator* mat_iterator );
+
+/** @brief Returns the next sparse matrix element
+
+The function moves iterator to the next sparse matrix element and returns pointer to it. In the
+current version there is no any particular order of the elements, because they are stored in the
+hash table. The sample below demonstrates how to iterate through the sparse matrix:
+@code
+    // print all the non-zero sparse matrix elements and compute their sum
+    double sum = 0;
+    int i, dims = cvGetDims(sparsemat);
+    CvSparseMatIterator it;
+    CvSparseNode* node = cvInitSparseMatIterator(sparsemat, &it);
+
+    for(; node != 0; node = cvGetNextSparseNode(&it))
+    {
+        int* idx = CV_NODE_IDX(array, node);
+        float val = *(float*)CV_NODE_VAL(array, node);
+        printf("M");
+        for(i = 0; i < dims; i++ )
+     
