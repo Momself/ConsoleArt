@@ -728,4 +728,76 @@ CVAPI(void) cvSetND( CvArr* arr, const int* idx, CvScalar value );
 
 /** @brief Change a specific array element.
 
-The functions assign a new value
+The functions assign a new value to a specific element of a single-channel array. If the array has
+multiple channels, a runtime error is raised. Note that the Set\*D function can be used safely for
+both single-channel and multiple-channel arrays, though they are a bit slower.
+
+In the case of a sparse array the functions create the node if it does not yet exist.
+@param arr Input array
+@param idx0 The first zero-based component of the element index
+@param value The assigned value
+ */
+CVAPI(void) cvSetReal1D( CvArr* arr, int idx0, double value );
+/** @overload */
+CVAPI(void) cvSetReal2D( CvArr* arr, int idx0, int idx1, double value );
+/** @overload */
+CVAPI(void) cvSetReal3D( CvArr* arr, int idx0,
+                        int idx1, int idx2, double value );
+/** @overload
+@param arr Input array
+@param idx Array of the element indices
+@param value The assigned value
+*/
+CVAPI(void) cvSetRealND( CvArr* arr, const int* idx, double value );
+
+/** clears element of ND dense array,
+   in case of sparse arrays it deletes the specified node */
+CVAPI(void) cvClearND( CvArr* arr, const int* idx );
+
+/** @brief Returns matrix header for arbitrary array.
+
+The function returns a matrix header for the input array that can be a matrix - CvMat, an image -
+IplImage, or a multi-dimensional dense array - CvMatND (the third option is allowed only if
+allowND != 0) . In the case of matrix the function simply returns the input pointer. In the case of
+IplImage\* or CvMatND it initializes the header structure with parameters of the current image ROI
+and returns &header. Because COI is not supported by CvMat, it is returned separately.
+
+The function provides an easy way to handle both types of arrays - IplImage and CvMat using the same
+code. Input array must have non-zero data pointer, otherwise the function will report an error.
+
+@note If the input array is IplImage with planar data layout and COI set, the function returns the
+pointer to the selected plane and COI == 0. This feature allows user to process IplImage structures
+with planar data layout, even though OpenCV does not support such images.
+@param arr Input array
+@param header Pointer to CvMat structure used as a temporary buffer
+@param coi Optional output parameter for storing COI
+@param allowND If non-zero, the function accepts multi-dimensional dense arrays (CvMatND\*) and
+returns 2D matrix (if CvMatND has two dimensions) or 1D matrix (when CvMatND has 1 dimension or
+more than 2 dimensions). The CvMatND array must be continuous.
+@sa cvGetImage, cvarrToMat.
+ */
+CVAPI(CvMat*) cvGetMat( const CvArr* arr, CvMat* header,
+                       int* coi CV_DEFAULT(NULL),
+                       int allowND CV_DEFAULT(0));
+
+/** @brief Returns image header for arbitrary array.
+
+The function returns the image header for the input array that can be a matrix (CvMat) or image
+(IplImage). In the case of an image the function simply returns the input pointer. In the case of
+CvMat it initializes an image_header structure with the parameters of the input matrix. Note that
+if we transform IplImage to CvMat using cvGetMat and then transform CvMat back to IplImage using
+this function, we will get different headers if the ROI is set in the original image.
+@param arr Input array
+@param image_header Pointer to IplImage structure used as a temporary buffer
+ */
+CVAPI(IplImage*) cvGetImage( const CvArr* arr, IplImage* image_header );
+
+
+/** @brief Changes the shape of a multi-dimensional array without copying the data.
+
+The function is an advanced version of cvReshape that can work with multi-dimensional arrays as
+well (though it can work with ordinary images and matrices) and change the number of dimensions.
+
+Below are the two samples from the cvReshape description rewritten using cvReshapeMatND:
+@code
+    IplImage* color_img = cvCreateImage(cvSiz
