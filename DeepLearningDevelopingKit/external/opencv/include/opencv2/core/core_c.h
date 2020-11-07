@@ -640,4 +640,92 @@ sequential access to 1D, 2D or nD dense arrays.
 The functions can be used for sparse arrays as well - if the requested node does not exist they
 create it and set it to zero.
 
-All these as well as other functions accessing array elements ( cvGetND , cvG
+All these as well as other functions accessing array elements ( cvGetND , cvGetRealND , cvSet
+, cvSetND , cvSetRealND ) raise an error in case if the element index is out of range.
+@param arr Input array
+@param idx0 The first zero-based component of the element index
+@param type Optional output parameter: type of matrix elements
+ */
+CVAPI(uchar*) cvPtr1D( const CvArr* arr, int idx0, int* type CV_DEFAULT(NULL));
+/** @overload */
+CVAPI(uchar*) cvPtr2D( const CvArr* arr, int idx0, int idx1, int* type CV_DEFAULT(NULL) );
+/** @overload */
+CVAPI(uchar*) cvPtr3D( const CvArr* arr, int idx0, int idx1, int idx2,
+                      int* type CV_DEFAULT(NULL));
+/** @overload
+@param arr Input array
+@param idx Array of the element indices
+@param type Optional output parameter: type of matrix elements
+@param create_node Optional input parameter for sparse matrices. Non-zero value of the parameter
+means that the requested element is created if it does not exist already.
+@param precalc_hashval Optional input parameter for sparse matrices. If the pointer is not NULL,
+the function does not recalculate the node hash value, but takes it from the specified location.
+It is useful for speeding up pair-wise operations (TODO: provide an example)
+*/
+CVAPI(uchar*) cvPtrND( const CvArr* arr, const int* idx, int* type CV_DEFAULT(NULL),
+                      int create_node CV_DEFAULT(1),
+                      unsigned* precalc_hashval CV_DEFAULT(NULL));
+
+/** @brief Return a specific array element.
+
+The functions return a specific array element. In the case of a sparse array the functions return 0
+if the requested node does not exist (no new node is created by the functions).
+@param arr Input array
+@param idx0 The first zero-based component of the element index
+ */
+CVAPI(CvScalar) cvGet1D( const CvArr* arr, int idx0 );
+/** @overload */
+CVAPI(CvScalar) cvGet2D( const CvArr* arr, int idx0, int idx1 );
+/** @overload */
+CVAPI(CvScalar) cvGet3D( const CvArr* arr, int idx0, int idx1, int idx2 );
+/** @overload
+@param arr Input array
+@param idx Array of the element indices
+*/
+CVAPI(CvScalar) cvGetND( const CvArr* arr, const int* idx );
+
+/** @brief Return a specific element of single-channel 1D, 2D, 3D or nD array.
+
+Returns a specific element of a single-channel array. If the array has multiple channels, a runtime
+error is raised. Note that Get?D functions can be used safely for both single-channel and
+multiple-channel arrays though they are a bit slower.
+
+In the case of a sparse array the functions return 0 if the requested node does not exist (no new
+node is created by the functions).
+@param arr Input array. Must have a single channel.
+@param idx0 The first zero-based component of the element index
+ */
+CVAPI(double) cvGetReal1D( const CvArr* arr, int idx0 );
+/** @overload */
+CVAPI(double) cvGetReal2D( const CvArr* arr, int idx0, int idx1 );
+/** @overload */
+CVAPI(double) cvGetReal3D( const CvArr* arr, int idx0, int idx1, int idx2 );
+/** @overload
+@param arr Input array. Must have a single channel.
+@param idx Array of the element indices
+*/
+CVAPI(double) cvGetRealND( const CvArr* arr, const int* idx );
+
+/** @brief Change the particular array element.
+
+The functions assign the new value to a particular array element. In the case of a sparse array the
+functions create the node if it does not exist yet.
+@param arr Input array
+@param idx0 The first zero-based component of the element index
+@param value The assigned value
+ */
+CVAPI(void) cvSet1D( CvArr* arr, int idx0, CvScalar value );
+/** @overload */
+CVAPI(void) cvSet2D( CvArr* arr, int idx0, int idx1, CvScalar value );
+/** @overload */
+CVAPI(void) cvSet3D( CvArr* arr, int idx0, int idx1, int idx2, CvScalar value );
+/** @overload
+@param arr Input array
+@param idx Array of the element indices
+@param value The assigned value
+*/
+CVAPI(void) cvSetND( CvArr* arr, const int* idx, CvScalar value );
+
+/** @brief Change a specific array element.
+
+The functions assign a new value
