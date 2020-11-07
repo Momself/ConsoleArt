@@ -529,4 +529,115 @@ hash table. The sample below demonstrates how to iterate through the sparse matr
         float val = *(float*)CV_NODE_VAL(array, node);
         printf("M");
         for(i = 0; i < dims; i++ )
-     
+            printf("[%d]", idx[i]);
+        printf("=%g\n", val);
+
+        sum += val;
+    }
+
+    printf("nTotal sum = %g\n", sum);
+@endcode
+@param mat_iterator Sparse array iterator
+ */
+CV_INLINE CvSparseNode* cvGetNextSparseNode( CvSparseMatIterator* mat_iterator )
+{
+    if( mat_iterator->node->next )
+        return mat_iterator->node = mat_iterator->node->next;
+    else
+    {
+        int idx;
+        for( idx = ++mat_iterator->curidx; idx < mat_iterator->mat->hashsize; idx++ )
+        {
+            CvSparseNode* node = (CvSparseNode*)mat_iterator->mat->hashtable[idx];
+            if( node )
+            {
+                mat_iterator->curidx = idx;
+                return mat_iterator->node = node;
+            }
+        }
+        return NULL;
+    }
+}
+
+
+#define CV_MAX_ARR 10
+
+/** matrix iterator: used for n-ary operations on dense arrays */
+typedef struct CvNArrayIterator
+{
+    int count; /**< number of arrays */
+    int dims; /**< number of dimensions to iterate */
+    CvSize size; /**< maximal common linear size: { width = size, height = 1 } */
+    uchar* ptr[CV_MAX_ARR]; /**< pointers to the array slices */
+    int stack[CV_MAX_DIM]; /**< for internal use */
+    CvMatND* hdr[CV_MAX_ARR]; /**< pointers to the headers of the
+                                 matrices that are processed */
+}
+CvNArrayIterator;
+
+#define CV_NO_DEPTH_CHECK     1
+#define CV_NO_CN_CHECK        2
+#define CV_NO_SIZE_CHECK      4
+
+/** initializes iterator that traverses through several arrays simulteneously
+   (the function together with cvNextArraySlice is used for
+    N-ari element-wise operations) */
+CVAPI(int) cvInitNArrayIterator( int count, CvArr** arrs,
+                                 const CvArr* mask, CvMatND* stubs,
+                                 CvNArrayIterator* array_iterator,
+                                 int flags CV_DEFAULT(0) );
+
+/** returns zero value if iteration is finished, non-zero (slice length) otherwise */
+CVAPI(int) cvNextNArraySlice( CvNArrayIterator* array_iterator );
+
+
+/** @brief Returns type of array elements.
+
+The function returns type of the array elements. In the case of IplImage the type is converted to
+CvMat-like representation. For example, if the image has been created as:
+@code
+    IplImage* img = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 3);
+@endcode
+The code cvGetElemType(img) will return CV_8UC3.
+@param arr Input array
+ */
+CVAPI(int) cvGetElemType( const CvArr* arr );
+
+/** @brief Return number of array dimensions
+
+The function returns the array dimensionality and the array of dimension sizes. In the case of
+IplImage or CvMat it always returns 2 regardless of number of image/matrix rows. For example, the
+following code calculates total number of array elements:
+@code
+    int sizes[CV_MAX_DIM];
+    int i, total = 1;
+    int dims = cvGetDims(arr, size);
+    for(i = 0; i < dims; i++ )
+        total *= sizes[i];
+@endcode
+@param arr Input array
+@param sizes Optional output vector of the array dimension sizes. For 2d arrays the number of rows
+(height) goes first, number of columns (width) next.
+ */
+CVAPI(int) cvGetDims( const CvArr* arr, int* sizes CV_DEFAULT(NULL) );
+
+
+/** @brief Returns array size along the specified dimension.
+
+@param arr Input array
+@param index Zero-based dimension index (for matrices 0 means number of rows, 1 means number of
+columns; for images 0 means height, 1 means width)
+ */
+CVAPI(int) cvGetDimSize( const CvArr* arr, int index );
+
+
+/** @brief Return pointer to a particular array element.
+
+The functions return a pointer to a specific array element. Number of array dimension should match
+to the number of indices passed to the function except for cvPtr1D function that can be used for
+sequential access to 1D, 2D or nD dense arrays.
+
+The functions can be used for sparse arrays as well - if the requested node does not exist they
+create it and set it to zero.
+
+All these as well as other functions accessing array elements ( cvGetND , cvG
