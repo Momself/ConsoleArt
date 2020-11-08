@@ -800,4 +800,94 @@ well (though it can work with ordinary images and matrices) and change the numbe
 
 Below are the two samples from the cvReshape description rewritten using cvReshapeMatND:
 @code
-    IplImage* color_img = cvCreateImage(cvSiz
+    IplImage* color_img = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+    IplImage gray_img_hdr, *gray_img;
+    gray_img = (IplImage*)cvReshapeMatND(color_img, sizeof(gray_img_hdr), &gray_img_hdr, 1, 0, 0);
+    ...
+    int size[] = { 2, 2, 2 };
+    CvMatND* mat = cvCreateMatND(3, size, CV_32F);
+    CvMat row_header, *row;
+    row = (CvMat*)cvReshapeMatND(mat, sizeof(row_header), &row_header, 0, 1, 0);
+@endcode
+In C, the header file for this function includes a convenient macro cvReshapeND that does away with
+the sizeof_header parameter. So, the lines containing the call to cvReshapeMatND in the examples
+may be replaced as follow:
+@code
+    gray_img = (IplImage*)cvReshapeND(color_img, &gray_img_hdr, 1, 0, 0);
+    ...
+    row = (CvMat*)cvReshapeND(mat, &row_header, 0, 1, 0);
+@endcode
+@param arr Input array
+@param sizeof_header Size of output header to distinguish between IplImage, CvMat and CvMatND
+output headers
+@param header Output header to be filled
+@param new_cn New number of channels. new_cn = 0 means that the number of channels remains
+unchanged.
+@param new_dims New number of dimensions. new_dims = 0 means that the number of dimensions
+remains the same.
+@param new_sizes Array of new dimension sizes. Only new_dims-1 values are used, because the
+total number of elements must remain the same. Thus, if new_dims = 1, new_sizes array is not
+used.
+ */
+CVAPI(CvArr*) cvReshapeMatND( const CvArr* arr,
+                             int sizeof_header, CvArr* header,
+                             int new_cn, int new_dims, int* new_sizes );
+
+#define cvReshapeND( arr, header, new_cn, new_dims, new_sizes )   \
+      cvReshapeMatND( (arr), sizeof(*(header)), (header),         \
+                      (new_cn), (new_dims), (new_sizes))
+
+/** @brief Changes shape of matrix/image without copying data.
+
+The function initializes the CvMat header so that it points to the same data as the original array
+but has a different shape - different number of channels, different number of rows, or both.
+
+The following example code creates one image buffer and two image headers, the first is for a
+320x240x3 image and the second is for a 960x240x1 image:
+@code
+    IplImage* color_img = cvCreateImage(cvSize(320,240), IPL_DEPTH_8U, 3);
+    CvMat gray_mat_hdr;
+    IplImage gray_img_hdr, *gray_img;
+    cvReshape(color_img, &gray_mat_hdr, 1);
+    gray_img = cvGetImage(&gray_mat_hdr, &gray_img_hdr);
+@endcode
+And the next example converts a 3x3 matrix to a single 1x9 vector:
+@code
+    CvMat* mat = cvCreateMat(3, 3, CV_32F);
+    CvMat row_header, *row;
+    row = cvReshape(mat, &row_header, 0, 1);
+@endcode
+@param arr Input array
+@param header Output header to be filled
+@param new_cn New number of channels. 'new_cn = 0' means that the number of channels remains
+unchanged.
+@param new_rows New number of rows. 'new_rows = 0' means that the number of rows remains
+unchanged unless it needs to be changed according to new_cn value.
+*/
+CVAPI(CvMat*) cvReshape( const CvArr* arr, CvMat* header,
+                        int new_cn, int new_rows CV_DEFAULT(0) );
+
+/** Repeats source 2d array several times in both horizontal and
+   vertical direction to fill destination array */
+CVAPI(void) cvRepeat( const CvArr* src, CvArr* dst );
+
+/** @brief Allocates array data
+
+The function allocates image, matrix or multi-dimensional dense array data. Note that in the case of
+matrix types OpenCV allocation functions are used. In the case of IplImage they are used unless
+CV_TURN_ON_IPL_COMPATIBILITY() has been called before. In the latter case IPL functions are used
+to allocate the data.
+@param arr Array header
+ */
+CVAPI(void)  cvCreateData( CvArr* arr );
+
+/** @brief Releases array data.
+
+The function releases the array data. In the case of CvMat or CvMatND it simply calls
+cvDecRefData(), that is the function can not deallocate external data. See also the note to
+cvCreateData .
+@param arr Array header
+ */
+CVAPI(void)  cvReleaseData( CvArr* arr );
+
+/** @brief Assigns use
