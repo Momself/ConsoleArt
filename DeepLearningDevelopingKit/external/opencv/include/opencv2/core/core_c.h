@@ -1175,4 +1175,90 @@ CVAPI(void) cvAbsDiff( const CvArr* src1, const CvArr* src2, CvArr* dst );
 CVAPI(void) cvAbsDiffS( const CvArr* src, CvArr* dst, CvScalar value );
 #define cvAbs( src, dst ) cvAbsDiffS( (src), (dst), cvScalarAll(0))
 
-/************************
+/****************************************************************************************\
+*                                Math operations                                         *
+\****************************************************************************************/
+
+/** Does cartesian->polar coordinates conversion.
+   Either of output components (magnitude or angle) is optional */
+CVAPI(void)  cvCartToPolar( const CvArr* x, const CvArr* y,
+                            CvArr* magnitude, CvArr* angle CV_DEFAULT(NULL),
+                            int angle_in_degrees CV_DEFAULT(0));
+
+/** Does polar->cartesian coordinates conversion.
+   Either of output components (magnitude or angle) is optional.
+   If magnitude is missing it is assumed to be all 1's */
+CVAPI(void)  cvPolarToCart( const CvArr* magnitude, const CvArr* angle,
+                            CvArr* x, CvArr* y,
+                            int angle_in_degrees CV_DEFAULT(0));
+
+/** Does powering: dst(idx) = src(idx)^power */
+CVAPI(void)  cvPow( const CvArr* src, CvArr* dst, double power );
+
+/** Does exponention: dst(idx) = exp(src(idx)).
+   Overflow is not handled yet. Underflow is handled.
+   Maximal relative error is ~7e-6 for single-precision input */
+CVAPI(void)  cvExp( const CvArr* src, CvArr* dst );
+
+/** Calculates natural logarithms: dst(idx) = log(abs(src(idx))).
+   Logarithm of 0 gives large negative number(~-700)
+   Maximal relative error is ~3e-7 for single-precision output
+*/
+CVAPI(void)  cvLog( const CvArr* src, CvArr* dst );
+
+/** Fast arctangent calculation */
+CVAPI(float) cvFastArctan( float y, float x );
+
+/** Fast cubic root calculation */
+CVAPI(float)  cvCbrt( float value );
+
+#define  CV_CHECK_RANGE    1
+#define  CV_CHECK_QUIET    2
+/** Checks array values for NaNs, Infs or simply for too large numbers
+   (if CV_CHECK_RANGE is set). If CV_CHECK_QUIET is set,
+   no runtime errors is raised (function returns zero value in case of "bad" values).
+   Otherwise cvError is called */
+CVAPI(int)  cvCheckArr( const CvArr* arr, int flags CV_DEFAULT(0),
+                        double min_val CV_DEFAULT(0), double max_val CV_DEFAULT(0));
+#define cvCheckArray cvCheckArr
+
+#define CV_RAND_UNI      0
+#define CV_RAND_NORMAL   1
+
+/** @brief Fills an array with random numbers and updates the RNG state.
+
+The function fills the destination array with uniformly or normally distributed random numbers.
+@param rng CvRNG state initialized by cvRNG
+@param arr The destination array
+@param dist_type Distribution type
+> -   **CV_RAND_UNI** uniform distribution
+> -   **CV_RAND_NORMAL** normal or Gaussian distribution
+@param param1 The first parameter of the distribution. In the case of a uniform distribution it is
+the inclusive lower boundary of the random numbers range. In the case of a normal distribution it
+is the mean value of the random numbers.
+@param param2 The second parameter of the distribution. In the case of a uniform distribution it
+is the exclusive upper boundary of the random numbers range. In the case of a normal distribution
+it is the standard deviation of the random numbers.
+@sa randu, randn, RNG::fill.
+ */
+CVAPI(void) cvRandArr( CvRNG* rng, CvArr* arr, int dist_type,
+                      CvScalar param1, CvScalar param2 );
+
+CVAPI(void) cvRandShuffle( CvArr* mat, CvRNG* rng,
+                           double iter_factor CV_DEFAULT(1.));
+
+#define CV_SORT_EVERY_ROW 0
+#define CV_SORT_EVERY_COLUMN 1
+#define CV_SORT_ASCENDING 0
+#define CV_SORT_DESCENDING 16
+
+CVAPI(void) cvSort( const CvArr* src, CvArr* dst CV_DEFAULT(NULL),
+                    CvArr* idxmat CV_DEFAULT(NULL),
+                    int flags CV_DEFAULT(0));
+
+/** Finds real roots of a cubic equation */
+CVAPI(int) cvSolveCubic( const CvMat* coeffs, CvMat* roots );
+
+/** Finds all real and complex roots of a polynomial equation */
+CVAPI(void) cvSolvePoly(const CvMat* coeffs, CvMat *roots2,
+      int maxiter CV_DEFAULT(20), int fig C
