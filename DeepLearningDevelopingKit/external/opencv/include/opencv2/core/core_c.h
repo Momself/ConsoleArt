@@ -1079,4 +1079,100 @@ CVAPI(void)  cvMul( const CvArr* src1, const CvArr* src2,
     dst(idx) = src1(idx) * scale / src2(idx)
     or dst(idx) = scale / src2(idx) if src1 == 0 */
 CVAPI(void)  cvDiv( const CvArr* src1, const CvArr* src2,
-      
+                    CvArr* dst, double scale CV_DEFAULT(1));
+
+/** dst = src1 * scale + src2 */
+CVAPI(void)  cvScaleAdd( const CvArr* src1, CvScalar scale,
+                         const CvArr* src2, CvArr* dst );
+#define cvAXPY( A, real_scalar, B, C ) cvScaleAdd(A, cvRealScalar(real_scalar), B, C)
+
+/** dst = src1 * alpha + src2 * beta + gamma */
+CVAPI(void)  cvAddWeighted( const CvArr* src1, double alpha,
+                            const CvArr* src2, double beta,
+                            double gamma, CvArr* dst );
+
+/** @brief Calculates the dot product of two arrays in Euclidean metrics.
+
+The function calculates and returns the Euclidean dot product of two arrays.
+
+\f[src1  \bullet src2 =  \sum _I ( \texttt{src1} (I)  \texttt{src2} (I))\f]
+
+In the case of multiple channel arrays, the results for all channels are accumulated. In particular,
+cvDotProduct(a,a) where a is a complex vector, will return \f$||\texttt{a}||^2\f$. The function can
+process multi-dimensional arrays, row by row, layer by layer, and so on.
+@param src1 The first source array
+@param src2 The second source array
+ */
+CVAPI(double)  cvDotProduct( const CvArr* src1, const CvArr* src2 );
+
+/** dst(idx) = src1(idx) & src2(idx) */
+CVAPI(void) cvAnd( const CvArr* src1, const CvArr* src2,
+                  CvArr* dst, const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(idx) = src(idx) & value */
+CVAPI(void) cvAndS( const CvArr* src, CvScalar value,
+                   CvArr* dst, const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(idx) = src1(idx) | src2(idx) */
+CVAPI(void) cvOr( const CvArr* src1, const CvArr* src2,
+                 CvArr* dst, const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(idx) = src(idx) | value */
+CVAPI(void) cvOrS( const CvArr* src, CvScalar value,
+                  CvArr* dst, const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(idx) = src1(idx) ^ src2(idx) */
+CVAPI(void) cvXor( const CvArr* src1, const CvArr* src2,
+                  CvArr* dst, const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(idx) = src(idx) ^ value */
+CVAPI(void) cvXorS( const CvArr* src, CvScalar value,
+                   CvArr* dst, const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(idx) = ~src(idx) */
+CVAPI(void) cvNot( const CvArr* src, CvArr* dst );
+
+/** dst(idx) = lower(idx) <= src(idx) < upper(idx) */
+CVAPI(void) cvInRange( const CvArr* src, const CvArr* lower,
+                      const CvArr* upper, CvArr* dst );
+
+/** dst(idx) = lower <= src(idx) < upper */
+CVAPI(void) cvInRangeS( const CvArr* src, CvScalar lower,
+                       CvScalar upper, CvArr* dst );
+
+#define CV_CMP_EQ   0
+#define CV_CMP_GT   1
+#define CV_CMP_GE   2
+#define CV_CMP_LT   3
+#define CV_CMP_LE   4
+#define CV_CMP_NE   5
+
+/** The comparison operation support single-channel arrays only.
+   Destination image should be 8uC1 or 8sC1 */
+
+/** dst(idx) = src1(idx) _cmp_op_ src2(idx) */
+CVAPI(void) cvCmp( const CvArr* src1, const CvArr* src2, CvArr* dst, int cmp_op );
+
+/** dst(idx) = src1(idx) _cmp_op_ value */
+CVAPI(void) cvCmpS( const CvArr* src, double value, CvArr* dst, int cmp_op );
+
+/** dst(idx) = min(src1(idx),src2(idx)) */
+CVAPI(void) cvMin( const CvArr* src1, const CvArr* src2, CvArr* dst );
+
+/** dst(idx) = max(src1(idx),src2(idx)) */
+CVAPI(void) cvMax( const CvArr* src1, const CvArr* src2, CvArr* dst );
+
+/** dst(idx) = min(src(idx),value) */
+CVAPI(void) cvMinS( const CvArr* src, double value, CvArr* dst );
+
+/** dst(idx) = max(src(idx),value) */
+CVAPI(void) cvMaxS( const CvArr* src, double value, CvArr* dst );
+
+/** dst(x,y,c) = abs(src1(x,y,c) - src2(x,y,c)) */
+CVAPI(void) cvAbsDiff( const CvArr* src1, const CvArr* src2, CvArr* dst );
+
+/** dst(x,y,c) = abs(src(x,y,c) - value(c)) */
+CVAPI(void) cvAbsDiffS( const CvArr* src, CvArr* dst, CvScalar value );
+#define cvAbs( src, dst ) cvAbsDiffS( (src), (dst), cvScalarAll(0))
+
+/************************
