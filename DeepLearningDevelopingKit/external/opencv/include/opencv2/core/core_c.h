@@ -890,4 +890,103 @@ cvCreateData .
  */
 CVAPI(void)  cvReleaseData( CvArr* arr );
 
-/** @brief Assigns use
+/** @brief Assigns user data to the array header.
+
+The function assigns user data to the array header. Header should be initialized before using
+cvCreateMatHeader, cvCreateImageHeader, cvCreateMatNDHeader, cvInitMatHeader,
+cvInitImageHeader or cvInitMatNDHeader.
+@param arr Array header
+@param data User data
+@param step Full row length in bytes
+ */
+CVAPI(void)  cvSetData( CvArr* arr, void* data, int step );
+
+/** @brief Retrieves low-level information about the array.
+
+The function fills output variables with low-level information about the array data. All output
+
+parameters are optional, so some of the pointers may be set to NULL. If the array is IplImage with
+ROI set, the parameters of ROI are returned.
+
+The following example shows how to get access to array elements. It computes absolute values of the
+array elements :
+@code
+    float* data;
+    int step;
+    CvSize size;
+
+    cvGetRawData(array, (uchar**)&data, &step, &size);
+    step /= sizeof(data[0]);
+
+    for(int y = 0; y < size.height; y++, data += step )
+        for(int x = 0; x < size.width; x++ )
+            data[x] = (float)fabs(data[x]);
+@endcode
+@param arr Array header
+@param data Output pointer to the whole image origin or ROI origin if ROI is set
+@param step Output full row length in bytes
+@param roi_size Output ROI size
+ */
+CVAPI(void) cvGetRawData( const CvArr* arr, uchar** data,
+                         int* step CV_DEFAULT(NULL),
+                         CvSize* roi_size CV_DEFAULT(NULL));
+
+/** @brief Returns size of matrix or image ROI.
+
+The function returns number of rows (CvSize::height) and number of columns (CvSize::width) of the
+input matrix or image. In the case of image the size of ROI is returned.
+@param arr array header
+ */
+CVAPI(CvSize) cvGetSize( const CvArr* arr );
+
+/** @brief Copies one array to another.
+
+The function copies selected elements from an input array to an output array:
+
+\f[\texttt{dst} (I)= \texttt{src} (I)  \quad \text{if} \quad \texttt{mask} (I)  \ne 0.\f]
+
+If any of the passed arrays is of IplImage type, then its ROI and COI fields are used. Both arrays
+must have the same type, the same number of dimensions, and the same size. The function can also
+copy sparse arrays (mask is not supported in this case).
+@param src The source array
+@param dst The destination array
+@param mask Operation mask, 8-bit single channel array; specifies elements of the destination array
+to be changed
+ */
+CVAPI(void)  cvCopy( const CvArr* src, CvArr* dst,
+                     const CvArr* mask CV_DEFAULT(NULL) );
+
+/** @brief Sets every element of an array to a given value.
+
+The function copies the scalar value to every selected element of the destination array:
+\f[\texttt{arr} (I)= \texttt{value} \quad \text{if} \quad \texttt{mask} (I)  \ne 0\f]
+If array arr is of IplImage type, then is ROI used, but COI must not be set.
+@param arr The destination array
+@param value Fill value
+@param mask Operation mask, 8-bit single channel array; specifies elements of the destination
+array to be changed
+ */
+CVAPI(void)  cvSet( CvArr* arr, CvScalar value,
+                    const CvArr* mask CV_DEFAULT(NULL) );
+
+/** @brief Clears the array.
+
+The function clears the array. In the case of dense arrays (CvMat, CvMatND or IplImage),
+cvZero(array) is equivalent to cvSet(array,cvScalarAll(0),0). In the case of sparse arrays all the
+elements are removed.
+@param arr Array to be cleared
+ */
+CVAPI(void)  cvSetZero( CvArr* arr );
+#define cvZero  cvSetZero
+
+
+/** Splits a multi-channel array into the set of single-channel arrays or
+   extracts particular [color] plane */
+CVAPI(void)  cvSplit( const CvArr* src, CvArr* dst0, CvArr* dst1,
+                      CvArr* dst2, CvArr* dst3 );
+
+/** Merges a set of single-channel arrays into the single multi-channel array
+   or inserts one particular [color] plane to the array */
+CVAPI(void)  cvMerge( const CvArr* src0, const CvArr* src1,
+                      const CvArr* src2, const CvArr* src3,
+                 
