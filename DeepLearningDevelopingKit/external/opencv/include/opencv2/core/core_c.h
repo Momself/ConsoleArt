@@ -989,4 +989,94 @@ CVAPI(void)  cvSplit( const CvArr* src, CvArr* dst0, CvArr* dst1,
    or inserts one particular [color] plane to the array */
 CVAPI(void)  cvMerge( const CvArr* src0, const CvArr* src1,
                       const CvArr* src2, const CvArr* src3,
-                 
+                      CvArr* dst );
+
+/** Copies several channels from input arrays to
+   certain channels of output arrays */
+CVAPI(void)  cvMixChannels( const CvArr** src, int src_count,
+                            CvArr** dst, int dst_count,
+                            const int* from_to, int pair_count );
+
+/** @brief Converts one array to another with optional linear transformation.
+
+The function has several different purposes, and thus has several different names. It copies one
+array to another with optional scaling, which is performed first, and/or optional type conversion,
+performed after:
+
+\f[\texttt{dst} (I) =  \texttt{scale} \texttt{src} (I) + ( \texttt{shift} _0, \texttt{shift} _1,...)\f]
+
+All the channels of multi-channel arrays are processed independently.
+
+The type of conversion is done with rounding and saturation, that is if the result of scaling +
+conversion can not be represented exactly by a value of the destination array element type, it is
+set to the nearest representable value on the real axis.
+@param src Source array
+@param dst Destination array
+@param scale Scale factor
+@param shift Value added to the scaled source array elements
+ */
+CVAPI(void)  cvConvertScale( const CvArr* src, CvArr* dst,
+                             double scale CV_DEFAULT(1),
+                             double shift CV_DEFAULT(0) );
+#define cvCvtScale cvConvertScale
+#define cvScale  cvConvertScale
+#define cvConvert( src, dst )  cvConvertScale( (src), (dst), 1, 0 )
+
+
+/** Performs linear transformation on every source array element,
+   stores absolute value of the result:
+   dst(x,y,c) = abs(scale*src(x,y,c)+shift).
+   destination array must have 8u type.
+   In other cases one may use cvConvertScale + cvAbsDiffS */
+CVAPI(void)  cvConvertScaleAbs( const CvArr* src, CvArr* dst,
+                                double scale CV_DEFAULT(1),
+                                double shift CV_DEFAULT(0) );
+#define cvCvtScaleAbs  cvConvertScaleAbs
+
+
+/** checks termination criteria validity and
+   sets eps to default_eps (if it is not set),
+   max_iter to default_max_iters (if it is not set)
+*/
+CVAPI(CvTermCriteria) cvCheckTermCriteria( CvTermCriteria criteria,
+                                           double default_eps,
+                                           int default_max_iters );
+
+/****************************************************************************************\
+*                   Arithmetic, logic and comparison operations                          *
+\****************************************************************************************/
+
+/** dst(mask) = src1(mask) + src2(mask) */
+CVAPI(void)  cvAdd( const CvArr* src1, const CvArr* src2, CvArr* dst,
+                    const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(mask) = src(mask) + value */
+CVAPI(void)  cvAddS( const CvArr* src, CvScalar value, CvArr* dst,
+                     const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(mask) = src1(mask) - src2(mask) */
+CVAPI(void)  cvSub( const CvArr* src1, const CvArr* src2, CvArr* dst,
+                    const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(mask) = src(mask) - value = src(mask) + (-value) */
+CV_INLINE  void  cvSubS( const CvArr* src, CvScalar value, CvArr* dst,
+                         const CvArr* mask CV_DEFAULT(NULL))
+{
+    cvAddS( src, cvScalar( -value.val[0], -value.val[1], -value.val[2], -value.val[3]),
+            dst, mask );
+}
+
+/** dst(mask) = value - src(mask) */
+CVAPI(void)  cvSubRS( const CvArr* src, CvScalar value, CvArr* dst,
+                      const CvArr* mask CV_DEFAULT(NULL));
+
+/** dst(idx) = src1(idx) * src2(idx) * scale
+   (scaled element-wise multiplication of 2 arrays) */
+CVAPI(void)  cvMul( const CvArr* src1, const CvArr* src2,
+                    CvArr* dst, double scale CV_DEFAULT(1) );
+
+/** element-wise division/inversion with scaling:
+    dst(idx) = src1(idx) * scale / src2(idx)
+    or dst(idx) = scale / src2(idx) if src1 == 0 */
+CVAPI(void)  cvDiv( const CvArr* src1, const CvArr* src2,
+      
