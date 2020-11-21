@@ -1261,4 +1261,95 @@ CVAPI(int) cvSolveCubic( const CvMat* coeffs, CvMat* roots );
 
 /** Finds all real and complex roots of a polynomial equation */
 CVAPI(void) cvSolvePoly(const CvMat* coeffs, CvMat *roots2,
-      int maxiter CV_DEFAULT(20), int fig C
+      int maxiter CV_DEFAULT(20), int fig CV_DEFAULT(100));
+
+/****************************************************************************************\
+*                                Matrix operations                                       *
+\****************************************************************************************/
+
+/** @brief Calculates the cross product of two 3D vectors.
+
+The function calculates the cross product of two 3D vectors:
+\f[\texttt{dst} =  \texttt{src1} \times \texttt{src2}\f]
+or:
+\f[\begin{array}{l} \texttt{dst} _1 =  \texttt{src1} _2  \texttt{src2} _3 -  \texttt{src1} _3  \texttt{src2} _2 \\ \texttt{dst} _2 =  \texttt{src1} _3  \texttt{src2} _1 -  \texttt{src1} _1  \texttt{src2} _3 \\ \texttt{dst} _3 =  \texttt{src1} _1  \texttt{src2} _2 -  \texttt{src1} _2  \texttt{src2} _1 \end{array}\f]
+@param src1 The first source vector
+@param src2 The second source vector
+@param dst The destination vector
+ */
+CVAPI(void)  cvCrossProduct( const CvArr* src1, const CvArr* src2, CvArr* dst );
+
+/** Matrix transform: dst = A*B + C, C is optional */
+#define cvMatMulAdd( src1, src2, src3, dst ) cvGEMM( (src1), (src2), 1., (src3), 1., (dst), 0 )
+#define cvMatMul( src1, src2, dst )  cvMatMulAdd( (src1), (src2), NULL, (dst))
+
+#define CV_GEMM_A_T 1
+#define CV_GEMM_B_T 2
+#define CV_GEMM_C_T 4
+/** Extended matrix transform:
+   dst = alpha*op(A)*op(B) + beta*op(C), where op(X) is X or X^T */
+CVAPI(void)  cvGEMM( const CvArr* src1, const CvArr* src2, double alpha,
+                     const CvArr* src3, double beta, CvArr* dst,
+                     int tABC CV_DEFAULT(0));
+#define cvMatMulAddEx cvGEMM
+
+/** Transforms each element of source array and stores
+   resultant vectors in destination array */
+CVAPI(void)  cvTransform( const CvArr* src, CvArr* dst,
+                          const CvMat* transmat,
+                          const CvMat* shiftvec CV_DEFAULT(NULL));
+#define cvMatMulAddS cvTransform
+
+/** Does perspective transform on every element of input array */
+CVAPI(void)  cvPerspectiveTransform( const CvArr* src, CvArr* dst,
+                                     const CvMat* mat );
+
+/** Calculates (A-delta)*(A-delta)^T (order=0) or (A-delta)^T*(A-delta) (order=1) */
+CVAPI(void) cvMulTransposed( const CvArr* src, CvArr* dst, int order,
+                             const CvArr* delta CV_DEFAULT(NULL),
+                             double scale CV_DEFAULT(1.) );
+
+/** Tranposes matrix. Square matrices can be transposed in-place */
+CVAPI(void)  cvTranspose( const CvArr* src, CvArr* dst );
+#define cvT cvTranspose
+
+/** Completes the symmetric matrix from the lower (LtoR=0) or from the upper (LtoR!=0) part */
+CVAPI(void)  cvCompleteSymm( CvMat* matrix, int LtoR CV_DEFAULT(0) );
+
+/** Mirror array data around horizontal (flip=0),
+   vertical (flip=1) or both(flip=-1) axises:
+   cvFlip(src) flips images vertically and sequences horizontally (inplace) */
+CVAPI(void)  cvFlip( const CvArr* src, CvArr* dst CV_DEFAULT(NULL),
+                     int flip_mode CV_DEFAULT(0));
+#define cvMirror cvFlip
+
+
+#define CV_SVD_MODIFY_A   1
+#define CV_SVD_U_T        2
+#define CV_SVD_V_T        4
+
+/** Performs Singular Value Decomposition of a matrix */
+CVAPI(void)   cvSVD( CvArr* A, CvArr* W, CvArr* U CV_DEFAULT(NULL),
+                     CvArr* V CV_DEFAULT(NULL), int flags CV_DEFAULT(0));
+
+/** Performs Singular Value Back Substitution (solves A*X = B):
+   flags must be the same as in cvSVD */
+CVAPI(void)   cvSVBkSb( const CvArr* W, const CvArr* U,
+                        const CvArr* V, const CvArr* B,
+                        CvArr* X, int flags );
+
+#define CV_LU  0
+#define CV_SVD 1
+#define CV_SVD_SYM 2
+#define CV_CHOLESKY 3
+#define CV_QR  4
+#define CV_NORMAL 16
+
+/** Inverts matrix */
+CVAPI(double)  cvInvert( const CvArr* src, CvArr* dst,
+                         int method CV_DEFAULT(CV_LU));
+#define cvInv cvInvert
+
+/** Solves linear system (src1)*(dst) = (src2)
+   (returns 0 if src1 is a singular and CV_LU method is used) */
+CVAPI(int
