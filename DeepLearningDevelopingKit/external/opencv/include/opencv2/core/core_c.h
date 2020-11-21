@@ -1447,4 +1447,113 @@ CVAPI(void)  cvAvgSdv( const CvArr* arr, CvScalar* mean, CvScalar* std_dev,
 CVAPI(void)  cvMinMaxLoc( const CvArr* arr, double* min_val, double* max_val,
                           CvPoint* min_loc CV_DEFAULT(NULL),
                           CvPoint* max_loc CV_DEFAULT(NULL),
-                        
+                          const CvArr* mask CV_DEFAULT(NULL) );
+
+/** @anchor core_c_NormFlags
+  @name Flags for cvNorm and cvNormalize
+  @{
+*/
+#define CV_C            1
+#define CV_L1           2
+#define CV_L2           4
+#define CV_NORM_MASK    7
+#define CV_RELATIVE     8
+#define CV_DIFF         16
+#define CV_MINMAX       32
+
+#define CV_DIFF_C       (CV_DIFF | CV_C)
+#define CV_DIFF_L1      (CV_DIFF | CV_L1)
+#define CV_DIFF_L2      (CV_DIFF | CV_L2)
+#define CV_RELATIVE_C   (CV_RELATIVE | CV_C)
+#define CV_RELATIVE_L1  (CV_RELATIVE | CV_L1)
+#define CV_RELATIVE_L2  (CV_RELATIVE | CV_L2)
+/** @} */
+
+/** Finds norm, difference norm or relative difference norm for an array (or two arrays)
+@see ref core_c_NormFlags "flags"
+*/
+CVAPI(double)  cvNorm( const CvArr* arr1, const CvArr* arr2 CV_DEFAULT(NULL),
+                       int norm_type CV_DEFAULT(CV_L2),
+                       const CvArr* mask CV_DEFAULT(NULL) );
+
+/** @see ref core_c_NormFlags "flags" */
+CVAPI(void)  cvNormalize( const CvArr* src, CvArr* dst,
+                          double a CV_DEFAULT(1.), double b CV_DEFAULT(0.),
+                          int norm_type CV_DEFAULT(CV_L2),
+                          const CvArr* mask CV_DEFAULT(NULL) );
+
+/** @anchor core_c_ReduceFlags
+  @name Flags for cvReduce
+  @{
+*/
+#define CV_REDUCE_SUM 0
+#define CV_REDUCE_AVG 1
+#define CV_REDUCE_MAX 2
+#define CV_REDUCE_MIN 3
+/** @} */
+
+/** @see @ref core_c_ReduceFlags "flags" */
+CVAPI(void)  cvReduce( const CvArr* src, CvArr* dst, int dim CV_DEFAULT(-1),
+                       int op CV_DEFAULT(CV_REDUCE_SUM) );
+
+/****************************************************************************************\
+*                      Discrete Linear Transforms and Related Functions                  *
+\****************************************************************************************/
+
+/** @anchor core_c_DftFlags
+  @name Flags for cvDFT, cvDCT and cvMulSpectrums
+  @{
+  */
+#define CV_DXT_FORWARD  0
+#define CV_DXT_INVERSE  1
+#define CV_DXT_SCALE    2 /**< divide result by size of array */
+#define CV_DXT_INV_SCALE (CV_DXT_INVERSE + CV_DXT_SCALE)
+#define CV_DXT_INVERSE_SCALE CV_DXT_INV_SCALE
+#define CV_DXT_ROWS     4 /**< transform each row individually */
+#define CV_DXT_MUL_CONJ 8 /**< conjugate the second argument of cvMulSpectrums */
+/** @} */
+
+/** Discrete Fourier Transform:
+    complex->complex,
+    real->ccs (forward),
+    ccs->real (inverse)
+@see core_c_DftFlags "flags"
+*/
+CVAPI(void)  cvDFT( const CvArr* src, CvArr* dst, int flags,
+                    int nonzero_rows CV_DEFAULT(0) );
+#define cvFFT cvDFT
+
+/** Multiply results of DFTs: DFT(X)*DFT(Y) or DFT(X)*conj(DFT(Y))
+@see core_c_DftFlags "flags"
+*/
+CVAPI(void)  cvMulSpectrums( const CvArr* src1, const CvArr* src2,
+                             CvArr* dst, int flags );
+
+/** Finds optimal DFT vector size >= size0 */
+CVAPI(int)  cvGetOptimalDFTSize( int size0 );
+
+/** Discrete Cosine Transform
+@see core_c_DftFlags "flags"
+*/
+CVAPI(void)  cvDCT( const CvArr* src, CvArr* dst, int flags );
+
+/****************************************************************************************\
+*                              Dynamic data structures                                   *
+\****************************************************************************************/
+
+/** Calculates length of sequence slice (with support of negative indices). */
+CVAPI(int) cvSliceLength( CvSlice slice, const CvSeq* seq );
+
+
+/** Creates new memory storage.
+   block_size == 0 means that default,
+   somewhat optimal size, is used (currently, it is 64K) */
+CVAPI(CvMemStorage*)  cvCreateMemStorage( int block_size CV_DEFAULT(0));
+
+
+/** Creates a memory storage that will borrow memory blocks from parent storage */
+CVAPI(CvMemStorage*)  cvCreateChildMemStorage( CvMemStorage* parent );
+
+
+/** Releases memory storage. All the children of a parent must be released before
+   the parent. A child storage returns all the blocks to parent when it
