@@ -1352,4 +1352,99 @@ CVAPI(double)  cvInvert( const CvArr* src, CvArr* dst,
 
 /** Solves linear system (src1)*(dst) = (src2)
    (returns 0 if src1 is a singular and CV_LU method is used) */
-CVAPI(int
+CVAPI(int)  cvSolve( const CvArr* src1, const CvArr* src2, CvArr* dst,
+                     int method CV_DEFAULT(CV_LU));
+
+/** Calculates determinant of input matrix */
+CVAPI(double) cvDet( const CvArr* mat );
+
+/** Calculates trace of the matrix (sum of elements on the main diagonal) */
+CVAPI(CvScalar) cvTrace( const CvArr* mat );
+
+/** Finds eigen values and vectors of a symmetric matrix */
+CVAPI(void)  cvEigenVV( CvArr* mat, CvArr* evects, CvArr* evals,
+                        double eps CV_DEFAULT(0),
+                        int lowindex CV_DEFAULT(-1),
+                        int highindex CV_DEFAULT(-1));
+
+///* Finds selected eigen values and vectors of a symmetric matrix */
+//CVAPI(void)  cvSelectedEigenVV( CvArr* mat, CvArr* evects, CvArr* evals,
+//                                int lowindex, int highindex );
+
+/** Makes an identity matrix (mat_ij = i == j) */
+CVAPI(void)  cvSetIdentity( CvArr* mat, CvScalar value CV_DEFAULT(cvRealScalar(1)) );
+
+/** Fills matrix with given range of numbers */
+CVAPI(CvArr*)  cvRange( CvArr* mat, double start, double end );
+
+/**   @anchor core_c_CovarFlags
+@name Flags for cvCalcCovarMatrix
+@see cvCalcCovarMatrix
+  @{
+*/
+
+/** flag for cvCalcCovarMatrix, transpose([v1-avg, v2-avg,...]) * [v1-avg,v2-avg,...] */
+#define CV_COVAR_SCRAMBLED 0
+
+/** flag for cvCalcCovarMatrix, [v1-avg, v2-avg,...] * transpose([v1-avg,v2-avg,...]) */
+#define CV_COVAR_NORMAL    1
+
+/** flag for cvCalcCovarMatrix, do not calc average (i.e. mean vector) - use the input vector instead
+   (useful for calculating covariance matrix by parts) */
+#define CV_COVAR_USE_AVG   2
+
+/** flag for cvCalcCovarMatrix, scale the covariance matrix coefficients by number of the vectors */
+#define CV_COVAR_SCALE     4
+
+/** flag for cvCalcCovarMatrix, all the input vectors are stored in a single matrix, as its rows */
+#define CV_COVAR_ROWS      8
+
+/** flag for cvCalcCovarMatrix, all the input vectors are stored in a single matrix, as its columns */
+#define CV_COVAR_COLS     16
+
+/** @} */
+
+/** Calculates covariation matrix for a set of vectors
+@see @ref core_c_CovarFlags "flags"
+*/
+CVAPI(void)  cvCalcCovarMatrix( const CvArr** vects, int count,
+                                CvArr* cov_mat, CvArr* avg, int flags );
+
+#define CV_PCA_DATA_AS_ROW 0
+#define CV_PCA_DATA_AS_COL 1
+#define CV_PCA_USE_AVG 2
+CVAPI(void)  cvCalcPCA( const CvArr* data, CvArr* mean,
+                        CvArr* eigenvals, CvArr* eigenvects, int flags );
+
+CVAPI(void)  cvProjectPCA( const CvArr* data, const CvArr* mean,
+                           const CvArr* eigenvects, CvArr* result );
+
+CVAPI(void)  cvBackProjectPCA( const CvArr* proj, const CvArr* mean,
+                               const CvArr* eigenvects, CvArr* result );
+
+/** Calculates Mahalanobis(weighted) distance */
+CVAPI(double)  cvMahalanobis( const CvArr* vec1, const CvArr* vec2, const CvArr* mat );
+#define cvMahalonobis  cvMahalanobis
+
+/****************************************************************************************\
+*                                    Array Statistics                                    *
+\****************************************************************************************/
+
+/** Finds sum of array elements */
+CVAPI(CvScalar)  cvSum( const CvArr* arr );
+
+/** Calculates number of non-zero pixels */
+CVAPI(int)  cvCountNonZero( const CvArr* arr );
+
+/** Calculates mean value of array elements */
+CVAPI(CvScalar)  cvAvg( const CvArr* arr, const CvArr* mask CV_DEFAULT(NULL) );
+
+/** Calculates mean and standard deviation of pixel values */
+CVAPI(void)  cvAvgSdv( const CvArr* arr, CvScalar* mean, CvScalar* std_dev,
+                       const CvArr* mask CV_DEFAULT(NULL) );
+
+/** Finds global minimum, maximum and their positions */
+CVAPI(void)  cvMinMaxLoc( const CvArr* arr, double* min_val, double* max_val,
+                          CvPoint* min_loc CV_DEFAULT(NULL),
+                          CvPoint* max_loc CV_DEFAULT(NULL),
+                        
