@@ -1556,4 +1556,98 @@ CVAPI(CvMemStorage*)  cvCreateChildMemStorage( CvMemStorage* parent );
 
 
 /** Releases memory storage. All the children of a parent must be released before
-   the parent. A child storage returns all the blocks to parent when it
+   the parent. A child storage returns all the blocks to parent when it is released */
+CVAPI(void)  cvReleaseMemStorage( CvMemStorage** storage );
+
+
+/** Clears memory storage. This is the only way(!!!) (besides cvRestoreMemStoragePos)
+   to reuse memory allocated for the storage - cvClearSeq,cvClearSet ...
+   do not free any memory.
+   A child storage returns all the blocks to the parent when it is cleared */
+CVAPI(void)  cvClearMemStorage( CvMemStorage* storage );
+
+/** Remember a storage "free memory" position */
+CVAPI(void)  cvSaveMemStoragePos( const CvMemStorage* storage, CvMemStoragePos* pos );
+
+/** Restore a storage "free memory" position */
+CVAPI(void)  cvRestoreMemStoragePos( CvMemStorage* storage, CvMemStoragePos* pos );
+
+/** Allocates continuous buffer of the specified size in the storage */
+CVAPI(void*) cvMemStorageAlloc( CvMemStorage* storage, size_t size );
+
+/** Allocates string in memory storage */
+CVAPI(CvString) cvMemStorageAllocString( CvMemStorage* storage, const char* ptr,
+                                         int len CV_DEFAULT(-1) );
+
+/** Creates new empty sequence that will reside in the specified storage */
+CVAPI(CvSeq*)  cvCreateSeq( int seq_flags, size_t header_size,
+                            size_t elem_size, CvMemStorage* storage );
+
+/** Changes default size (granularity) of sequence blocks.
+   The default size is ~1Kbyte */
+CVAPI(void)  cvSetSeqBlockSize( CvSeq* seq, int delta_elems );
+
+
+/** Adds new element to the end of sequence. Returns pointer to the element */
+CVAPI(schar*)  cvSeqPush( CvSeq* seq, const void* element CV_DEFAULT(NULL));
+
+
+/** Adds new element to the beginning of sequence. Returns pointer to it */
+CVAPI(schar*)  cvSeqPushFront( CvSeq* seq, const void* element CV_DEFAULT(NULL));
+
+
+/** Removes the last element from sequence and optionally saves it */
+CVAPI(void)  cvSeqPop( CvSeq* seq, void* element CV_DEFAULT(NULL));
+
+
+/** Removes the first element from sequence and optioanally saves it */
+CVAPI(void)  cvSeqPopFront( CvSeq* seq, void* element CV_DEFAULT(NULL));
+
+
+#define CV_FRONT 1
+#define CV_BACK 0
+/** Adds several new elements to the end of sequence */
+CVAPI(void)  cvSeqPushMulti( CvSeq* seq, const void* elements,
+                             int count, int in_front CV_DEFAULT(0) );
+
+/** Removes several elements from the end of sequence and optionally saves them */
+CVAPI(void)  cvSeqPopMulti( CvSeq* seq, void* elements,
+                            int count, int in_front CV_DEFAULT(0) );
+
+/** Inserts a new element in the middle of sequence.
+   cvSeqInsert(seq,0,elem) == cvSeqPushFront(seq,elem) */
+CVAPI(schar*)  cvSeqInsert( CvSeq* seq, int before_index,
+                            const void* element CV_DEFAULT(NULL));
+
+/** Removes specified sequence element */
+CVAPI(void)  cvSeqRemove( CvSeq* seq, int index );
+
+
+/** Removes all the elements from the sequence. The freed memory
+   can be reused later only by the same sequence unless cvClearMemStorage
+   or cvRestoreMemStoragePos is called */
+CVAPI(void)  cvClearSeq( CvSeq* seq );
+
+
+/** Retrieves pointer to specified sequence element.
+   Negative indices are supported and mean counting from the end
+   (e.g -1 means the last sequence element) */
+CVAPI(schar*)  cvGetSeqElem( const CvSeq* seq, int index );
+
+/** Calculates index of the specified sequence element.
+   Returns -1 if element does not belong to the sequence */
+CVAPI(int)  cvSeqElemIdx( const CvSeq* seq, const void* element,
+                         CvSeqBlock** block CV_DEFAULT(NULL) );
+
+/** Initializes sequence writer. The new elements will be added to the end of sequence */
+CVAPI(void)  cvStartAppendToSeq( CvSeq* seq, CvSeqWriter* writer );
+
+
+/** Combination of cvCreateSeq and cvStartAppendToSeq */
+CVAPI(void)  cvStartWriteSeq( int seq_flags, int header_size,
+                              int elem_size, CvMemStorage* storage,
+                              CvSeqWriter* writer );
+
+/** Closes sequence writer, updates sequence header and returns pointer
+   to the resultant sequence
+   (which may be useful if the sequence was created using cvSt
