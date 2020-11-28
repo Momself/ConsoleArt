@@ -1748,4 +1748,94 @@ CV_INLINE  CvSetElem* cvSetNew( CvSet* set_header )
     return elem;
 }
 
-/** Removes 
+/** Removes set element given its pointer */
+CV_INLINE  void cvSetRemoveByPtr( CvSet* set_header, void* elem )
+{
+    CvSetElem* _elem = (CvSetElem*)elem;
+    assert( _elem->flags >= 0 /*&& (elem->flags & CV_SET_ELEM_IDX_MASK) < set_header->total*/ );
+    _elem->next_free = set_header->free_elems;
+    _elem->flags = (_elem->flags & CV_SET_ELEM_IDX_MASK) | CV_SET_ELEM_FREE_FLAG;
+    set_header->free_elems = _elem;
+    set_header->active_count--;
+}
+
+/** Removes element from the set by its index  */
+CVAPI(void)   cvSetRemove( CvSet* set_header, int index );
+
+/** Returns a set element by index. If the element doesn't belong to the set,
+   NULL is returned */
+CV_INLINE CvSetElem* cvGetSetElem( const CvSet* set_header, int idx )
+{
+    CvSetElem* elem = (CvSetElem*)(void *)cvGetSeqElem( (CvSeq*)set_header, idx );
+    return elem && CV_IS_SET_ELEM( elem ) ? elem : 0;
+}
+
+/** Removes all the elements from the set */
+CVAPI(void)  cvClearSet( CvSet* set_header );
+
+/** Creates new graph */
+CVAPI(CvGraph*)  cvCreateGraph( int graph_flags, int header_size,
+                                int vtx_size, int edge_size,
+                                CvMemStorage* storage );
+
+/** Adds new vertex to the graph */
+CVAPI(int)  cvGraphAddVtx( CvGraph* graph, const CvGraphVtx* vtx CV_DEFAULT(NULL),
+                           CvGraphVtx** inserted_vtx CV_DEFAULT(NULL) );
+
+
+/** Removes vertex from the graph together with all incident edges */
+CVAPI(int)  cvGraphRemoveVtx( CvGraph* graph, int index );
+CVAPI(int)  cvGraphRemoveVtxByPtr( CvGraph* graph, CvGraphVtx* vtx );
+
+
+/** Link two vertices specified by indices or pointers if they
+   are not connected or return pointer to already existing edge
+   connecting the vertices.
+   Functions return 1 if a new edge was created, 0 otherwise */
+CVAPI(int)  cvGraphAddEdge( CvGraph* graph,
+                            int start_idx, int end_idx,
+                            const CvGraphEdge* edge CV_DEFAULT(NULL),
+                            CvGraphEdge** inserted_edge CV_DEFAULT(NULL) );
+
+CVAPI(int)  cvGraphAddEdgeByPtr( CvGraph* graph,
+                               CvGraphVtx* start_vtx, CvGraphVtx* end_vtx,
+                               const CvGraphEdge* edge CV_DEFAULT(NULL),
+                               CvGraphEdge** inserted_edge CV_DEFAULT(NULL) );
+
+/** Remove edge connecting two vertices */
+CVAPI(void)  cvGraphRemoveEdge( CvGraph* graph, int start_idx, int end_idx );
+CVAPI(void)  cvGraphRemoveEdgeByPtr( CvGraph* graph, CvGraphVtx* start_vtx,
+                                     CvGraphVtx* end_vtx );
+
+/** Find edge connecting two vertices */
+CVAPI(CvGraphEdge*)  cvFindGraphEdge( const CvGraph* graph, int start_idx, int end_idx );
+CVAPI(CvGraphEdge*)  cvFindGraphEdgeByPtr( const CvGraph* graph,
+                                           const CvGraphVtx* start_vtx,
+                                           const CvGraphVtx* end_vtx );
+#define cvGraphFindEdge cvFindGraphEdge
+#define cvGraphFindEdgeByPtr cvFindGraphEdgeByPtr
+
+/** Remove all vertices and edges from the graph */
+CVAPI(void)  cvClearGraph( CvGraph* graph );
+
+
+/** Count number of edges incident to the vertex */
+CVAPI(int)  cvGraphVtxDegree( const CvGraph* graph, int vtx_idx );
+CVAPI(int)  cvGraphVtxDegreeByPtr( const CvGraph* graph, const CvGraphVtx* vtx );
+
+
+/** Retrieves graph vertex by given index */
+#define cvGetGraphVtx( graph, idx ) (CvGraphVtx*)cvGetSetElem((CvSet*)(graph), (idx))
+
+/** Retrieves index of a graph vertex given its pointer */
+#define cvGraphVtxIdx( graph, vtx ) ((vtx)->flags & CV_SET_ELEM_IDX_MASK)
+
+/** Retrieves index of a graph edge given its pointer */
+#define cvGraphEdgeIdx( graph, edge ) ((edge)->flags & CV_SET_ELEM_IDX_MASK)
+
+#define cvGraphGetVtxCount( graph ) ((graph)->active_count)
+#define cvGraphGetEdgeCount( graph ) ((graph)->edges->active_count)
+
+#define  CV_GRAPH_VERTEX        1
+#define  CV_GRAPH_TREE_EDGE     2
+#define  CV_GRAPH_BACK_EDGE     4
