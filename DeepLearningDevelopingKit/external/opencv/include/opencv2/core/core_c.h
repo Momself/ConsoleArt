@@ -1650,4 +1650,102 @@ CVAPI(void)  cvStartWriteSeq( int seq_flags, int header_size,
 
 /** Closes sequence writer, updates sequence header and returns pointer
    to the resultant sequence
-   (which may be useful if the sequence was created using cvSt
+   (which may be useful if the sequence was created using cvStartWriteSeq))
+*/
+CVAPI(CvSeq*)  cvEndWriteSeq( CvSeqWriter* writer );
+
+
+/** Updates sequence header. May be useful to get access to some of previously
+   written elements via cvGetSeqElem or sequence reader */
+CVAPI(void)   cvFlushSeqWriter( CvSeqWriter* writer );
+
+
+/** Initializes sequence reader.
+   The sequence can be read in forward or backward direction */
+CVAPI(void) cvStartReadSeq( const CvSeq* seq, CvSeqReader* reader,
+                           int reverse CV_DEFAULT(0) );
+
+
+/** Returns current sequence reader position (currently observed sequence element) */
+CVAPI(int)  cvGetSeqReaderPos( CvSeqReader* reader );
+
+
+/** Changes sequence reader position. It may seek to an absolute or
+   to relative to the current position */
+CVAPI(void)   cvSetSeqReaderPos( CvSeqReader* reader, int index,
+                                 int is_relative CV_DEFAULT(0));
+
+/** Copies sequence content to a continuous piece of memory */
+CVAPI(void*)  cvCvtSeqToArray( const CvSeq* seq, void* elements,
+                               CvSlice slice CV_DEFAULT(CV_WHOLE_SEQ) );
+
+/** Creates sequence header for array.
+   After that all the operations on sequences that do not alter the content
+   can be applied to the resultant sequence */
+CVAPI(CvSeq*) cvMakeSeqHeaderForArray( int seq_type, int header_size,
+                                       int elem_size, void* elements, int total,
+                                       CvSeq* seq, CvSeqBlock* block );
+
+/** Extracts sequence slice (with or without copying sequence elements) */
+CVAPI(CvSeq*) cvSeqSlice( const CvSeq* seq, CvSlice slice,
+                         CvMemStorage* storage CV_DEFAULT(NULL),
+                         int copy_data CV_DEFAULT(0));
+
+CV_INLINE CvSeq* cvCloneSeq( const CvSeq* seq, CvMemStorage* storage CV_DEFAULT(NULL))
+{
+    return cvSeqSlice( seq, CV_WHOLE_SEQ, storage, 1 );
+}
+
+/** Removes sequence slice */
+CVAPI(void)  cvSeqRemoveSlice( CvSeq* seq, CvSlice slice );
+
+/** Inserts a sequence or array into another sequence */
+CVAPI(void)  cvSeqInsertSlice( CvSeq* seq, int before_index, const CvArr* from_arr );
+
+/** a < b ? -1 : a > b ? 1 : 0 */
+typedef int (CV_CDECL* CvCmpFunc)(const void* a, const void* b, void* userdata );
+
+/** Sorts sequence in-place given element comparison function */
+CVAPI(void) cvSeqSort( CvSeq* seq, CvCmpFunc func, void* userdata CV_DEFAULT(NULL) );
+
+/** Finds element in a [sorted] sequence */
+CVAPI(schar*) cvSeqSearch( CvSeq* seq, const void* elem, CvCmpFunc func,
+                           int is_sorted, int* elem_idx,
+                           void* userdata CV_DEFAULT(NULL) );
+
+/** Reverses order of sequence elements in-place */
+CVAPI(void) cvSeqInvert( CvSeq* seq );
+
+/** Splits sequence into one or more equivalence classes using the specified criteria */
+CVAPI(int)  cvSeqPartition( const CvSeq* seq, CvMemStorage* storage,
+                            CvSeq** labels, CvCmpFunc is_equal, void* userdata );
+
+/************ Internal sequence functions ************/
+CVAPI(void)  cvChangeSeqBlock( void* reader, int direction );
+CVAPI(void)  cvCreateSeqBlock( CvSeqWriter* writer );
+
+
+/** Creates a new set */
+CVAPI(CvSet*)  cvCreateSet( int set_flags, int header_size,
+                            int elem_size, CvMemStorage* storage );
+
+/** Adds new element to the set and returns pointer to it */
+CVAPI(int)  cvSetAdd( CvSet* set_header, CvSetElem* elem CV_DEFAULT(NULL),
+                      CvSetElem** inserted_elem CV_DEFAULT(NULL) );
+
+/** Fast variant of cvSetAdd */
+CV_INLINE  CvSetElem* cvSetNew( CvSet* set_header )
+{
+    CvSetElem* elem = set_header->free_elems;
+    if( elem )
+    {
+        set_header->free_elems = elem->next_free;
+        elem->flags = elem->flags & CV_SET_ELEM_IDX_MASK;
+        set_header->active_count++;
+    }
+    else
+        cvSetAdd( set_header, NULL, &elem );
+    return elem;
+}
+
+/** Removes 
