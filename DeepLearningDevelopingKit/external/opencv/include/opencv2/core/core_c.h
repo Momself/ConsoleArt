@@ -1839,3 +1839,97 @@ CVAPI(int)  cvGraphVtxDegreeByPtr( const CvGraph* graph, const CvGraphVtx* vtx )
 #define  CV_GRAPH_VERTEX        1
 #define  CV_GRAPH_TREE_EDGE     2
 #define  CV_GRAPH_BACK_EDGE     4
+#define  CV_GRAPH_FORWARD_EDGE  8
+#define  CV_GRAPH_CROSS_EDGE    16
+#define  CV_GRAPH_ANY_EDGE      30
+#define  CV_GRAPH_NEW_TREE      32
+#define  CV_GRAPH_BACKTRACKING  64
+#define  CV_GRAPH_OVER          -1
+
+#define  CV_GRAPH_ALL_ITEMS    -1
+
+/** flags for graph vertices and edges */
+#define  CV_GRAPH_ITEM_VISITED_FLAG  (1 << 30)
+#define  CV_IS_GRAPH_VERTEX_VISITED(vtx) \
+    (((CvGraphVtx*)(vtx))->flags & CV_GRAPH_ITEM_VISITED_FLAG)
+#define  CV_IS_GRAPH_EDGE_VISITED(edge) \
+    (((CvGraphEdge*)(edge))->flags & CV_GRAPH_ITEM_VISITED_FLAG)
+#define  CV_GRAPH_SEARCH_TREE_NODE_FLAG   (1 << 29)
+#define  CV_GRAPH_FORWARD_EDGE_FLAG       (1 << 28)
+
+typedef struct CvGraphScanner
+{
+    CvGraphVtx* vtx;       /* current graph vertex (or current edge origin) */
+    CvGraphVtx* dst;       /* current graph edge destination vertex */
+    CvGraphEdge* edge;     /* current edge */
+
+    CvGraph* graph;        /* the graph */
+    CvSeq*   stack;        /* the graph vertex stack */
+    int      index;        /* the lower bound of certainly visited vertices */
+    int      mask;         /* event mask */
+}
+CvGraphScanner;
+
+/** Creates new graph scanner. */
+CVAPI(CvGraphScanner*)  cvCreateGraphScanner( CvGraph* graph,
+                                             CvGraphVtx* vtx CV_DEFAULT(NULL),
+                                             int mask CV_DEFAULT(CV_GRAPH_ALL_ITEMS));
+
+/** Releases graph scanner. */
+CVAPI(void) cvReleaseGraphScanner( CvGraphScanner** scanner );
+
+/** Get next graph element */
+CVAPI(int)  cvNextGraphItem( CvGraphScanner* scanner );
+
+/** Creates a copy of graph */
+CVAPI(CvGraph*) cvCloneGraph( const CvGraph* graph, CvMemStorage* storage );
+
+
+/** Does look-up transformation. Elements of the source array
+   (that should be 8uC1 or 8sC1) are used as indexes in lutarr 256-element table */
+CVAPI(void) cvLUT( const CvArr* src, CvArr* dst, const CvArr* lut );
+
+
+/******************* Iteration through the sequence tree *****************/
+typedef struct CvTreeNodeIterator
+{
+    const void* node;
+    int level;
+    int max_level;
+}
+CvTreeNodeIterator;
+
+CVAPI(void) cvInitTreeNodeIterator( CvTreeNodeIterator* tree_iterator,
+                                   const void* first, int max_level );
+CVAPI(void*) cvNextTreeNode( CvTreeNodeIterator* tree_iterator );
+CVAPI(void*) cvPrevTreeNode( CvTreeNodeIterator* tree_iterator );
+
+/** Inserts sequence into tree with specified "parent" sequence.
+   If parent is equal to frame (e.g. the most external contour),
+   then added contour will have null pointer to parent. */
+CVAPI(void) cvInsertNodeIntoTree( void* node, void* parent, void* frame );
+
+/** Removes contour from tree (together with the contour children). */
+CVAPI(void) cvRemoveNodeFromTree( void* node, void* frame );
+
+/** Gathers pointers to all the sequences,
+   accessible from the `first`, to the single sequence */
+CVAPI(CvSeq*) cvTreeToNodeSeq( const void* first, int header_size,
+                              CvMemStorage* storage );
+
+/** The function implements the K-means algorithm for clustering an array of sample
+   vectors in a specified number of classes */
+#define CV_KMEANS_USE_INITIAL_LABELS    1
+CVAPI(int) cvKMeans2( const CvArr* samples, int cluster_count, CvArr* labels,
+                      CvTermCriteria termcrit, int attempts CV_DEFAULT(1),
+                      CvRNG* rng CV_DEFAULT(0), int flags CV_DEFAULT(0),
+                      CvArr* _centers CV_DEFAULT(0), double* compactness CV_DEFAULT(0) );
+
+/****************************************************************************************\
+*                                    System functions                                    *
+\****************************************************************************************/
+
+/** Loads optimized functions from IPP, MKL etc. or switches back to pure C code */
+CVAPI(int)  cvUseOptimized( int on_off );
+
+typedef IplImage* (
