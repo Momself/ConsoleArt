@@ -1932,4 +1932,80 @@ CVAPI(int) cvKMeans2( const CvArr* samples, int cluster_count, CvArr* labels,
 /** Loads optimized functions from IPP, MKL etc. or switches back to pure C code */
 CVAPI(int)  cvUseOptimized( int on_off );
 
-typedef IplImage* (
+typedef IplImage* (CV_STDCALL* Cv_iplCreateImageHeader)
+                            (int,int,int,char*,char*,int,int,int,int,int,
+                            IplROI*,IplImage*,void*,IplTileInfo*);
+typedef void (CV_STDCALL* Cv_iplAllocateImageData)(IplImage*,int,int);
+typedef void (CV_STDCALL* Cv_iplDeallocate)(IplImage*,int);
+typedef IplROI* (CV_STDCALL* Cv_iplCreateROI)(int,int,int,int,int);
+typedef IplImage* (CV_STDCALL* Cv_iplCloneImage)(const IplImage*);
+
+/** @brief Makes OpenCV use IPL functions for allocating IplImage and IplROI structures.
+
+Normally, the function is not called directly. Instead, a simple macro
+CV_TURN_ON_IPL_COMPATIBILITY() is used that calls cvSetIPLAllocators and passes there pointers
+to IPL allocation functions. :
+@code
+    ...
+    CV_TURN_ON_IPL_COMPATIBILITY()
+    ...
+@endcode
+@param create_header pointer to a function, creating IPL image header.
+@param allocate_data pointer to a function, allocating IPL image data.
+@param deallocate pointer to a function, deallocating IPL image.
+@param create_roi pointer to a function, creating IPL image ROI (i.e. Region of Interest).
+@param clone_image pointer to a function, cloning an IPL image.
+ */
+CVAPI(void) cvSetIPLAllocators( Cv_iplCreateImageHeader create_header,
+                               Cv_iplAllocateImageData allocate_data,
+                               Cv_iplDeallocate deallocate,
+                               Cv_iplCreateROI create_roi,
+                               Cv_iplCloneImage clone_image );
+
+#define CV_TURN_ON_IPL_COMPATIBILITY()                                  \
+    cvSetIPLAllocators( iplCreateImageHeader, iplAllocateImage,         \
+                        iplDeallocate, iplCreateROI, iplCloneImage )
+
+/****************************************************************************************\
+*                                    Data Persistence                                    *
+\****************************************************************************************/
+
+/********************************** High-level functions ********************************/
+
+/** @brief Opens file storage for reading or writing data.
+
+The function opens file storage for reading or writing data. In the latter case, a new file is
+created or an existing file is rewritten. The type of the read or written file is determined by the
+filename extension: .xml for XML, .yml or .yaml for YAML and .json for JSON.
+
+At the same time, it also supports adding parameters like "example.xml?base64". The three ways
+are the same:
+@snippet samples/cpp/filestorage_base64.cpp suffix_in_file_name
+@snippet samples/cpp/filestorage_base64.cpp flag_write_base64
+@snippet samples/cpp/filestorage_base64.cpp flag_write_and_flag_base64
+
+The function returns a pointer to the CvFileStorage structure.
+If the file cannot be opened then the function returns NULL.
+@param filename Name of the file associated with the storage
+@param memstorage Memory storage used for temporary data and for
+:   storing dynamic structures, such as CvSeq or CvGraph . If it is NULL, a temporary memory
+    storage is created and used.
+@param flags Can be one of the following:
+> -   **CV_STORAGE_READ** the storage is open for reading
+> -   **CV_STORAGE_WRITE** the storage is open for writing
+      (use **CV_STORAGE_WRITE | CV_STORAGE_WRITE_BASE64** to write rawdata in Base64)
+@param encoding
+ */
+CVAPI(CvFileStorage*)  cvOpenFileStorage( const char* filename, CvMemStorage* memstorage,
+                                          int flags, const char* encoding CV_DEFAULT(NULL) );
+
+/** @brief Releases file storage.
+
+The function closes the file associated with the storage and releases all the temporary structures.
+It must be called after all I/O operations with the storage are finished.
+@param fs Double pointer to the released file storage
+ */
+CVAPI(void) cvReleaseFileStorage( CvFileStorage** fs );
+
+/** returns attribute value or 0 (NULL) if there is no such attribute */
+CVAPI(const char*) cvAttrValue( const CvAttr
