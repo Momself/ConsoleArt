@@ -2008,4 +2008,83 @@ It must be called after all I/O operations with the storage are finished.
 CVAPI(void) cvReleaseFileStorage( CvFileStorage** fs );
 
 /** returns attribute value or 0 (NULL) if there is no such attribute */
-CVAPI(const char*) cvAttrValue( const CvAttr
+CVAPI(const char*) cvAttrValue( const CvAttrList* attr, const char* attr_name );
+
+/** @brief Starts writing a new structure.
+
+The function starts writing a compound structure (collection) that can be a sequence or a map. After
+all the structure fields, which can be scalars or structures, are written, cvEndWriteStruct should
+be called. The function can be used to group some objects or to implement the write function for a
+some user object (see CvTypeInfo).
+@param fs File storage
+@param name Name of the written structure. The structure can be accessed by this name when the
+storage is read.
+@param struct_flags A combination one of the following values:
+-   **CV_NODE_SEQ** the written structure is a sequence (see discussion of CvFileStorage ),
+    that is, its elements do not have a name.
+-   **CV_NODE_MAP** the written structure is a map (see discussion of CvFileStorage ), that
+    is, all its elements have names.
+One and only one of the two above flags must be specified
+-   **CV_NODE_FLOW** the optional flag that makes sense only for YAML streams. It means that
+     the structure is written as a flow (not as a block), which is more compact. It is
+     recommended to use this flag for structures or arrays whose elements are all scalars.
+@param type_name Optional parameter - the object type name. In
+    case of XML it is written as a type_id attribute of the structure opening tag. In the case of
+    YAML it is written after a colon following the structure name (see the example in
+    CvFileStorage description). In case of JSON it is written as a name/value pair.
+    Mainly it is used with user objects. When the storage is read, the
+    encoded type name is used to determine the object type (see CvTypeInfo and cvFindType ).
+@param attributes This parameter is not used in the current implementation
+ */
+CVAPI(void) cvStartWriteStruct( CvFileStorage* fs, const char* name,
+                                int struct_flags, const char* type_name CV_DEFAULT(NULL),
+                                CvAttrList attributes CV_DEFAULT(cvAttrList()));
+
+/** @brief Finishes writing to a file node collection.
+@param fs File storage
+@sa cvStartWriteStruct.
+ */
+CVAPI(void) cvEndWriteStruct( CvFileStorage* fs );
+
+/** @brief Writes an integer value.
+
+The function writes a single integer value (with or without a name) to the file storage.
+@param fs File storage
+@param name Name of the written value. Should be NULL if and only if the parent structure is a
+sequence.
+@param value The written value
+ */
+CVAPI(void) cvWriteInt( CvFileStorage* fs, const char* name, int value );
+
+/** @brief Writes a floating-point value.
+
+The function writes a single floating-point value (with or without a name) to file storage. Special
+values are encoded as follows: NaN (Not A Number) as .NaN, infinity as +.Inf or -.Inf.
+
+The following example shows how to use the low-level writing functions to store custom structures,
+such as termination criteria, without registering a new type. :
+@code
+    void write_termcriteria( CvFileStorage* fs, const char* struct_name,
+                             CvTermCriteria* termcrit )
+    {
+        cvStartWriteStruct( fs, struct_name, CV_NODE_MAP, NULL, cvAttrList(0,0));
+        cvWriteComment( fs, "termination criteria", 1 ); // just a description
+        if( termcrit->type & CV_TERMCRIT_ITER )
+            cvWriteInteger( fs, "max_iterations", termcrit->max_iter );
+        if( termcrit->type & CV_TERMCRIT_EPS )
+            cvWriteReal( fs, "accuracy", termcrit->epsilon );
+        cvEndWriteStruct( fs );
+    }
+@endcode
+@param fs File storage
+@param name Name of the written value. Should be NULL if and only if the parent structure is a
+sequence.
+@param value The written value
+*/
+CVAPI(void) cvWriteReal( CvFileStorage* fs, const char* name, double value );
+
+/** @brief Writes a text string.
+
+The function writes a text string to file storage.
+@param fs File storage
+@param name Name of the wr
