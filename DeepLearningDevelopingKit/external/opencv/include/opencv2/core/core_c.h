@@ -2087,4 +2087,102 @@ CVAPI(void) cvWriteReal( CvFileStorage* fs, const char* name, double value );
 
 The function writes a text string to file storage.
 @param fs File storage
-@param name Name of the wr
+@param name Name of the written string . Should be NULL if and only if the parent structure is a
+sequence.
+@param str The written text string
+@param quote If non-zero, the written string is put in quotes, regardless of whether they are
+required. Otherwise, if the flag is zero, quotes are used only when they are required (e.g. when
+the string starts with a digit or contains spaces).
+ */
+CVAPI(void) cvWriteString( CvFileStorage* fs, const char* name,
+                           const char* str, int quote CV_DEFAULT(0) );
+
+/** @brief Writes a comment.
+
+The function writes a comment into file storage. The comments are skipped when the storage is read.
+@param fs File storage
+@param comment The written comment, single-line or multi-line
+@param eol_comment If non-zero, the function tries to put the comment at the end of current line.
+If the flag is zero, if the comment is multi-line, or if it does not fit at the end of the current
+line, the comment starts a new line.
+ */
+CVAPI(void) cvWriteComment( CvFileStorage* fs, const char* comment,
+                            int eol_comment );
+
+/** @brief Writes an object to file storage.
+
+The function writes an object to file storage. First, the appropriate type info is found using
+cvTypeOf. Then, the write method associated with the type info is called.
+
+Attributes are used to customize the writing procedure. The standard types support the following
+attributes (all the dt attributes have the same format as in cvWriteRawData):
+
+-# CvSeq
+    -   **header_dt** description of user fields of the sequence header that follow CvSeq, or
+        CvChain (if the sequence is a Freeman chain) or CvContour (if the sequence is a contour or
+        point sequence)
+    -   **dt** description of the sequence elements.
+    -   **recursive** if the attribute is present and is not equal to "0" or "false", the whole
+        tree of sequences (contours) is stored.
+-# CvGraph
+    -   **header_dt** description of user fields of the graph header that follows CvGraph;
+    -   **vertex_dt** description of user fields of graph vertices
+    -   **edge_dt** description of user fields of graph edges (note that the edge weight is
+        always written, so there is no need to specify it explicitly)
+
+Below is the code that creates the YAML file shown in the CvFileStorage description:
+@code
+    #include "cxcore.h"
+
+    int main( int argc, char** argv )
+    {
+        CvMat* mat = cvCreateMat( 3, 3, CV_32F );
+        CvFileStorage* fs = cvOpenFileStorage( "example.yml", 0, CV_STORAGE_WRITE );
+
+        cvSetIdentity( mat );
+        cvWrite( fs, "A", mat, cvAttrList(0,0) );
+
+        cvReleaseFileStorage( &fs );
+        cvReleaseMat( &mat );
+        return 0;
+    }
+@endcode
+@param fs File storage
+@param name Name of the written object. Should be NULL if and only if the parent structure is a
+sequence.
+@param ptr Pointer to the object
+@param attributes The attributes of the object. They are specific for each particular type (see
+the discussion below).
+ */
+CVAPI(void) cvWrite( CvFileStorage* fs, const char* name, const void* ptr,
+                         CvAttrList attributes CV_DEFAULT(cvAttrList()));
+
+/** @brief Starts the next stream.
+
+The function finishes the currently written stream and starts the next stream. In the case of XML
+the file with multiple streams looks like this:
+@code{.xml}
+    <opencv_storage>
+    <!-- stream #1 data -->
+    </opencv_storage>
+    <opencv_storage>
+    <!-- stream #2 data -->
+    </opencv_storage>
+    ...
+@endcode
+The YAML file will look like this:
+@code{.yaml}
+    %YAML 1.0
+    # stream #1 data
+    ...
+    ---
+    # stream #2 data
+@endcode
+This is useful for concatenating files or for resuming the writing process.
+@param fs File storage
+ */
+CVAPI(void) cvStartNextStream( CvFileStorage* fs );
+
+/** @brief Writes multiple numbers.
+
+The function writes an ar
