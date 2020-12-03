@@ -2185,4 +2185,90 @@ CVAPI(void) cvStartNextStream( CvFileStorage* fs );
 
 /** @brief Writes multiple numbers.
 
-The function writes an ar
+The function writes an array, whose elements consist of single or multiple numbers. The function
+call can be replaced with a loop containing a few cvWriteInt and cvWriteReal calls, but a single
+call is more efficient. Note that because none of the elements have a name, they should be written
+to a sequence rather than a map.
+@param fs File storage
+@param src Pointer to the written array
+@param len Number of the array elements to write
+@param dt Specification of each array element, see @ref format_spec "format specification"
+ */
+CVAPI(void) cvWriteRawData( CvFileStorage* fs, const void* src,
+                                int len, const char* dt );
+
+/** @brief Writes multiple numbers in Base64.
+
+If either CV_STORAGE_WRITE_BASE64 or cv::FileStorage::WRITE_BASE64 is used,
+this function will be the same as cvWriteRawData. If neither, the main
+difference is that it outputs a sequence in Base64 encoding rather than
+in plain text.
+
+This function can only be used to write a sequence with a type "binary".
+
+Consider the following two examples where their output is the same:
+@snippet samples/cpp/filestorage_base64.cpp without_base64_flag
+and
+@snippet samples/cpp/filestorage_base64.cpp with_write_base64_flag
+
+@param fs File storage
+@param src Pointer to the written array
+@param len Number of the array elements to write
+@param dt Specification of each array element, see @ref format_spec "format specification"
+*/
+CVAPI(void) cvWriteRawDataBase64( CvFileStorage* fs, const void* src,
+                                 int len, const char* dt );
+
+/** @brief Returns a unique pointer for a given name.
+
+The function returns a unique pointer for each particular file node name. This pointer can be then
+passed to the cvGetFileNode function that is faster than cvGetFileNodeByName because it compares
+text strings by comparing pointers rather than the strings' content.
+
+Consider the following example where an array of points is encoded as a sequence of 2-entry maps:
+@code
+    points:
+      - { x: 10, y: 10 }
+      - { x: 20, y: 20 }
+      - { x: 30, y: 30 }
+      # ...
+@endcode
+Then, it is possible to get hashed "x" and "y" pointers to speed up decoding of the points. :
+@code
+    #include "cxcore.h"
+
+    int main( int argc, char** argv )
+    {
+        CvFileStorage* fs = cvOpenFileStorage( "points.yml", 0, CV_STORAGE_READ );
+        CvStringHashNode* x_key = cvGetHashedNode( fs, "x", -1, 1 );
+        CvStringHashNode* y_key = cvGetHashedNode( fs, "y", -1, 1 );
+        CvFileNode* points = cvGetFileNodeByName( fs, 0, "points" );
+
+        if( CV_NODE_IS_SEQ(points->tag) )
+        {
+            CvSeq* seq = points->data.seq;
+            int i, total = seq->total;
+            CvSeqReader reader;
+            cvStartReadSeq( seq, &reader, 0 );
+            for( i = 0; i < total; i++ )
+            {
+                CvFileNode* pt = (CvFileNode*)reader.ptr;
+    #if 1 // faster variant
+                CvFileNode* xnode = cvGetFileNode( fs, pt, x_key, 0 );
+                CvFileNode* ynode = cvGetFileNode( fs, pt, y_key, 0 );
+                assert( xnode && CV_NODE_IS_INT(xnode->tag) &&
+                        ynode && CV_NODE_IS_INT(ynode->tag));
+                int x = xnode->data.i; // or x = cvReadInt( xnode, 0 );
+                int y = ynode->data.i; // or y = cvReadInt( ynode, 0 );
+    #elif 1 // slower variant; does not use x_key & y_key
+                CvFileNode* xnode = cvGetFileNodeByName( fs, pt, "x" );
+                CvFileNode* ynode = cvGetFileNodeByName( fs, pt, "y" );
+                assert( xnode && CV_NODE_IS_INT(xnode->tag) &&
+                        ynode && CV_NODE_IS_INT(ynode->tag));
+                int x = xnode->data.i; // or x = cvReadInt( xnode, 0 );
+                int y = ynode->data.i; // or y = cvReadInt( ynode, 0 );
+    #else // the slowest yet the easiest to use variant
+                int x = cvReadIntByName( fs, pt, "x", 0 );
+                int y = cvReadIntByName( fs, pt, "y", 0 );
+    #endif
+                CV_NEXT_SEQ_ELEM( s
