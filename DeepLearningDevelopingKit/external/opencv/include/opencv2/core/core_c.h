@@ -2341,4 +2341,93 @@ The function returns an integer that is represented by the file node. If the fil
 default_value is returned (thus, it is convenient to call the function right after cvGetFileNode
 without checking for a NULL pointer). If the file node has type CV_NODE_INT, then node-\>data.i is
 returned. If the file node has type CV_NODE_REAL, then node-\>data.f is converted to an integer
-and returned. Otherwise t
+and returned. Otherwise the error is reported.
+@param node File node
+@param default_value The value that is returned if node is NULL
+ */
+CV_INLINE int cvReadInt( const CvFileNode* node, int default_value CV_DEFAULT(0) )
+{
+    return !node ? default_value :
+        CV_NODE_IS_INT(node->tag) ? node->data.i :
+        CV_NODE_IS_REAL(node->tag) ? cvRound(node->data.f) : 0x7fffffff;
+}
+
+/** @brief Finds a file node and returns its value.
+
+The function is a simple superposition of cvGetFileNodeByName and cvReadInt.
+@param fs File storage
+@param map The parent map. If it is NULL, the function searches a top-level node.
+@param name The node name
+@param default_value The value that is returned if the file node is not found
+ */
+CV_INLINE int cvReadIntByName( const CvFileStorage* fs, const CvFileNode* map,
+                         const char* name, int default_value CV_DEFAULT(0) )
+{
+    return cvReadInt( cvGetFileNodeByName( fs, map, name ), default_value );
+}
+
+/** @brief Retrieves a floating-point value from a file node.
+
+The function returns a floating-point value that is represented by the file node. If the file node
+is NULL, the default_value is returned (thus, it is convenient to call the function right after
+cvGetFileNode without checking for a NULL pointer). If the file node has type CV_NODE_REAL ,
+then node-\>data.f is returned. If the file node has type CV_NODE_INT , then node-:math:\>data.f
+is converted to floating-point and returned. Otherwise the result is not determined.
+@param node File node
+@param default_value The value that is returned if node is NULL
+ */
+CV_INLINE double cvReadReal( const CvFileNode* node, double default_value CV_DEFAULT(0.) )
+{
+    return !node ? default_value :
+        CV_NODE_IS_INT(node->tag) ? (double)node->data.i :
+        CV_NODE_IS_REAL(node->tag) ? node->data.f : 1e300;
+}
+
+/** @brief Finds a file node and returns its value.
+
+The function is a simple superposition of cvGetFileNodeByName and cvReadReal .
+@param fs File storage
+@param map The parent map. If it is NULL, the function searches a top-level node.
+@param name The node name
+@param default_value The value that is returned if the file node is not found
+ */
+CV_INLINE double cvReadRealByName( const CvFileStorage* fs, const CvFileNode* map,
+                        const char* name, double default_value CV_DEFAULT(0.) )
+{
+    return cvReadReal( cvGetFileNodeByName( fs, map, name ), default_value );
+}
+
+/** @brief Retrieves a text string from a file node.
+
+The function returns a text string that is represented by the file node. If the file node is NULL,
+the default_value is returned (thus, it is convenient to call the function right after
+cvGetFileNode without checking for a NULL pointer). If the file node has type CV_NODE_STR , then
+node-:math:\>data.str.ptr is returned. Otherwise the result is not determined.
+@param node File node
+@param default_value The value that is returned if node is NULL
+ */
+CV_INLINE const char* cvReadString( const CvFileNode* node,
+                        const char* default_value CV_DEFAULT(NULL) )
+{
+    return !node ? default_value : CV_NODE_IS_STRING(node->tag) ? node->data.str.ptr : 0;
+}
+
+/** @brief Finds a file node by its name and returns its value.
+
+The function is a simple superposition of cvGetFileNodeByName and cvReadString .
+@param fs File storage
+@param map The parent map. If it is NULL, the function searches a top-level node.
+@param name The node name
+@param default_value The value that is returned if the file node is not found
+ */
+CV_INLINE const char* cvReadStringByName( const CvFileStorage* fs, const CvFileNode* map,
+                        const char* name, const char* default_value CV_DEFAULT(NULL) )
+{
+    return cvReadString( cvGetFileNodeByName( fs, map, name ), default_value );
+}
+
+
+/** @brief Decodes an object and returns a pointer to it.
+
+The function decodes a user object (creates an object in a native representation from the file
+storage subtree) and returns it. 
