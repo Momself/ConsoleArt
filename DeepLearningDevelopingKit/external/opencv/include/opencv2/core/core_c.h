@@ -2271,4 +2271,74 @@ Then, it is possible to get hashed "x" and "y" pointers to speed up decoding of 
                 int x = cvReadIntByName( fs, pt, "x", 0 );
                 int y = cvReadIntByName( fs, pt, "y", 0 );
     #endif
-                CV_NEXT_SEQ_ELEM( s
+                CV_NEXT_SEQ_ELEM( seq->elem_size, reader );
+                printf("
+            }
+        }
+        cvReleaseFileStorage( &fs );
+        return 0;
+    }
+@endcode
+Please note that whatever method of accessing a map you are using, it is still much slower than
+using plain sequences; for example, in the above example, it is more efficient to encode the points
+as pairs of integers in a single numeric sequence.
+@param fs File storage
+@param name Literal node name
+@param len Length of the name (if it is known apriori), or -1 if it needs to be calculated
+@param create_missing Flag that specifies, whether an absent key should be added into the hash table
+*/
+CVAPI(CvStringHashNode*) cvGetHashedKey( CvFileStorage* fs, const char* name,
+                                        int len CV_DEFAULT(-1),
+                                        int create_missing CV_DEFAULT(0));
+
+/** @brief Retrieves one of the top-level nodes of the file storage.
+
+The function returns one of the top-level file nodes. The top-level nodes do not have a name, they
+correspond to the streams that are stored one after another in the file storage. If the index is out
+of range, the function returns a NULL pointer, so all the top-level nodes can be iterated by
+subsequent calls to the function with stream_index=0,1,..., until the NULL pointer is returned.
+This function can be used as a base for recursive traversal of the file storage.
+@param fs File storage
+@param stream_index Zero-based index of the stream. See cvStartNextStream . In most cases,
+there is only one stream in the file; however, there can be several.
+ */
+CVAPI(CvFileNode*) cvGetRootFileNode( const CvFileStorage* fs,
+                                     int stream_index CV_DEFAULT(0) );
+
+/** @brief Finds a node in a map or file storage.
+
+The function finds a file node. It is a faster version of cvGetFileNodeByName (see
+cvGetHashedKey discussion). Also, the function can insert a new node, if it is not in the map yet.
+@param fs File storage
+@param map The parent map. If it is NULL, the function searches a top-level node. If both map and
+key are NULLs, the function returns the root file node - a map that contains top-level nodes.
+@param key Unique pointer to the node name, retrieved with cvGetHashedKey
+@param create_missing Flag that specifies whether an absent node should be added to the map
+ */
+CVAPI(CvFileNode*) cvGetFileNode( CvFileStorage* fs, CvFileNode* map,
+                                 const CvStringHashNode* key,
+                                 int create_missing CV_DEFAULT(0) );
+
+/** @brief Finds a node in a map or file storage.
+
+The function finds a file node by name. The node is searched either in map or, if the pointer is
+NULL, among the top-level file storage nodes. Using this function for maps and cvGetSeqElem (or
+sequence reader) for sequences, it is possible to navigate through the file storage. To speed up
+multiple queries for a certain key (e.g., in the case of an array of structures) one may use a
+combination of cvGetHashedKey and cvGetFileNode.
+@param fs File storage
+@param map The parent map. If it is NULL, the function searches in all the top-level nodes
+(streams), starting with the first one.
+@param name The file node name
+ */
+CVAPI(CvFileNode*) cvGetFileNodeByName( const CvFileStorage* fs,
+                                       const CvFileNode* map,
+                                       const char* name );
+
+/** @brief Retrieves an integer value from a file node.
+
+The function returns an integer that is represented by the file node. If the file node is NULL, the
+default_value is returned (thus, it is convenient to call the function right after cvGetFileNode
+without checking for a NULL pointer). If the file node has type CV_NODE_INT, then node-\>data.i is
+returned. If the file node has type CV_NODE_REAL, then node-\>data.f is converted to an integer
+and returned. Otherwise t
