@@ -2430,4 +2430,84 @@ CV_INLINE const char* cvReadStringByName( const CvFileStorage* fs, const CvFileN
 /** @brief Decodes an object and returns a pointer to it.
 
 The function decodes a user object (creates an object in a native representation from the file
-storage subtree) and returns it. 
+storage subtree) and returns it. The object to be decoded must be an instance of a registered type
+that supports the read method (see CvTypeInfo). The type of the object is determined by the type
+name that is encoded in the file. If the object is a dynamic structure, it is created either in
+memory storage and passed to cvOpenFileStorage or, if a NULL pointer was passed, in temporary
+memory storage, which is released when cvReleaseFileStorage is called. Otherwise, if the object is
+not a dynamic structure, it is created in a heap and should be released with a specialized function
+or by using the generic cvRelease.
+@param fs File storage
+@param node The root object node
+@param attributes Unused parameter
+ */
+CVAPI(void*) cvRead( CvFileStorage* fs, CvFileNode* node,
+                        CvAttrList* attributes CV_DEFAULT(NULL));
+
+/** @brief Finds an object by name and decodes it.
+
+The function is a simple superposition of cvGetFileNodeByName and cvRead.
+@param fs File storage
+@param map The parent map. If it is NULL, the function searches a top-level node.
+@param name The node name
+@param attributes Unused parameter
+ */
+CV_INLINE void* cvReadByName( CvFileStorage* fs, const CvFileNode* map,
+                              const char* name, CvAttrList* attributes CV_DEFAULT(NULL) )
+{
+    return cvRead( fs, cvGetFileNodeByName( fs, map, name ), attributes );
+}
+
+
+/** @brief Initializes the file node sequence reader.
+
+The function initializes the sequence reader to read data from a file node. The initialized reader
+can be then passed to cvReadRawDataSlice.
+@param fs File storage
+@param src The file node (a sequence) to read numbers from
+@param reader Pointer to the sequence reader
+ */
+CVAPI(void) cvStartReadRawData( const CvFileStorage* fs, const CvFileNode* src,
+                               CvSeqReader* reader );
+
+/** @brief Initializes file node sequence reader.
+
+The function reads one or more elements from the file node, representing a sequence, to a
+user-specified array. The total number of read sequence elements is a product of total and the
+number of components in each array element. For example, if dt=2if, the function will read total\*3
+sequence elements. As with any sequence, some parts of the file node sequence can be skipped or read
+repeatedly by repositioning the reader using cvSetSeqReaderPos.
+@param fs File storage
+@param reader The sequence reader. Initialize it with cvStartReadRawData .
+@param count The number of elements to read
+@param dst Pointer to the destination array
+@param dt Specification of each array element. It has the same format as in cvWriteRawData .
+ */
+CVAPI(void) cvReadRawDataSlice( const CvFileStorage* fs, CvSeqReader* reader,
+                               int count, void* dst, const char* dt );
+
+/** @brief Reads multiple numbers.
+
+The function reads elements from a file node that represents a sequence of scalars.
+@param fs File storage
+@param src The file node (a sequence) to read numbers from
+@param dst Pointer to the destination array
+@param dt Specification of each array element. It has the same format as in cvWriteRawData .
+ */
+CVAPI(void) cvReadRawData( const CvFileStorage* fs, const CvFileNode* src,
+                          void* dst, const char* dt );
+
+/** @brief Writes a file node to another file storage.
+
+The function writes a copy of a file node to file storage. Possible applications of the function are
+merging several file storages into one and conversion between XML, YAML and JSON formats.
+@param fs Destination file storage
+@param new_node_name New name of the file node in the destination file storage. To keep the
+existing name, use cvcvGetFileNodeName
+@param node The written node
+@param embed If the written node is a collection and this parameter is not zero, no extra level of
+hierarchy is created. Instead, all the elements of node are written into the currently written
+structure. Of course, map elements can only be embedded into another map, and sequence elements
+can only be embedded into another sequence.
+ */
+CVAPI(void) cv
