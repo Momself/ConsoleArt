@@ -2510,4 +2510,95 @@ hierarchy is created. Instead, all the elements of node are written into the cur
 structure. Of course, map elements can only be embedded into another map, and sequence elements
 can only be embedded into another sequence.
  */
-CVAPI(void) cv
+CVAPI(void) cvWriteFileNode( CvFileStorage* fs, const char* new_node_name,
+                            const CvFileNode* node, int embed );
+
+/** @brief Returns the name of a file node.
+
+The function returns the name of a file node or NULL, if the file node does not have a name or if
+node is NULL.
+@param node File node
+ */
+CVAPI(const char*) cvGetFileNodeName( const CvFileNode* node );
+
+/*********************************** Adding own types ***********************************/
+
+/** @brief Registers a new type.
+
+The function registers a new type, which is described by info . The function creates a copy of the
+structure, so the user should delete it after calling the function.
+@param info Type info structure
+ */
+CVAPI(void) cvRegisterType( const CvTypeInfo* info );
+
+/** @brief Unregisters the type.
+
+The function unregisters a type with a specified name. If the name is unknown, it is possible to
+locate the type info by an instance of the type using cvTypeOf or by iterating the type list,
+starting from cvFirstType, and then calling cvUnregisterType(info-\>typeName).
+@param type_name Name of an unregistered type
+ */
+CVAPI(void) cvUnregisterType( const char* type_name );
+
+/** @brief Returns the beginning of a type list.
+
+The function returns the first type in the list of registered types. Navigation through the list can
+be done via the prev and next fields of the CvTypeInfo structure.
+ */
+CVAPI(CvTypeInfo*) cvFirstType(void);
+
+/** @brief Finds a type by its name.
+
+The function finds a registered type by its name. It returns NULL if there is no type with the
+specified name.
+@param type_name Type name
+ */
+CVAPI(CvTypeInfo*) cvFindType( const char* type_name );
+
+/** @brief Returns the type of an object.
+
+The function finds the type of a given object. It iterates through the list of registered types and
+calls the is_instance function/method for every type info structure with that object until one of
+them returns non-zero or until the whole list has been traversed. In the latter case, the function
+returns NULL.
+@param struct_ptr The object pointer
+ */
+CVAPI(CvTypeInfo*) cvTypeOf( const void* struct_ptr );
+
+/** @brief Releases an object.
+
+The function finds the type of a given object and calls release with the double pointer.
+@param struct_ptr Double pointer to the object
+ */
+CVAPI(void) cvRelease( void** struct_ptr );
+
+/** @brief Makes a clone of an object.
+
+The function finds the type of a given object and calls clone with the passed object. Of course, if
+you know the object type, for example, struct_ptr is CvMat\*, it is faster to call the specific
+function, like cvCloneMat.
+@param struct_ptr The object to clone
+ */
+CVAPI(void*) cvClone( const void* struct_ptr );
+
+/** @brief Saves an object to a file.
+
+The function saves an object to a file. It provides a simple interface to cvWrite .
+@param filename File name
+@param struct_ptr Object to save
+@param name Optional object name. If it is NULL, the name will be formed from filename .
+@param comment Optional comment to put in the beginning of the file
+@param attributes Optional attributes passed to cvWrite
+ */
+CVAPI(void) cvSave( const char* filename, const void* struct_ptr,
+                    const char* name CV_DEFAULT(NULL),
+                    const char* comment CV_DEFAULT(NULL),
+                    CvAttrList attributes CV_DEFAULT(cvAttrList()));
+
+/** @brief Loads an object from a file.
+
+The function loads an object from a file. It basically reads the specified file, find the first
+top-level node and calls cvRead for that node. If the file node does not have type information or
+the type information can not be found by the type name, the function returns NULL. After the object
+is loaded, the file storage is closed and all the temporary buffers are deleted. Thus, to load a
+dynamic structure, such as a sequence, contour, or graph, one should pass a valid memory
