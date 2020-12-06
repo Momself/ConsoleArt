@@ -2601,4 +2601,94 @@ The function loads an object from a file. It basically reads the specified file,
 top-level node and calls cvRead for that node. If the file node does not have type information or
 the type information can not be found by the type name, the function returns NULL. After the object
 is loaded, the file storage is closed and all the temporary buffers are deleted. Thus, to load a
-dynamic structure, such as a sequence, contour, or graph, one should pass a valid memory
+dynamic structure, such as a sequence, contour, or graph, one should pass a valid memory storage
+destination to the function.
+@param filename File name
+@param memstorage Memory storage for dynamic structures, such as CvSeq or CvGraph . It is not used
+for matrices or images.
+@param name Optional object name. If it is NULL, the first top-level object in the storage will be
+loaded.
+@param real_name Optional output parameter that will contain the name of the loaded object
+(useful if name=NULL )
+ */
+CVAPI(void*) cvLoad( const char* filename,
+                     CvMemStorage* memstorage CV_DEFAULT(NULL),
+                     const char* name CV_DEFAULT(NULL),
+                     const char** real_name CV_DEFAULT(NULL) );
+
+/*********************************** Measuring Execution Time ***************************/
+
+/** helper functions for RNG initialization and accurate time measurement:
+   uses internal clock counter on x86 */
+CVAPI(int64)  cvGetTickCount( void );
+CVAPI(double) cvGetTickFrequency( void );
+
+/*********************************** CPU capabilities ***********************************/
+
+CVAPI(int) cvCheckHardwareSupport(int feature);
+
+/*********************************** Multi-Threading ************************************/
+
+/** retrieve/set the number of threads used in OpenMP implementations */
+CVAPI(int)  cvGetNumThreads( void );
+CVAPI(void) cvSetNumThreads( int threads CV_DEFAULT(0) );
+/** get index of the thread being executed */
+CVAPI(int)  cvGetThreadNum( void );
+
+
+/********************************** Error Handling **************************************/
+
+/** Get current OpenCV error status */
+CVAPI(int) cvGetErrStatus( void );
+
+/** Sets error status silently */
+CVAPI(void) cvSetErrStatus( int status );
+
+#define CV_ErrModeLeaf     0   /* Print error and exit program */
+#define CV_ErrModeParent   1   /* Print error and continue */
+#define CV_ErrModeSilent   2   /* Don't print and continue */
+
+/** Retrieves current error processing mode */
+CVAPI(int)  cvGetErrMode( void );
+
+/** Sets error processing mode, returns previously used mode */
+CVAPI(int) cvSetErrMode( int mode );
+
+/** Sets error status and performs some additional actions (displaying message box,
+ writing message to stderr, terminating application etc.)
+ depending on the current error mode */
+CVAPI(void) cvError( int status, const char* func_name,
+                    const char* err_msg, const char* file_name, int line );
+
+/** Retrieves textual description of the error given its code */
+CVAPI(const char*) cvErrorStr( int status );
+
+/** Retrieves detailed information about the last error occurred */
+CVAPI(int) cvGetErrInfo( const char** errcode_desc, const char** description,
+                        const char** filename, int* line );
+
+/** Maps IPP error codes to the counterparts from OpenCV */
+CVAPI(int) cvErrorFromIppStatus( int ipp_status );
+
+typedef int (CV_CDECL *CvErrorCallback)( int status, const char* func_name,
+                                        const char* err_msg, const char* file_name, int line, void* userdata );
+
+/** Assigns a new error-handling function */
+CVAPI(CvErrorCallback) cvRedirectError( CvErrorCallback error_handler,
+                                       void* userdata CV_DEFAULT(NULL),
+                                       void** prev_userdata CV_DEFAULT(NULL) );
+
+/** Output nothing */
+CVAPI(int) cvNulDevReport( int status, const char* func_name, const char* err_msg,
+                          const char* file_name, int line, void* userdata );
+
+/** Output to console(fprintf(stderr,...)) */
+CVAPI(int) cvStdErrReport( int status, const char* func_name, const char* err_msg,
+                          const char* file_name, int line, void* userdata );
+
+/** Output to MessageBox(WIN32) */
+CVAPI(int) cvGuiBoxReport( int status, const char* func_name, const char* err_msg,
+                          const char* file_name, int line, void* userdata );
+
+#define OPENCV_ERROR(status,func,context)                           \
+cvError((status),(func),(context),__FILE__,__LINE__)
