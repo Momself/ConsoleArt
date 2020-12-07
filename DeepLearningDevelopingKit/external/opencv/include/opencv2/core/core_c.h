@@ -2692,3 +2692,127 @@ CVAPI(int) cvGuiBoxReport( int status, const char* func_name, const char* err_ms
 
 #define OPENCV_ERROR(status,func,context)                           \
 cvError((status),(func),(context),__FILE__,__LINE__)
+
+#define OPENCV_ASSERT(expr,func,context)                            \
+{if (! (expr))                                      \
+{OPENCV_ERROR(CV_StsInternal,(func),(context));}}
+
+#define OPENCV_CALL( Func )                                         \
+{                                                                   \
+Func;                                                           \
+}
+
+
+/** CV_FUNCNAME macro defines icvFuncName constant which is used by CV_ERROR macro */
+#ifdef CV_NO_FUNC_NAMES
+#define CV_FUNCNAME( Name )
+#define cvFuncName ""
+#else
+#define CV_FUNCNAME( Name )  \
+static char cvFuncName[] = Name
+#endif
+
+
+/**
+ CV_ERROR macro unconditionally raises error with passed code and message.
+ After raising error, control will be transferred to the exit label.
+ */
+#define CV_ERROR( Code, Msg )                                       \
+{                                                                   \
+    cvError( (Code), cvFuncName, Msg, __FILE__, __LINE__ );        \
+    __CV_EXIT__;                                                   \
+}
+
+/**
+ CV_CHECK macro checks error status after CV (or IPL)
+ function call. If error detected, control will be transferred to the exit
+ label.
+ */
+#define CV_CHECK()                                                  \
+{                                                                   \
+    if( cvGetErrStatus() < 0 )                                      \
+        CV_ERROR( CV_StsBackTrace, "Inner function failed." );      \
+}
+
+
+/**
+ CV_CALL macro calls CV (or IPL) function, checks error status and
+ signals a error if the function failed. Useful in "parent node"
+ error processing mode
+ */
+#define CV_CALL( Func )                                             \
+{                                                                   \
+    Func;                                                           \
+    CV_CHECK();                                                     \
+}
+
+
+/** Runtime assertion macro */
+#define CV_ASSERT( Condition )                                          \
+{                                                                       \
+    if( !(Condition) )                                                  \
+        CV_ERROR( CV_StsInternal, "Assertion: " #Condition " failed" ); \
+}
+
+#define __CV_BEGIN__       {
+#define __CV_END__         goto exit; exit: ; }
+#define __CV_EXIT__        goto exit
+
+/** @} core_c */
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
+
+#ifdef __cplusplus
+
+//! @addtogroup core_c_glue
+//! @{
+
+//! class for automatic module/RTTI data registration/unregistration
+struct CV_EXPORTS CvType
+{
+    CvType( const char* type_name,
+            CvIsInstanceFunc is_instance, CvReleaseFunc release=0,
+            CvReadFunc read=0, CvWriteFunc write=0, CvCloneFunc clone=0 );
+    ~CvType();
+    CvTypeInfo* info;
+
+    static CvTypeInfo* first;
+    static CvTypeInfo* last;
+};
+
+//! @}
+
+#include "opencv2/core/utility.hpp"
+
+namespace cv
+{
+
+//! @addtogroup core_c_glue
+//! @{
+
+/////////////////////////////////////////// glue ///////////////////////////////////////////
+
+//! converts array (CvMat or IplImage) to cv::Mat
+CV_EXPORTS Mat cvarrToMat(const CvArr* arr, bool copyData=false,
+                          bool allowND=true, int coiMode=0,
+                          AutoBuffer<double>* buf=0);
+
+static inline Mat cvarrToMatND(const CvArr* arr, bool copyData=false, int coiMode=0)
+{
+    return cvarrToMat(arr, copyData, true, coiMode);
+}
+
+
+//! extracts Channel of Interest from CvMat or IplImage and makes cv::Mat out of it.
+CV_EXPORTS void extractImageCOI(const CvArr* arr, OutputArray coiimg, int coi=-1);
+//! inserts single-channel cv::Mat into a multi-channel CvMat or IplImage
+CV_EXPORTS void insertImageCOI(InputArray coiimg, CvArr* arr, int coi=-1);
+
+
+
+////// specialized implementations of DefaultDeleter::operator() for classic OpenCV types //////
+
+template<> CV_EXPORTS void DefaultDeleter<CvMat>::operator ()(CvMat* obj) const;
+temp
