@@ -2907,4 +2907,111 @@ public:
     //! removes zero or more elements from the end of the sequence
     void pop_back(_Tp* elems, size_t count);
 
-    //! copies the whole sequence or the sequence s
+    //! copies the whole sequence or the sequence slice to the specified vector
+    void copyTo(std::vector<_Tp>& vec, const Range& range=Range::all()) const;
+    //! returns the vector containing all the sequence elements
+    operator std::vector<_Tp>() const;
+
+    CvSeq* seq;
+};
+
+
+/*!
+ STL-style Sequence Iterator inherited from the CvSeqReader structure
+*/
+template<typename _Tp> class SeqIterator : public CvSeqReader
+{
+public:
+    //! the default constructor
+    SeqIterator();
+    //! the constructor setting the iterator to the beginning or to the end of the sequence
+    SeqIterator(const Seq<_Tp>& seq, bool seekEnd=false);
+    //! positions the iterator within the sequence
+    void seek(size_t pos);
+    //! reports the current iterator position
+    size_t tell() const;
+    //! returns reference to the current sequence element
+    _Tp& operator *();
+    //! returns read-only reference to the current sequence element
+    const _Tp& operator *() const;
+    //! moves iterator to the next sequence element
+    SeqIterator& operator ++();
+    //! moves iterator to the next sequence element
+    SeqIterator operator ++(int) const;
+    //! moves iterator to the previous sequence element
+    SeqIterator& operator --();
+    //! moves iterator to the previous sequence element
+    SeqIterator operator --(int) const;
+
+    //! moves iterator forward by the specified offset (possibly negative)
+    SeqIterator& operator +=(int);
+    //! moves iterator backward by the specified offset (possibly negative)
+    SeqIterator& operator -=(int);
+
+    // this is index of the current element module seq->total*2
+    // (to distinguish between 0 and seq->total)
+    int index;
+};
+
+
+
+// bridge C++ => C Seq API
+CV_EXPORTS schar*  seqPush( CvSeq* seq, const void* element=0);
+CV_EXPORTS schar*  seqPushFront( CvSeq* seq, const void* element=0);
+CV_EXPORTS void  seqPop( CvSeq* seq, void* element=0);
+CV_EXPORTS void  seqPopFront( CvSeq* seq, void* element=0);
+CV_EXPORTS void  seqPopMulti( CvSeq* seq, void* elements,
+                              int count, int in_front=0 );
+CV_EXPORTS void  seqRemove( CvSeq* seq, int index );
+CV_EXPORTS void  clearSeq( CvSeq* seq );
+CV_EXPORTS schar*  getSeqElem( const CvSeq* seq, int index );
+CV_EXPORTS void  seqRemoveSlice( CvSeq* seq, CvSlice slice );
+CV_EXPORTS void  seqInsertSlice( CvSeq* seq, int before_index, const CvArr* from_arr );
+
+template<typename _Tp> inline Seq<_Tp>::Seq() : seq(0) {}
+template<typename _Tp> inline Seq<_Tp>::Seq( const CvSeq* _seq ) : seq((CvSeq*)_seq)
+{
+    CV_Assert(!_seq || _seq->elem_size == sizeof(_Tp));
+}
+
+template<typename _Tp> inline Seq<_Tp>::Seq( MemStorage& storage,
+                                             int headerSize )
+{
+    CV_Assert(headerSize >= (int)sizeof(CvSeq));
+    seq = cvCreateSeq(DataType<_Tp>::type, headerSize, sizeof(_Tp), storage);
+}
+
+template<typename _Tp> inline _Tp& Seq<_Tp>::operator [](int idx)
+{ return *(_Tp*)getSeqElem(seq, idx); }
+
+template<typename _Tp> inline const _Tp& Seq<_Tp>::operator [](int idx) const
+{ return *(_Tp*)getSeqElem(seq, idx); }
+
+template<typename _Tp> inline SeqIterator<_Tp> Seq<_Tp>::begin() const
+{ return SeqIterator<_Tp>(*this); }
+
+template<typename _Tp> inline SeqIterator<_Tp> Seq<_Tp>::end() const
+{ return SeqIterator<_Tp>(*this, true); }
+
+template<typename _Tp> inline size_t Seq<_Tp>::size() const
+{ return seq ? seq->total : 0; }
+
+template<typename _Tp> inline int Seq<_Tp>::type() const
+{ return seq ? CV_MAT_TYPE(seq->flags) : 0; }
+
+template<typename _Tp> inline int Seq<_Tp>::depth() const
+{ return seq ? CV_MAT_DEPTH(seq->flags) : 0; }
+
+template<typename _Tp> inline int Seq<_Tp>::channels() const
+{ return seq ? CV_MAT_CN(seq->flags) : 0; }
+
+template<typename _Tp> inline size_t Seq<_Tp>::elemSize() const
+{ return seq ? seq->elem_size : 0; }
+
+template<typename _Tp> inline size_t Seq<_Tp>::index(const _Tp& elem) const
+{ return cvSeqElemIdx(seq, &elem); }
+
+template<typename _Tp> inline void Seq<_Tp>::push_back(const _Tp& elem)
+{ cvSeqPush(seq, &elem); }
+
+template
