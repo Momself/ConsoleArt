@@ -3014,4 +3014,136 @@ template<typename _Tp> inline size_t Seq<_Tp>::index(const _Tp& elem) const
 template<typename _Tp> inline void Seq<_Tp>::push_back(const _Tp& elem)
 { cvSeqPush(seq, &elem); }
 
-template
+template<typename _Tp> inline void Seq<_Tp>::push_front(const _Tp& elem)
+{ cvSeqPushFront(seq, &elem); }
+
+template<typename _Tp> inline void Seq<_Tp>::push_back(const _Tp* elem, size_t count)
+{ cvSeqPushMulti(seq, elem, (int)count, 0); }
+
+template<typename _Tp> inline void Seq<_Tp>::push_front(const _Tp* elem, size_t count)
+{ cvSeqPushMulti(seq, elem, (int)count, 1); }
+
+template<typename _Tp> inline _Tp& Seq<_Tp>::back()
+{ return *(_Tp*)getSeqElem(seq, -1); }
+
+template<typename _Tp> inline const _Tp& Seq<_Tp>::back() const
+{ return *(const _Tp*)getSeqElem(seq, -1); }
+
+template<typename _Tp> inline _Tp& Seq<_Tp>::front()
+{ return *(_Tp*)getSeqElem(seq, 0); }
+
+template<typename _Tp> inline const _Tp& Seq<_Tp>::front() const
+{ return *(const _Tp*)getSeqElem(seq, 0); }
+
+template<typename _Tp> inline bool Seq<_Tp>::empty() const
+{ return !seq || seq->total == 0; }
+
+template<typename _Tp> inline void Seq<_Tp>::clear()
+{ if(seq) clearSeq(seq); }
+
+template<typename _Tp> inline void Seq<_Tp>::pop_back()
+{ seqPop(seq); }
+
+template<typename _Tp> inline void Seq<_Tp>::pop_front()
+{ seqPopFront(seq); }
+
+template<typename _Tp> inline void Seq<_Tp>::pop_back(_Tp* elem, size_t count)
+{ seqPopMulti(seq, elem, (int)count, 0); }
+
+template<typename _Tp> inline void Seq<_Tp>::pop_front(_Tp* elem, size_t count)
+{ seqPopMulti(seq, elem, (int)count, 1); }
+
+template<typename _Tp> inline void Seq<_Tp>::insert(int idx, const _Tp& elem)
+{ seqInsert(seq, idx, &elem); }
+
+template<typename _Tp> inline void Seq<_Tp>::insert(int idx, const _Tp* elems, size_t count)
+{
+    CvMat m = cvMat(1, count, DataType<_Tp>::type, elems);
+    seqInsertSlice(seq, idx, &m);
+}
+
+template<typename _Tp> inline void Seq<_Tp>::remove(int idx)
+{ seqRemove(seq, idx); }
+
+template<typename _Tp> inline void Seq<_Tp>::remove(const Range& r)
+{ seqRemoveSlice(seq, cvSlice(r.start, r.end)); }
+
+template<typename _Tp> inline void Seq<_Tp>::copyTo(std::vector<_Tp>& vec, const Range& range) const
+{
+    size_t len = !seq ? 0 : range == Range::all() ? seq->total : range.end - range.start;
+    vec.resize(len);
+    if( seq && len )
+        cvCvtSeqToArray(seq, &vec[0], range);
+}
+
+template<typename _Tp> inline Seq<_Tp>::operator std::vector<_Tp>() const
+{
+    std::vector<_Tp> vec;
+    copyTo(vec);
+    return vec;
+}
+
+template<typename _Tp> inline SeqIterator<_Tp>::SeqIterator()
+{ memset(this, 0, sizeof(*this)); }
+
+template<typename _Tp> inline SeqIterator<_Tp>::SeqIterator(const Seq<_Tp>& _seq, bool seekEnd)
+{
+    cvStartReadSeq(_seq.seq, this);
+    index = seekEnd ? _seq.seq->total : 0;
+}
+
+template<typename _Tp> inline void SeqIterator<_Tp>::seek(size_t pos)
+{
+    cvSetSeqReaderPos(this, (int)pos, false);
+    index = pos;
+}
+
+template<typename _Tp> inline size_t SeqIterator<_Tp>::tell() const
+{ return index; }
+
+template<typename _Tp> inline _Tp& SeqIterator<_Tp>::operator *()
+{ return *(_Tp*)ptr; }
+
+template<typename _Tp> inline const _Tp& SeqIterator<_Tp>::operator *() const
+{ return *(const _Tp*)ptr; }
+
+template<typename _Tp> inline SeqIterator<_Tp>& SeqIterator<_Tp>::operator ++()
+{
+    CV_NEXT_SEQ_ELEM(sizeof(_Tp), *this);
+    if( ++index >= seq->total*2 )
+        index = 0;
+    return *this;
+}
+
+template<typename _Tp> inline SeqIterator<_Tp> SeqIterator<_Tp>::operator ++(int) const
+{
+    SeqIterator<_Tp> it = *this;
+    ++*this;
+    return it;
+}
+
+template<typename _Tp> inline SeqIterator<_Tp>& SeqIterator<_Tp>::operator --()
+{
+    CV_PREV_SEQ_ELEM(sizeof(_Tp), *this);
+    if( --index < 0 )
+        index = seq->total*2-1;
+    return *this;
+}
+
+template<typename _Tp> inline SeqIterator<_Tp> SeqIterator<_Tp>::operator --(int) const
+{
+    SeqIterator<_Tp> it = *this;
+    --*this;
+    return it;
+}
+
+template<typename _Tp> inline SeqIterator<_Tp>& SeqIterator<_Tp>::operator +=(int delta)
+{
+    cvSetSeqReaderPos(this, delta, 1);
+    index += delta;
+    int n = seq->total*2;
+    if( index < 0 )
+        index += n;
+    if( index >= n )
+        index -= n;
+    return *this;
