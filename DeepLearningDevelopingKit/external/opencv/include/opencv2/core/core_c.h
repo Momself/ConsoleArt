@@ -3147,3 +3147,38 @@ template<typename _Tp> inline SeqIterator<_Tp>& SeqIterator<_Tp>::operator +=(in
     if( index >= n )
         index -= n;
     return *this;
+}
+
+template<typename _Tp> inline SeqIterator<_Tp>& SeqIterator<_Tp>::operator -=(int delta)
+{
+    return (*this += -delta);
+}
+
+template<typename _Tp> inline ptrdiff_t operator - (const SeqIterator<_Tp>& a,
+                                                    const SeqIterator<_Tp>& b)
+{
+    ptrdiff_t delta = a.index - b.index, n = a.seq->total;
+    if( delta > n || delta < -n )
+        delta += delta < 0 ? n : -n;
+    return delta;
+}
+
+template<typename _Tp> inline bool operator == (const SeqIterator<_Tp>& a,
+                                                const SeqIterator<_Tp>& b)
+{
+    return a.seq == b.seq && a.index == b.index;
+}
+
+template<typename _Tp> inline bool operator != (const SeqIterator<_Tp>& a,
+                                                const SeqIterator<_Tp>& b)
+{
+    return !(a == b);
+}
+
+//! @}
+
+} // cv
+
+#endif
+
+#endif
