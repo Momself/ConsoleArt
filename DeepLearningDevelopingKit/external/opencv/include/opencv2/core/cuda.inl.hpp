@@ -405,4 +405,212 @@ HostMem::HostMem(int rows_, int cols_, int type_, AllocType alloc_type_)
 
 inline
 HostMem::HostMem(Size size_, int type_, AllocType alloc_type_)
-    : flags(0), rows(0), cols(0), step(0), data(0), refcount(0), datastart(0), dataend(0), alloc_t
+    : flags(0), rows(0), cols(0), step(0), data(0), refcount(0), datastart(0), dataend(0), alloc_type(alloc_type_)
+{
+    if (size_.height > 0 && size_.width > 0)
+        create(size_.height, size_.width, type_);
+}
+
+inline
+HostMem::HostMem(InputArray arr, AllocType alloc_type_)
+    : flags(0), rows(0), cols(0), step(0), data(0), refcount(0), datastart(0), dataend(0), alloc_type(alloc_type_)
+{
+    arr.getMat().copyTo(*this);
+}
+
+inline
+HostMem::~HostMem()
+{
+    release();
+}
+
+inline
+HostMem& HostMem::operator =(const HostMem& m)
+{
+    if (this != &m)
+    {
+        HostMem temp(m);
+        swap(temp);
+    }
+
+    return *this;
+}
+
+inline
+void HostMem::swap(HostMem& b)
+{
+    std::swap(flags, b.flags);
+    std::swap(rows, b.rows);
+    std::swap(cols, b.cols);
+    std::swap(step, b.step);
+    std::swap(data, b.data);
+    std::swap(datastart, b.datastart);
+    std::swap(dataend, b.dataend);
+    std::swap(refcount, b.refcount);
+    std::swap(alloc_type, b.alloc_type);
+}
+
+inline
+HostMem HostMem::clone() const
+{
+    HostMem m(size(), type(), alloc_type);
+    createMatHeader().copyTo(m);
+    return m;
+}
+
+inline
+void HostMem::create(Size size_, int type_)
+{
+    create(size_.height, size_.width, type_);
+}
+
+inline
+Mat HostMem::createMatHeader() const
+{
+    return Mat(size(), type(), data, step);
+}
+
+inline
+bool HostMem::isContinuous() const
+{
+    return (flags & Mat::CONTINUOUS_FLAG) != 0;
+}
+
+inline
+size_t HostMem::elemSize() const
+{
+    return CV_ELEM_SIZE(flags);
+}
+
+inline
+size_t HostMem::elemSize1() const
+{
+    return CV_ELEM_SIZE1(flags);
+}
+
+inline
+int HostMem::type() const
+{
+    return CV_MAT_TYPE(flags);
+}
+
+inline
+int HostMem::depth() const
+{
+    return CV_MAT_DEPTH(flags);
+}
+
+inline
+int HostMem::channels() const
+{
+    return CV_MAT_CN(flags);
+}
+
+inline
+size_t HostMem::step1() const
+{
+    return step / elemSize1();
+}
+
+inline
+Size HostMem::size() const
+{
+    return Size(cols, rows);
+}
+
+inline
+bool HostMem::empty() const
+{
+    return data == 0;
+}
+
+static inline
+void swap(HostMem& a, HostMem& b)
+{
+    a.swap(b);
+}
+
+//===================================================================================
+// Stream
+//===================================================================================
+
+inline
+Stream::Stream(const Ptr<Impl>& impl)
+    : impl_(impl)
+{
+}
+
+//===================================================================================
+// Event
+//===================================================================================
+
+inline
+Event::Event(const Ptr<Impl>& impl)
+    : impl_(impl)
+{
+}
+
+//===================================================================================
+// Initialization & Info
+//===================================================================================
+
+inline
+bool TargetArchs::has(int major, int minor)
+{
+    return hasPtx(major, minor) || hasBin(major, minor);
+}
+
+inline
+bool TargetArchs::hasEqualOrGreater(int major, int minor)
+{
+    return hasEqualOrGreaterPtx(major, minor) || hasEqualOrGreaterBin(major, minor);
+}
+
+inline
+DeviceInfo::DeviceInfo()
+{
+    device_id_ = getDevice();
+}
+
+inline
+DeviceInfo::DeviceInfo(int device_id)
+{
+    CV_Assert( device_id >= 0 && device_id < getCudaEnabledDeviceCount() );
+    device_id_ = device_id;
+}
+
+inline
+int DeviceInfo::deviceID() const
+{
+    return device_id_;
+}
+
+inline
+size_t DeviceInfo::freeMemory() const
+{
+    size_t _totalMemory = 0, _freeMemory = 0;
+    queryMemory(_totalMemory, _freeMemory);
+    return _freeMemory;
+}
+
+inline
+size_t DeviceInfo::totalMemory() const
+{
+    size_t _totalMemory = 0, _freeMemory = 0;
+    queryMemory(_totalMemory, _freeMemory);
+    return _totalMemory;
+}
+
+inline
+bool DeviceInfo::supports(FeatureSet feature_set) const
+{
+    int version = majorVersion() * 10 + minorVersion();
+    return version >= feature_set;
+}
+
+
+}} // namespace cv { namespace cuda {
+
+//===================================================================================
+// Mat
+//========================================
