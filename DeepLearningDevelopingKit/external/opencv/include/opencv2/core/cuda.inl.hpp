@@ -195,4 +195,214 @@ void GpuMat::convertTo(OutputArray dst, int rtype, double alpha, Stream& stream)
 }
 
 inline
-void GpuMat::assignTo(GpuMat& m, int _type) 
+void GpuMat::assignTo(GpuMat& m, int _type) const
+{
+    if (_type < 0)
+        m = *this;
+    else
+        convertTo(m, _type);
+}
+
+inline
+uchar* GpuMat::ptr(int y)
+{
+    CV_DbgAssert( (unsigned)y < (unsigned)rows );
+    return data + step * y;
+}
+
+inline
+const uchar* GpuMat::ptr(int y) const
+{
+    CV_DbgAssert( (unsigned)y < (unsigned)rows );
+    return data + step * y;
+}
+
+template<typename _Tp> inline
+_Tp* GpuMat::ptr(int y)
+{
+    return (_Tp*)ptr(y);
+}
+
+template<typename _Tp> inline
+const _Tp* GpuMat::ptr(int y) const
+{
+    return (const _Tp*)ptr(y);
+}
+
+template <class T> inline
+GpuMat::operator PtrStepSz<T>() const
+{
+    return PtrStepSz<T>(rows, cols, (T*)data, step);
+}
+
+template <class T> inline
+GpuMat::operator PtrStep<T>() const
+{
+    return PtrStep<T>((T*)data, step);
+}
+
+inline
+GpuMat GpuMat::row(int y) const
+{
+    return GpuMat(*this, Range(y, y+1), Range::all());
+}
+
+inline
+GpuMat GpuMat::col(int x) const
+{
+    return GpuMat(*this, Range::all(), Range(x, x+1));
+}
+
+inline
+GpuMat GpuMat::rowRange(int startrow, int endrow) const
+{
+    return GpuMat(*this, Range(startrow, endrow), Range::all());
+}
+
+inline
+GpuMat GpuMat::rowRange(Range r) const
+{
+    return GpuMat(*this, r, Range::all());
+}
+
+inline
+GpuMat GpuMat::colRange(int startcol, int endcol) const
+{
+    return GpuMat(*this, Range::all(), Range(startcol, endcol));
+}
+
+inline
+GpuMat GpuMat::colRange(Range r) const
+{
+    return GpuMat(*this, Range::all(), r);
+}
+
+inline
+GpuMat GpuMat::operator ()(Range rowRange_, Range colRange_) const
+{
+    return GpuMat(*this, rowRange_, colRange_);
+}
+
+inline
+GpuMat GpuMat::operator ()(Rect roi) const
+{
+    return GpuMat(*this, roi);
+}
+
+inline
+bool GpuMat::isContinuous() const
+{
+    return (flags & Mat::CONTINUOUS_FLAG) != 0;
+}
+
+inline
+size_t GpuMat::elemSize() const
+{
+    return CV_ELEM_SIZE(flags);
+}
+
+inline
+size_t GpuMat::elemSize1() const
+{
+    return CV_ELEM_SIZE1(flags);
+}
+
+inline
+int GpuMat::type() const
+{
+    return CV_MAT_TYPE(flags);
+}
+
+inline
+int GpuMat::depth() const
+{
+    return CV_MAT_DEPTH(flags);
+}
+
+inline
+int GpuMat::channels() const
+{
+    return CV_MAT_CN(flags);
+}
+
+inline
+size_t GpuMat::step1() const
+{
+    return step / elemSize1();
+}
+
+inline
+Size GpuMat::size() const
+{
+    return Size(cols, rows);
+}
+
+inline
+bool GpuMat::empty() const
+{
+    return data == 0;
+}
+
+static inline
+GpuMat createContinuous(int rows, int cols, int type)
+{
+    GpuMat m;
+    createContinuous(rows, cols, type, m);
+    return m;
+}
+
+static inline
+void createContinuous(Size size, int type, OutputArray arr)
+{
+    createContinuous(size.height, size.width, type, arr);
+}
+
+static inline
+GpuMat createContinuous(Size size, int type)
+{
+    GpuMat m;
+    createContinuous(size, type, m);
+    return m;
+}
+
+static inline
+void ensureSizeIsEnough(Size size, int type, OutputArray arr)
+{
+    ensureSizeIsEnough(size.height, size.width, type, arr);
+}
+
+static inline
+void swap(GpuMat& a, GpuMat& b)
+{
+    a.swap(b);
+}
+
+//===================================================================================
+// HostMem
+//===================================================================================
+
+inline
+HostMem::HostMem(AllocType alloc_type_)
+    : flags(0), rows(0), cols(0), step(0), data(0), refcount(0), datastart(0), dataend(0), alloc_type(alloc_type_)
+{
+}
+
+inline
+HostMem::HostMem(const HostMem& m)
+    : flags(m.flags), rows(m.rows), cols(m.cols), step(m.step), data(m.data), refcount(m.refcount), datastart(m.datastart), dataend(m.dataend), alloc_type(m.alloc_type)
+{
+    if( refcount )
+        CV_XADD(refcount, 1);
+}
+
+inline
+HostMem::HostMem(int rows_, int cols_, int type_, AllocType alloc_type_)
+    : flags(0), rows(0), cols(0), step(0), data(0), refcount(0), datastart(0), dataend(0), alloc_type(alloc_type_)
+{
+    if (rows_ > 0 && cols_ > 0)
+        create(rows_, cols_, type_);
+}
+
+inline
+HostMem::HostMem(Size size_, int type_, AllocType alloc_type_)
+    : flags(0), rows(0), cols(0), step(0), data(0), refcount(0), datastart(0), dataend(0), alloc_t
