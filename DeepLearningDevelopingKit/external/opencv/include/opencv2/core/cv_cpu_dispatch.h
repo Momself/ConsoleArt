@@ -147,4 +147,93 @@ struct VZeroUpperGuard {
 #elif defined _WIN32 && defined(_M_ARM)
 # include <Intrin.h>
 # include <arm_neon.h>
-# defin
+# define CV_NEON 1
+#elif defined(__ARM_NEON__) || (defined (__ARM_NEON) && defined(__aarch64__))
+#  include <arm_neon.h>
+#  define CV_NEON 1
+#elif defined(__VSX__) && defined(__PPC64__) && defined(__LITTLE_ENDIAN__)
+#  include <altivec.h>
+#  undef vector
+#  undef pixel
+#  undef bool
+#  define CV_VSX 1
+#endif
+
+#endif // !__OPENCV_BUILD && !__CUDACC (Compatibility code)
+
+
+
+#ifndef CV_MMX
+#  define CV_MMX 0
+#endif
+#ifndef CV_SSE
+#  define CV_SSE 0
+#endif
+#ifndef CV_SSE2
+#  define CV_SSE2 0
+#endif
+#ifndef CV_SSE3
+#  define CV_SSE3 0
+#endif
+#ifndef CV_SSSE3
+#  define CV_SSSE3 0
+#endif
+#ifndef CV_SSE4_1
+#  define CV_SSE4_1 0
+#endif
+#ifndef CV_SSE4_2
+#  define CV_SSE4_2 0
+#endif
+#ifndef CV_POPCNT
+#  define CV_POPCNT 0
+#endif
+#ifndef CV_AVX
+#  define CV_AVX 0
+#endif
+#ifndef CV_FP16
+#  define CV_FP16 0
+#endif
+#ifndef CV_AVX2
+#  define CV_AVX2 0
+#endif
+#ifndef CV_FMA3
+#  define CV_FMA3 0
+#endif
+#ifndef CV_AVX_512F
+#  define CV_AVX_512F 0
+#endif
+#ifndef CV_AVX_512BW
+#  define CV_AVX_512BW 0
+#endif
+#ifndef CV_AVX_512CD
+#  define CV_AVX_512CD 0
+#endif
+#ifndef CV_AVX_512DQ
+#  define CV_AVX_512DQ 0
+#endif
+#ifndef CV_AVX_512ER
+#  define CV_AVX_512ER 0
+#endif
+#ifndef CV_AVX_512IFMA512
+#  define CV_AVX_512IFMA512 0
+#endif
+#ifndef CV_AVX_512PF
+#  define CV_AVX_512PF 0
+#endif
+#ifndef CV_AVX_512VBMI
+#  define CV_AVX_512VBMI 0
+#endif
+#ifndef CV_AVX_512VL
+#  define CV_AVX_512VL 0
+#endif
+#ifndef CV_AVX512_SKX
+#  define CV_AVX512_SKX 0
+#endif
+
+#ifndef CV_NEON
+#  define CV_NEON 0
+#endif
+
+#ifndef CV_VSX
+#  define CV_VSX 0
+#endif
