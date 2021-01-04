@@ -195,4 +195,154 @@ enum CpuFeatures {
 
     CPU_AVX512_SKX      = 256, //!< Skylake-X with AVX-512F/CD/BW/DQ/VL
 
-    CPU_MAX_FEATURE     = 512  // see CV_HARDWARE_MA
+    CPU_MAX_FEATURE     = 512  // see CV_HARDWARE_MAX_FEATURE
+};
+
+
+#include "cv_cpu_dispatch.h"
+
+
+/* fundamental constants */
+#define CV_PI   3.1415926535897932384626433832795
+#define CV_2PI  6.283185307179586476925286766559
+#define CV_LOG2 0.69314718055994530941723212145818
+
+#if defined __ARM_FP16_FORMAT_IEEE \
+    && !defined __CUDACC__
+#  define CV_FP16_TYPE 1
+#else
+#  define CV_FP16_TYPE 0
+#endif
+
+typedef union Cv16suf
+{
+    short i;
+#if CV_FP16_TYPE
+    __fp16 h;
+#endif
+    struct _fp16Format
+    {
+        unsigned int significand : 10;
+        unsigned int exponent    : 5;
+        unsigned int sign        : 1;
+    } fmt;
+}
+Cv16suf;
+
+typedef union Cv32suf
+{
+    int i;
+    unsigned u;
+    float f;
+    struct _fp32Format
+    {
+        unsigned int significand : 23;
+        unsigned int exponent    : 8;
+        unsigned int sign        : 1;
+    } fmt;
+}
+Cv32suf;
+
+typedef union Cv64suf
+{
+    int64 i;
+    uint64 u;
+    double f;
+}
+Cv64suf;
+
+#define OPENCV_ABI_COMPATIBILITY 300
+
+#ifdef __OPENCV_BUILD
+#  define DISABLE_OPENCV_24_COMPATIBILITY
+#endif
+
+#ifdef CVAPI_EXPORTS
+# if (defined _WIN32 || defined WINCE || defined __CYGWIN__)
+#   define CV_EXPORTS __declspec(dllexport)
+# elif defined __GNUC__ && __GNUC__ >= 4
+#   define CV_EXPORTS __attribute__ ((visibility ("default")))
+# endif
+#endif
+
+#ifndef CV_EXPORTS
+# define CV_EXPORTS
+#endif
+
+#ifdef _MSC_VER
+#   define CV_EXPORTS_TEMPLATE
+#else
+#   define CV_EXPORTS_TEMPLATE CV_EXPORTS
+#endif
+
+#ifndef CV_DEPRECATED
+#  if defined(__GNUC__)
+#    define CV_DEPRECATED __attribute__ ((deprecated))
+#  elif defined(_MSC_VER)
+#    define CV_DEPRECATED __declspec(deprecated)
+#  else
+#    define CV_DEPRECATED
+#  endif
+#endif
+
+#ifndef CV_EXTERN_C
+#  ifdef __cplusplus
+#    define CV_EXTERN_C extern "C"
+#  else
+#    define CV_EXTERN_C
+#  endif
+#endif
+
+/* special informative macros for wrapper generators */
+#define CV_EXPORTS_W CV_EXPORTS
+#define CV_EXPORTS_W_SIMPLE CV_EXPORTS
+#define CV_EXPORTS_AS(synonym) CV_EXPORTS
+#define CV_EXPORTS_W_MAP CV_EXPORTS
+#define CV_IN_OUT
+#define CV_OUT
+#define CV_PROP
+#define CV_PROP_RW
+#define CV_WRAP
+#define CV_WRAP_AS(synonym)
+
+/****************************************************************************************\
+*                                  Matrix type (Mat)                                     *
+\****************************************************************************************/
+
+#define CV_MAT_CN_MASK          ((CV_CN_MAX - 1) << CV_CN_SHIFT)
+#define CV_MAT_CN(flags)        ((((flags) & CV_MAT_CN_MASK) >> CV_CN_SHIFT) + 1)
+#define CV_MAT_TYPE_MASK        (CV_DEPTH_MAX*CV_CN_MAX - 1)
+#define CV_MAT_TYPE(flags)      ((flags) & CV_MAT_TYPE_MASK)
+#define CV_MAT_CONT_FLAG_SHIFT  14
+#define CV_MAT_CONT_FLAG        (1 << CV_MAT_CONT_FLAG_SHIFT)
+#define CV_IS_MAT_CONT(flags)   ((flags) & CV_MAT_CONT_FLAG)
+#define CV_IS_CONT_MAT          CV_IS_MAT_CONT
+#define CV_SUBMAT_FLAG_SHIFT    15
+#define CV_SUBMAT_FLAG          (1 << CV_SUBMAT_FLAG_SHIFT)
+#define CV_IS_SUBMAT(flags)     ((flags) & CV_MAT_SUBMAT_FLAG)
+
+/** Size of each channel item,
+   0x8442211 = 1000 0100 0100 0010 0010 0001 0001 ~ array of sizeof(arr_type_elem) */
+#define CV_ELEM_SIZE1(type) \
+    ((((sizeof(size_t)<<28)|0x8442211) >> CV_MAT_DEPTH(type)*4) & 15)
+
+/** 0x3a50 = 11 10 10 01 01 00 00 ~ array of log2(sizeof(arr_type_elem)) */
+#define CV_ELEM_SIZE(type) \
+    (CV_MAT_CN(type) << ((((sizeof(size_t)/4+1)*16384|0x3a50) >> CV_MAT_DEPTH(type)*2) & 3))
+
+#ifndef MIN
+#  define MIN(a,b)  ((a) > (b) ? (b) : (a))
+#endif
+
+#ifndef MAX
+#  define MAX(a,b)  ((a) < (b) ? (b) : (a))
+#endif
+
+/****************************************************************************************\
+*                                    static analysys                                     *
+\****************************************************************************************/
+
+// In practice, some macro are not processed correctly (noreturn is not detected).
+// We need to use simplified definition for them.
+#ifndef CV_STATIC_ANALYSIS
+# if defin
