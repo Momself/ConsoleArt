@@ -112,4 +112,148 @@ template<> struct V_TypeTraits<uchar>
 
     static int_type reinterpret_int(value_type x) { return (int_type)x; }
     static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
-    static value_type reinterpret_from_int(int_type x) { retu
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+template<> struct V_TypeTraits<schar>
+{
+    typedef schar value_type;
+    typedef schar int_type;
+    typedef uchar uint_type;
+    typedef uchar abs_type;
+    typedef int sum_type;
+
+    typedef short w_type;
+    typedef int q_type;
+
+    enum { delta = 128, shift = 8 };
+
+    static int_type reinterpret_int(value_type x) { return (int_type)x; }
+    static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+template<> struct V_TypeTraits<ushort>
+{
+    typedef ushort value_type;
+    typedef short int_type;
+    typedef ushort uint_type;
+    typedef ushort abs_type;
+    typedef int sum_type;
+
+    typedef unsigned w_type;
+    typedef uchar nu_type;
+
+    enum { delta = 32768, shift = 16 };
+
+    static int_type reinterpret_int(value_type x) { return (int_type)x; }
+    static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+template<> struct V_TypeTraits<short>
+{
+    typedef short value_type;
+    typedef short int_type;
+    typedef ushort uint_type;
+    typedef ushort abs_type;
+    typedef int sum_type;
+
+    typedef int w_type;
+    typedef uchar nu_type;
+    typedef schar n_type;
+
+    enum { delta = 128, shift = 8 };
+
+    static int_type reinterpret_int(value_type x) { return (int_type)x; }
+    static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+template<> struct V_TypeTraits<unsigned>
+{
+    typedef unsigned value_type;
+    typedef int int_type;
+    typedef unsigned uint_type;
+    typedef unsigned abs_type;
+    typedef unsigned sum_type;
+
+    typedef uint64 w_type;
+    typedef ushort nu_type;
+
+    static int_type reinterpret_int(value_type x) { return (int_type)x; }
+    static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+template<> struct V_TypeTraits<int>
+{
+    typedef int value_type;
+    typedef int int_type;
+    typedef unsigned uint_type;
+    typedef unsigned abs_type;
+    typedef int sum_type;
+
+    typedef int64 w_type;
+    typedef short n_type;
+    typedef ushort nu_type;
+
+    static int_type reinterpret_int(value_type x) { return (int_type)x; }
+    static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+template<> struct V_TypeTraits<uint64>
+{
+    typedef uint64 value_type;
+    typedef int64 int_type;
+    typedef uint64 uint_type;
+    typedef uint64 abs_type;
+    typedef uint64 sum_type;
+
+    typedef unsigned nu_type;
+
+    static int_type reinterpret_int(value_type x) { return (int_type)x; }
+    static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+template<> struct V_TypeTraits<int64>
+{
+    typedef int64 value_type;
+    typedef int64 int_type;
+    typedef uint64 uint_type;
+    typedef uint64 abs_type;
+    typedef int64 sum_type;
+
+    typedef int nu_type;
+
+    static int_type reinterpret_int(value_type x) { return (int_type)x; }
+    static uint_type reinterpret_uint(value_type x) { return (uint_type)x; }
+    static value_type reinterpret_from_int(int_type x) { return (value_type)x; }
+};
+
+
+template<> struct V_TypeTraits<float>
+{
+    typedef float value_type;
+    typedef int int_type;
+    typedef unsigned uint_type;
+    typedef float abs_type;
+    typedef float sum_type;
+
+    typedef double w_type;
+
+    static int_type reinterpret_int(value_type x)
+    {
+        Cv32suf u;
+        u.f = x;
+        return u.i;
+    }
+    static uint_type reinterpet_uint(value_type x)
+    {
+        Cv32suf u;
+        u.f = x;
+        return u.u;
+    }
+    sta
