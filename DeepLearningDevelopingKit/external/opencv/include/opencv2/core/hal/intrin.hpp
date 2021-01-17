@@ -256,4 +256,170 @@ template<> struct V_TypeTraits<float>
         u.f = x;
         return u.u;
     }
-    sta
+    static value_type reinterpret_from_int(int_type x)
+    {
+        Cv32suf u;
+        u.i = x;
+        return u.f;
+    }
+};
+
+template<> struct V_TypeTraits<double>
+{
+    typedef double value_type;
+    typedef int64 int_type;
+    typedef uint64 uint_type;
+    typedef double abs_type;
+    typedef double sum_type;
+    static int_type reinterpret_int(value_type x)
+    {
+        Cv64suf u;
+        u.f = x;
+        return u.i;
+    }
+    static uint_type reinterpet_uint(value_type x)
+    {
+        Cv64suf u;
+        u.f = x;
+        return u.u;
+    }
+    static value_type reinterpret_from_int(int_type x)
+    {
+        Cv64suf u;
+        u.i = x;
+        return u.f;
+    }
+};
+
+template <typename T> struct V_SIMD128Traits
+{
+    enum { nlanes = 16 / sizeof(T) };
+};
+
+//! @endcond
+
+//! @}
+
+#ifndef CV_DOXYGEN
+CV_CPU_OPTIMIZATION_HAL_NAMESPACE_END
+#endif
+}
+
+#ifdef CV_DOXYGEN
+#   undef CV_SSE2
+#   undef CV_NEON
+#   undef CV_VSX
+#endif
+
+#if CV_SSE2
+
+#include "opencv2/core/hal/intrin_sse.hpp"
+
+#elif CV_NEON
+
+#include "opencv2/core/hal/intrin_neon.hpp"
+
+#elif CV_VSX
+
+#include "opencv2/core/hal/intrin_vsx.hpp"
+
+#else
+
+#include "opencv2/core/hal/intrin_cpp.hpp"
+
+#endif
+
+//! @addtogroup core_hal_intrin
+//! @{
+
+#ifndef CV_SIMD128
+//! Set to 1 if current compiler supports vector extensions (NEON or SSE is enabled)
+#define CV_SIMD128 0
+#endif
+
+#ifndef CV_SIMD128_64F
+//! Set to 1 if current intrinsics implementation supports 64-bit float vectors
+#define CV_SIMD128_64F 0
+#endif
+
+//! @}
+
+//==================================================================================================
+
+//! @cond IGNORED
+
+namespace cv {
+
+#ifndef CV_DOXYGEN
+CV_CPU_OPTIMIZATION_HAL_NAMESPACE_BEGIN
+#endif
+
+template <typename R> struct V_RegTrait128;
+
+template <> struct V_RegTrait128<uchar> {
+    typedef v_uint8x16 reg;
+    typedef v_uint16x8 w_reg;
+    typedef v_uint32x4 q_reg;
+    typedef v_uint8x16 u_reg;
+    static v_uint8x16 zero() { return v_setzero_u8(); }
+    static v_uint8x16 all(uchar val) { return v_setall_u8(val); }
+};
+
+template <> struct V_RegTrait128<schar> {
+    typedef v_int8x16 reg;
+    typedef v_int16x8 w_reg;
+    typedef v_int32x4 q_reg;
+    typedef v_uint8x16 u_reg;
+    static v_int8x16 zero() { return v_setzero_s8(); }
+    static v_int8x16 all(schar val) { return v_setall_s8(val); }
+};
+
+template <> struct V_RegTrait128<ushort> {
+    typedef v_uint16x8 reg;
+    typedef v_uint32x4 w_reg;
+    typedef v_int16x8 int_reg;
+    typedef v_uint16x8 u_reg;
+    static v_uint16x8 zero() { return v_setzero_u16(); }
+    static v_uint16x8 all(ushort val) { return v_setall_u16(val); }
+};
+
+template <> struct V_RegTrait128<short> {
+    typedef v_int16x8 reg;
+    typedef v_int32x4 w_reg;
+    typedef v_uint16x8 u_reg;
+    static v_int16x8 zero() { return v_setzero_s16(); }
+    static v_int16x8 all(short val) { return v_setall_s16(val); }
+};
+
+template <> struct V_RegTrait128<unsigned> {
+    typedef v_uint32x4 reg;
+    typedef v_uint64x2 w_reg;
+    typedef v_int32x4 int_reg;
+    typedef v_uint32x4 u_reg;
+    static v_uint32x4 zero() { return v_setzero_u32(); }
+    static v_uint32x4 all(unsigned val) { return v_setall_u32(val); }
+};
+
+template <> struct V_RegTrait128<int> {
+    typedef v_int32x4 reg;
+    typedef v_int64x2 w_reg;
+    typedef v_uint32x4 u_reg;
+    static v_int32x4 zero() { return v_setzero_s32(); }
+    static v_int32x4 all(int val) { return v_setall_s32(val); }
+};
+
+template <> struct V_RegTrait128<uint64> {
+    typedef v_uint64x2 reg;
+    static v_uint64x2 zero() { return v_setzero_u64(); }
+    static v_uint64x2 all(uint64 val) { return v_setall_u64(val); }
+};
+
+template <> struct V_RegTrait128<int64> {
+    typedef v_int64x2 reg;
+    static v_int64x2 zero() { return v_setzero_s64(); }
+    static v_int64x2 all(int64 val) { return v_setall_s64(val); }
+};
+
+template <> struct V_RegTrait128<float> {
+    typedef v_float32x4 reg;
+    typedef v_int32x4 i
