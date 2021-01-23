@@ -116,4 +116,102 @@ public:
     typedef Matx<_Tp, shortdim, 1> diag_type;
 
     //! default constructor
-  
+    Matx();
+
+    Matx(_Tp v0); //!< 1x1 matrix
+    Matx(_Tp v0, _Tp v1); //!< 1x2 or 2x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2); //!< 1x3 or 3x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3); //!< 1x4, 2x2 or 4x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4); //!< 1x5 or 5x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5); //!< 1x6, 2x3, 3x2 or 6x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6); //!< 1x7 or 7x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6, _Tp v7); //!< 1x8, 2x4, 4x2 or 8x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6, _Tp v7, _Tp v8); //!< 1x9, 3x3 or 9x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6, _Tp v7, _Tp v8, _Tp v9); //!< 1x10, 2x5 or 5x2 or 10x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3,
+         _Tp v4, _Tp v5, _Tp v6, _Tp v7,
+         _Tp v8, _Tp v9, _Tp v10, _Tp v11); //!< 1x12, 2x6, 3x4, 4x3, 6x2 or 12x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3,
+         _Tp v4, _Tp v5, _Tp v6, _Tp v7,
+         _Tp v8, _Tp v9, _Tp v10, _Tp v11,
+         _Tp v12, _Tp v13); //!< 1x14, 2x7, 7x2 or 14x1 matrix
+    Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3,
+         _Tp v4, _Tp v5, _Tp v6, _Tp v7,
+         _Tp v8, _Tp v9, _Tp v10, _Tp v11,
+         _Tp v12, _Tp v13, _Tp v14, _Tp v15); //!< 1x16, 4x4 or 16x1 matrix
+    explicit Matx(const _Tp* vals); //!< initialize from a plain array
+
+#ifdef CV_CXX11
+    Matx(std::initializer_list<_Tp>); //!< initialize from an initializer list
+#endif
+
+    static Matx all(_Tp alpha);
+    static Matx zeros();
+    static Matx ones();
+    static Matx eye();
+    static Matx diag(const diag_type& d);
+    static Matx randu(_Tp a, _Tp b);
+    static Matx randn(_Tp a, _Tp b);
+
+    //! dot product computed with the default precision
+    _Tp dot(const Matx<_Tp, m, n>& v) const;
+
+    //! dot product computed in double-precision arithmetics
+    double ddot(const Matx<_Tp, m, n>& v) const;
+
+    //! conversion to another data type
+    template<typename T2> operator Matx<T2, m, n>() const;
+
+    //! change the matrix shape
+    template<int m1, int n1> Matx<_Tp, m1, n1> reshape() const;
+
+    //! extract part of the matrix
+    template<int m1, int n1> Matx<_Tp, m1, n1> get_minor(int i, int j) const;
+
+    //! extract the matrix row
+    Matx<_Tp, 1, n> row(int i) const;
+
+    //! extract the matrix column
+    Matx<_Tp, m, 1> col(int i) const;
+
+    //! extract the matrix diagonal
+    diag_type diag() const;
+
+    //! transpose the matrix
+    Matx<_Tp, n, m> t() const;
+
+    //! invert the matrix
+    Matx<_Tp, n, m> inv(int method=DECOMP_LU, bool *p_is_ok = NULL) const;
+
+    //! solve linear system
+    template<int l> Matx<_Tp, n, l> solve(const Matx<_Tp, m, l>& rhs, int flags=DECOMP_LU) const;
+    Vec<_Tp, n> solve(const Vec<_Tp, m>& rhs, int method) const;
+
+    //! multiply two matrices element-wise
+    Matx<_Tp, m, n> mul(const Matx<_Tp, m, n>& a) const;
+
+    //! divide two matrices element-wise
+    Matx<_Tp, m, n> div(const Matx<_Tp, m, n>& a) const;
+
+    //! element access
+    const _Tp& operator ()(int i, int j) const;
+    _Tp& operator ()(int i, int j);
+
+    //! 1D element access
+    const _Tp& operator ()(int i) const;
+    _Tp& operator ()(int i);
+
+    Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_AddOp);
+    Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_SubOp);
+    template<typename _T2> Matx(const Matx<_Tp, m, n>& a, _T2 alpha, Matx_ScaleOp);
+    Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_MulOp);
+    Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_DivOp);
+    template<int l> Matx(const Matx<_Tp, m, l>& a, const Matx<_Tp, l, n>& b, Matx_MatMulOp);
+    Matx(const Matx<_Tp, n, m>& a, Matx_TOp);
+
+    _Tp val[m*n]; //< matrix elements
+};
+
+typedef Matx<float, 1, 2> Matx12f;
+typedef Matx<double, 1, 2> Matx12d;
+typedef Matx<
