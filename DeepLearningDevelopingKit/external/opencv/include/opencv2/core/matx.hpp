@@ -329,3 +329,124 @@ All the expected vector operations are also implemented:
 -   v1 = -v2
 -   v1 += v2 and other augmenting operations
 -   v1 == v2, v1 != v2
+-   norm(v1) (euclidean norm)
+The Vec class is commonly used to describe pixel types of multi-channel arrays. See Mat for details.
+*/
+template<typename _Tp, int cn> class Vec : public Matx<_Tp, cn, 1>
+{
+public:
+    typedef _Tp value_type;
+    enum {
+           channels = cn,
+#ifdef OPENCV_TRAITS_ENABLE_DEPRECATED
+           depth    = Matx<_Tp, cn, 1>::depth,
+           type     = CV_MAKETYPE(depth, channels),
+#endif
+           _dummy_enum_finalizer = 0
+         };
+
+    //! default constructor
+    Vec();
+
+    Vec(_Tp v0); //!< 1-element vector constructor
+    Vec(_Tp v0, _Tp v1); //!< 2-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2); //!< 3-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3); //!< 4-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4); //!< 5-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5); //!< 6-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6); //!< 7-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6, _Tp v7); //!< 8-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6, _Tp v7, _Tp v8); //!< 9-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6, _Tp v7, _Tp v8, _Tp v9); //!< 10-element vector constructor
+    Vec(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5, _Tp v6, _Tp v7, _Tp v8, _Tp v9, _Tp v10, _Tp v11, _Tp v12, _Tp v13); //!< 14-element vector constructor
+    explicit Vec(const _Tp* values);
+
+#ifdef CV_CXX11
+    Vec(std::initializer_list<_Tp>);
+#endif
+
+    Vec(const Vec<_Tp, cn>& v);
+
+    static Vec all(_Tp alpha);
+
+    //! per-element multiplication
+    Vec mul(const Vec<_Tp, cn>& v) const;
+
+    //! conjugation (makes sense for complex numbers and quaternions)
+    Vec conj() const;
+
+    /*!
+      cross product of the two 3D vectors.
+
+      For other dimensionalities the exception is raised
+    */
+    Vec cross(const Vec& v) const;
+    //! conversion to another data type
+    template<typename T2> operator Vec<T2, cn>() const;
+
+    /*! element access */
+    const _Tp& operator [](int i) const;
+    _Tp& operator[](int i);
+    const _Tp& operator ()(int i) const;
+    _Tp& operator ()(int i);
+
+    Vec(const Matx<_Tp, cn, 1>& a, const Matx<_Tp, cn, 1>& b, Matx_AddOp);
+    Vec(const Matx<_Tp, cn, 1>& a, const Matx<_Tp, cn, 1>& b, Matx_SubOp);
+    template<typename _T2> Vec(const Matx<_Tp, cn, 1>& a, _T2 alpha, Matx_ScaleOp);
+};
+
+/** @name Shorter aliases for the most popular specializations of Vec<T,n>
+  @{
+*/
+typedef Vec<uchar, 2> Vec2b;
+typedef Vec<uchar, 3> Vec3b;
+typedef Vec<uchar, 4> Vec4b;
+
+typedef Vec<short, 2> Vec2s;
+typedef Vec<short, 3> Vec3s;
+typedef Vec<short, 4> Vec4s;
+
+typedef Vec<ushort, 2> Vec2w;
+typedef Vec<ushort, 3> Vec3w;
+typedef Vec<ushort, 4> Vec4w;
+
+typedef Vec<int, 2> Vec2i;
+typedef Vec<int, 3> Vec3i;
+typedef Vec<int, 4> Vec4i;
+typedef Vec<int, 6> Vec6i;
+typedef Vec<int, 8> Vec8i;
+
+typedef Vec<float, 2> Vec2f;
+typedef Vec<float, 3> Vec3f;
+typedef Vec<float, 4> Vec4f;
+typedef Vec<float, 6> Vec6f;
+
+typedef Vec<double, 2> Vec2d;
+typedef Vec<double, 3> Vec3d;
+typedef Vec<double, 4> Vec4d;
+typedef Vec<double, 6> Vec6d;
+/** @} */
+
+/*!
+  traits
+*/
+template<typename _Tp, int cn> class DataType< Vec<_Tp, cn> >
+{
+public:
+    typedef Vec<_Tp, cn>                               value_type;
+    typedef Vec<typename DataType<_Tp>::work_type, cn> work_type;
+    typedef _Tp                                        channel_type;
+    typedef value_type                                 vec_type;
+
+    enum { generic_type = 0,
+           channels     = cn,
+           fmt          = DataType<channel_type>::fmt + ((channels - 1) << 8),
+#ifdef OPENCV_TRAITS_ENABLE_DEPRECATED
+           depth        = DataType<channel_type>::depth,
+           type         = CV_MAKETYPE(depth, channels),
+#endif
+           _dummy_enum_finalizer = 0
+         };
+};
+
+namespace tr
