@@ -449,4 +449,143 @@ public:
          };
 };
 
-namespace tr
+namespace traits {
+template<typename _Tp, int cn>
+struct Depth< Vec<_Tp, cn> > { enum { value = Depth<_Tp>::value }; };
+template<typename _Tp, int cn>
+struct Type< Vec<_Tp, cn> > { enum { value = CV_MAKETYPE(Depth<_Tp>::value, cn) }; };
+} // namespace
+
+
+/** @brief  Comma-separated Vec Initializer
+*/
+template<typename _Tp, int m> class VecCommaInitializer : public MatxCommaInitializer<_Tp, m, 1>
+{
+public:
+    VecCommaInitializer(Vec<_Tp, m>* _vec);
+    template<typename T2> VecCommaInitializer<_Tp, m>& operator , (T2 val);
+    Vec<_Tp, m> operator *() const;
+};
+
+template<typename _Tp, int cn> static Vec<_Tp, cn> normalize(const Vec<_Tp, cn>& v);
+
+//! @} core_basic
+
+//! @cond IGNORED
+
+///////////////////////////////////// helper classes /////////////////////////////////////
+namespace internal
+{
+
+template<typename _Tp, int m> struct Matx_DetOp
+{
+    double operator ()(const Matx<_Tp, m, m>& a) const
+    {
+        Matx<_Tp, m, m> temp = a;
+        double p = LU(temp.val, m*sizeof(_Tp), m, 0, 0, 0);
+        if( p == 0 )
+            return p;
+        for( int i = 0; i < m; i++ )
+            p *= temp(i, i);
+        return p;
+    }
+};
+
+template<typename _Tp> struct Matx_DetOp<_Tp, 1>
+{
+    double operator ()(const Matx<_Tp, 1, 1>& a) const
+    {
+        return a(0,0);
+    }
+};
+
+template<typename _Tp> struct Matx_DetOp<_Tp, 2>
+{
+    double operator ()(const Matx<_Tp, 2, 2>& a) const
+    {
+        return a(0,0)*a(1,1) - a(0,1)*a(1,0);
+    }
+};
+
+template<typename _Tp> struct Matx_DetOp<_Tp, 3>
+{
+    double operator ()(const Matx<_Tp, 3, 3>& a) const
+    {
+        return a(0,0)*(a(1,1)*a(2,2) - a(2,1)*a(1,2)) -
+            a(0,1)*(a(1,0)*a(2,2) - a(2,0)*a(1,2)) +
+            a(0,2)*(a(1,0)*a(2,1) - a(2,0)*a(1,1));
+    }
+};
+
+template<typename _Tp> Vec<_Tp, 2> inline conjugate(const Vec<_Tp, 2>& v)
+{
+    return Vec<_Tp, 2>(v[0], -v[1]);
+}
+
+template<typename _Tp> Vec<_Tp, 4> inline conjugate(const Vec<_Tp, 4>& v)
+{
+    return Vec<_Tp, 4>(v[0], -v[1], -v[2], -v[3]);
+}
+
+} // internal
+
+
+
+////////////////////////////////// Matx Implementation ///////////////////////////////////
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Matx()
+{
+    for(int i = 0; i < channels; i++) val[i] = _Tp(0);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Matx(_Tp v0)
+{
+    val[0] = v0;
+    for(int i = 1; i < channels; i++) val[i] = _Tp(0);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Matx(_Tp v0, _Tp v1)
+{
+    CV_StaticAssert(channels >= 2, "Matx should have at least 2 elements.");
+    val[0] = v0; val[1] = v1;
+    for(int i = 2; i < channels; i++) val[i] = _Tp(0);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Matx(_Tp v0, _Tp v1, _Tp v2)
+{
+    CV_StaticAssert(channels >= 3, "Matx should have at least 3 elements.");
+    val[0] = v0; val[1] = v1; val[2] = v2;
+    for(int i = 3; i < channels; i++) val[i] = _Tp(0);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3)
+{
+    CV_StaticAssert(channels >= 4, "Matx should have at least 4 elements.");
+    val[0] = v0; val[1] = v1; val[2] = v2; val[3] = v3;
+    for(int i = 4; i < channels; i++) val[i] = _Tp(0);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4)
+{
+    CV_StaticAssert(channels >= 5, "Matx should have at least 5 elements.");
+    val[0] = v0; val[1] = v1; val[2] = v2; val[3] = v3; val[4] = v4;
+    for(int i = 5; i < channels; i++) val[i] = _Tp(0);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Matx(_Tp v0, _Tp v1, _Tp v2, _Tp v3, _Tp v4, _Tp v5)
+{
+    CV_StaticAssert(channels >= 6, "Matx should have at least 6 elements.");
+    val[0] = v0; val[1] = v1; val[2] = v2; val[3] = v3;
+    val[4] = v4; val[5] = v5;
+    for(int i = 6; i < channels; i++) val[i] = _Tp(0);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n>::Mat
