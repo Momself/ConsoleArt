@@ -698,4 +698,138 @@ Matx<_Tp,m,n> Matx<_Tp,m,n>::ones()
     return all(1);
 }
 
-template<typ
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n> Matx<_Tp,m,n>::eye()
+{
+    Matx<_Tp,m,n> M;
+    for(int i = 0; i < shortdim; i++)
+        M(i,i) = 1;
+    return M;
+}
+
+template<typename _Tp, int m, int n> inline
+_Tp Matx<_Tp, m, n>::dot(const Matx<_Tp, m, n>& M) const
+{
+    _Tp s = 0;
+    for( int i = 0; i < channels; i++ ) s += val[i]*M.val[i];
+    return s;
+}
+
+template<typename _Tp, int m, int n> inline
+double Matx<_Tp, m, n>::ddot(const Matx<_Tp, m, n>& M) const
+{
+    double s = 0;
+    for( int i = 0; i < channels; i++ ) s += (double)val[i]*M.val[i];
+    return s;
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n> Matx<_Tp,m,n>::diag(const typename Matx<_Tp,m,n>::diag_type& d)
+{
+    Matx<_Tp,m,n> M;
+    for(int i = 0; i < shortdim; i++)
+        M(i,i) = d(i, 0);
+    return M;
+}
+
+template<typename _Tp, int m, int n> template<typename T2>
+inline Matx<_Tp, m, n>::operator Matx<T2, m, n>() const
+{
+    Matx<T2, m, n> M;
+    for( int i = 0; i < m*n; i++ ) M.val[i] = saturate_cast<T2>(val[i]);
+    return M;
+}
+
+template<typename _Tp, int m, int n> template<int m1, int n1> inline
+Matx<_Tp, m1, n1> Matx<_Tp, m, n>::reshape() const
+{
+    CV_StaticAssert(m1*n1 == m*n, "Input and destnarion matrices must have the same number of elements");
+    return (const Matx<_Tp, m1, n1>&)*this;
+}
+
+template<typename _Tp, int m, int n>
+template<int m1, int n1> inline
+Matx<_Tp, m1, n1> Matx<_Tp, m, n>::get_minor(int i, int j) const
+{
+    CV_DbgAssert(0 <= i && i+m1 <= m && 0 <= j && j+n1 <= n);
+    Matx<_Tp, m1, n1> s;
+    for( int di = 0; di < m1; di++ )
+        for( int dj = 0; dj < n1; dj++ )
+            s(di, dj) = (*this)(i+di, j+dj);
+    return s;
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, 1, n> Matx<_Tp, m, n>::row(int i) const
+{
+    CV_DbgAssert((unsigned)i < (unsigned)m);
+    return Matx<_Tp, 1, n>(&val[i*n]);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, 1> Matx<_Tp, m, n>::col(int j) const
+{
+    CV_DbgAssert((unsigned)j < (unsigned)n);
+    Matx<_Tp, m, 1> v;
+    for( int i = 0; i < m; i++ )
+        v.val[i] = val[i*n + j];
+    return v;
+}
+
+template<typename _Tp, int m, int n> inline
+typename Matx<_Tp, m, n>::diag_type Matx<_Tp, m, n>::diag() const
+{
+    diag_type d;
+    for( int i = 0; i < shortdim; i++ )
+        d.val[i] = val[i*n + i];
+    return d;
+}
+
+template<typename _Tp, int m, int n> inline
+const _Tp& Matx<_Tp, m, n>::operator()(int i, int j) const
+{
+    CV_DbgAssert( (unsigned)i < (unsigned)m && (unsigned)j < (unsigned)n );
+    return this->val[i*n + j];
+}
+
+template<typename _Tp, int m, int n> inline
+_Tp& Matx<_Tp, m, n>::operator ()(int i, int j)
+{
+    CV_DbgAssert( (unsigned)i < (unsigned)m && (unsigned)j < (unsigned)n );
+    return val[i*n + j];
+}
+
+template<typename _Tp, int m, int n> inline
+const _Tp& Matx<_Tp, m, n>::operator ()(int i) const
+{
+    CV_StaticAssert(m == 1 || n == 1, "Single index indexation requires matrix to be a column or a row");
+    CV_DbgAssert( (unsigned)i < (unsigned)(m+n-1) );
+    return val[i];
+}
+
+template<typename _Tp, int m, int n> inline
+_Tp& Matx<_Tp, m, n>::operator ()(int i)
+{
+    CV_StaticAssert(m == 1 || n == 1, "Single index indexation requires matrix to be a column or a row");
+    CV_DbgAssert( (unsigned)i < (unsigned)(m+n-1) );
+    return val[i];
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_AddOp)
+{
+    for( int i = 0; i < channels; i++ )
+        val[i] = saturate_cast<_Tp>(a.val[i] + b.val[i]);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_SubOp)
+{
+    for( int i = 0; i < channels; i++ )
+        val[i] = saturate_cast<_Tp>(a.val[i] - b.val[i]);
+}
+
+template<typename _Tp, int m, int n> template<typename _T2> inline
+Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, n>& a, _T2 alpha, Matx_ScaleOp)
+{
+    for( i
