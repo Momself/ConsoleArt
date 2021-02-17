@@ -832,4 +832,138 @@ Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_Sub
 template<typename _Tp, int m, int n> template<typename _T2> inline
 Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, n>& a, _T2 alpha, Matx_ScaleOp)
 {
-    for( i
+    for( int i = 0; i < channels; i++ )
+        val[i] = saturate_cast<_Tp>(a.val[i] * alpha);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_MulOp)
+{
+    for( int i = 0; i < channels; i++ )
+        val[i] = saturate_cast<_Tp>(a.val[i] * b.val[i]);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b, Matx_DivOp)
+{
+    for( int i = 0; i < channels; i++ )
+        val[i] = saturate_cast<_Tp>(a.val[i] / b.val[i]);
+}
+
+template<typename _Tp, int m, int n> template<int l> inline
+Matx<_Tp,m,n>::Matx(const Matx<_Tp, m, l>& a, const Matx<_Tp, l, n>& b, Matx_MatMulOp)
+{
+    for( int i = 0; i < m; i++ )
+        for( int j = 0; j < n; j++ )
+        {
+            _Tp s = 0;
+            for( int k = 0; k < l; k++ )
+                s += a(i, k) * b(k, j);
+            val[i*n + j] = s;
+        }
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n>::Matx(const Matx<_Tp, n, m>& a, Matx_TOp)
+{
+    for( int i = 0; i < m; i++ )
+        for( int j = 0; j < n; j++ )
+            val[i*n + j] = a(j, i);
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n> Matx<_Tp, m, n>::mul(const Matx<_Tp, m, n>& a) const
+{
+    return Matx<_Tp, m, n>(*this, a, Matx_MulOp());
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n> Matx<_Tp, m, n>::div(const Matx<_Tp, m, n>& a) const
+{
+    return Matx<_Tp, m, n>(*this, a, Matx_DivOp());
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, n, m> Matx<_Tp, m, n>::t() const
+{
+    return Matx<_Tp, n, m>(*this, Matx_TOp());
+}
+
+template<typename _Tp, int m, int n> inline
+Vec<_Tp, n> Matx<_Tp, m, n>::solve(const Vec<_Tp, m>& rhs, int method) const
+{
+    Matx<_Tp, n, 1> x = solve((const Matx<_Tp, m, 1>&)(rhs), method);
+    return (Vec<_Tp, n>&)(x);
+}
+
+template<typename _Tp, int m> static inline
+double determinant(const Matx<_Tp, m, m>& a)
+{
+    return cv::internal::Matx_DetOp<_Tp, m>()(a);
+}
+
+template<typename _Tp, int m, int n> static inline
+double trace(const Matx<_Tp, m, n>& a)
+{
+    _Tp s = 0;
+    for( int i = 0; i < std::min(m, n); i++ )
+        s += a(i,i);
+    return s;
+}
+
+template<typename _Tp, int m, int n> static inline
+double norm(const Matx<_Tp, m, n>& M)
+{
+    return std::sqrt(normL2Sqr<_Tp, double>(M.val, m*n));
+}
+
+template<typename _Tp, int m, int n> static inline
+double norm(const Matx<_Tp, m, n>& M, int normType)
+{
+    switch(normType) {
+    case NORM_INF:
+        return (double)normInf<_Tp, typename DataType<_Tp>::work_type>(M.val, m*n);
+    case NORM_L1:
+        return (double)normL1<_Tp, typename DataType<_Tp>::work_type>(M.val, m*n);
+    case NORM_L2SQR:
+        return (double)normL2Sqr<_Tp, typename DataType<_Tp>::work_type>(M.val, m*n);
+    default:
+    case NORM_L2:
+        return std::sqrt((double)normL2Sqr<_Tp, typename DataType<_Tp>::work_type>(M.val, m*n));
+    }
+}
+
+
+
+//////////////////////////////// matx comma initializer //////////////////////////////////
+
+template<typename _Tp, typename _T2, int m, int n> static inline
+MatxCommaInitializer<_Tp, m, n> operator << (const Matx<_Tp, m, n>& mtx, _T2 val)
+{
+    MatxCommaInitializer<_Tp, m, n> commaInitializer((Matx<_Tp, m, n>*)&mtx);
+    return (commaInitializer, val);
+}
+
+template<typename _Tp, int m, int n> inline
+MatxCommaInitializer<_Tp, m, n>::MatxCommaInitializer(Matx<_Tp, m, n>* _mtx)
+    : dst(_mtx), idx(0)
+{}
+
+template<typename _Tp, int m, int n> template<typename _T2> inline
+MatxCommaInitializer<_Tp, m, n>& MatxCommaInitializer<_Tp, m, n>::operator , (_T2 value)
+{
+    CV_DbgAssert( idx < m*n );
+    dst->val[idx++] = saturate_cast<_Tp>(value);
+    return *this;
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, m, n> MatxCommaInitializer<_Tp, m, n>::operator *() const
+{
+    CV_DbgAssert( idx == n*m );
+    return *dst;
+}
+
+
+
+/////////////////////////////////// Vec Implementati
