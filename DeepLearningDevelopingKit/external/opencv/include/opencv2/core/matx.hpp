@@ -1091,4 +1091,140 @@ Vec<_Tp, cn> Vec<_Tp, cn>::cross(const Vec<_Tp, cn>&) const
 template<> inline
 Vec<float, 3> Vec<float, 3>::cross(const Vec<float, 3>& v) const
 {
-    return Vec<float,3>(this->val[1]*v.val[2] - this->val[2]*v.va
+    return Vec<float,3>(this->val[1]*v.val[2] - this->val[2]*v.val[1],
+                     this->val[2]*v.val[0] - this->val[0]*v.val[2],
+                     this->val[0]*v.val[1] - this->val[1]*v.val[0]);
+}
+
+template<> inline
+Vec<double, 3> Vec<double, 3>::cross(const Vec<double, 3>& v) const
+{
+    return Vec<double,3>(this->val[1]*v.val[2] - this->val[2]*v.val[1],
+                     this->val[2]*v.val[0] - this->val[0]*v.val[2],
+                     this->val[0]*v.val[1] - this->val[1]*v.val[0]);
+}
+
+template<typename _Tp, int cn> template<typename T2> inline
+Vec<_Tp, cn>::operator Vec<T2, cn>() const
+{
+    Vec<T2, cn> v;
+    for( int i = 0; i < cn; i++ ) v.val[i] = saturate_cast<T2>(this->val[i]);
+    return v;
+}
+
+template<typename _Tp, int cn> inline
+const _Tp& Vec<_Tp, cn>::operator [](int i) const
+{
+    CV_DbgAssert( (unsigned)i < (unsigned)cn );
+    return this->val[i];
+}
+
+template<typename _Tp, int cn> inline
+_Tp& Vec<_Tp, cn>::operator [](int i)
+{
+    CV_DbgAssert( (unsigned)i < (unsigned)cn );
+    return this->val[i];
+}
+
+template<typename _Tp, int cn> inline
+const _Tp& Vec<_Tp, cn>::operator ()(int i) const
+{
+    CV_DbgAssert( (unsigned)i < (unsigned)cn );
+    return this->val[i];
+}
+
+template<typename _Tp, int cn> inline
+_Tp& Vec<_Tp, cn>::operator ()(int i)
+{
+    CV_DbgAssert( (unsigned)i < (unsigned)cn );
+    return this->val[i];
+}
+
+template<typename _Tp, int cn> inline
+Vec<_Tp, cn> normalize(const Vec<_Tp, cn>& v)
+{
+    double nv = norm(v);
+    return v * (nv ? 1./nv : 0.);
+}
+
+
+
+//////////////////////////////// vec comma initializer //////////////////////////////////
+
+
+template<typename _Tp, typename _T2, int cn> static inline
+VecCommaInitializer<_Tp, cn> operator << (const Vec<_Tp, cn>& vec, _T2 val)
+{
+    VecCommaInitializer<_Tp, cn> commaInitializer((Vec<_Tp, cn>*)&vec);
+    return (commaInitializer, val);
+}
+
+template<typename _Tp, int cn> inline
+VecCommaInitializer<_Tp, cn>::VecCommaInitializer(Vec<_Tp, cn>* _vec)
+    : MatxCommaInitializer<_Tp, cn, 1>(_vec)
+{}
+
+template<typename _Tp, int cn> template<typename _T2> inline
+VecCommaInitializer<_Tp, cn>& VecCommaInitializer<_Tp, cn>::operator , (_T2 value)
+{
+    CV_DbgAssert( this->idx < cn );
+    this->dst->val[this->idx++] = saturate_cast<_Tp>(value);
+    return *this;
+}
+
+template<typename _Tp, int cn> inline
+Vec<_Tp, cn> VecCommaInitializer<_Tp, cn>::operator *() const
+{
+    CV_DbgAssert( this->idx == cn );
+    return *this->dst;
+}
+
+//! @endcond
+
+///////////////////////////// Matx out-of-class operators ////////////////////////////////
+
+//! @relates cv::Matx
+//! @{
+
+template<typename _Tp1, typename _Tp2, int m, int n> static inline
+Matx<_Tp1, m, n>& operator += (Matx<_Tp1, m, n>& a, const Matx<_Tp2, m, n>& b)
+{
+    for( int i = 0; i < m*n; i++ )
+        a.val[i] = saturate_cast<_Tp1>(a.val[i] + b.val[i]);
+    return a;
+}
+
+template<typename _Tp1, typename _Tp2, int m, int n> static inline
+Matx<_Tp1, m, n>& operator -= (Matx<_Tp1, m, n>& a, const Matx<_Tp2, m, n>& b)
+{
+    for( int i = 0; i < m*n; i++ )
+        a.val[i] = saturate_cast<_Tp1>(a.val[i] - b.val[i]);
+    return a;
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator + (const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b)
+{
+    return Matx<_Tp, m, n>(a, b, Matx_AddOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator - (const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b)
+{
+    return Matx<_Tp, m, n>(a, b, Matx_SubOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n>& operator *= (Matx<_Tp, m, n>& a, int alpha)
+{
+    for( int i = 0; i < m*n; i++ )
+        a.val[i] = saturate_cast<_Tp>(a.val[i] * alpha);
+    return a;
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n>& operator *= (Matx<_Tp, m, n>& a, float alpha)
+{
+    for( int i = 0; i < m*n; i++ )
+        a.val[i] = saturate_cast<_Tp>(a.val[i] * alpha);
+    return a;
