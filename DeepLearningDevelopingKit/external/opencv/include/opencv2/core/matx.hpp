@@ -1228,3 +1228,145 @@ Matx<_Tp, m, n>& operator *= (Matx<_Tp, m, n>& a, float alpha)
     for( int i = 0; i < m*n; i++ )
         a.val[i] = saturate_cast<_Tp>(a.val[i] * alpha);
     return a;
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n>& operator *= (Matx<_Tp, m, n>& a, double alpha)
+{
+    for( int i = 0; i < m*n; i++ )
+        a.val[i] = saturate_cast<_Tp>(a.val[i] * alpha);
+    return a;
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator * (const Matx<_Tp, m, n>& a, int alpha)
+{
+    return Matx<_Tp, m, n>(a, alpha, Matx_ScaleOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator * (const Matx<_Tp, m, n>& a, float alpha)
+{
+    return Matx<_Tp, m, n>(a, alpha, Matx_ScaleOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator * (const Matx<_Tp, m, n>& a, double alpha)
+{
+    return Matx<_Tp, m, n>(a, alpha, Matx_ScaleOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator * (int alpha, const Matx<_Tp, m, n>& a)
+{
+    return Matx<_Tp, m, n>(a, alpha, Matx_ScaleOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator * (float alpha, const Matx<_Tp, m, n>& a)
+{
+    return Matx<_Tp, m, n>(a, alpha, Matx_ScaleOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator * (double alpha, const Matx<_Tp, m, n>& a)
+{
+    return Matx<_Tp, m, n>(a, alpha, Matx_ScaleOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Matx<_Tp, m, n> operator - (const Matx<_Tp, m, n>& a)
+{
+    return Matx<_Tp, m, n>(a, -1, Matx_ScaleOp());
+}
+
+template<typename _Tp, int m, int n, int l> static inline
+Matx<_Tp, m, n> operator * (const Matx<_Tp, m, l>& a, const Matx<_Tp, l, n>& b)
+{
+    return Matx<_Tp, m, n>(a, b, Matx_MatMulOp());
+}
+
+template<typename _Tp, int m, int n> static inline
+Vec<_Tp, m> operator * (const Matx<_Tp, m, n>& a, const Vec<_Tp, n>& b)
+{
+    Matx<_Tp, m, 1> c(a, b, Matx_MatMulOp());
+    return (const Vec<_Tp, m>&)(c);
+}
+
+template<typename _Tp, int m, int n> static inline
+bool operator == (const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b)
+{
+    for( int i = 0; i < m*n; i++ )
+        if( a.val[i] != b.val[i] ) return false;
+    return true;
+}
+
+template<typename _Tp, int m, int n> static inline
+bool operator != (const Matx<_Tp, m, n>& a, const Matx<_Tp, m, n>& b)
+{
+    return !(a == b);
+}
+
+//! @}
+
+////////////////////////////// Vec out-of-class operators ////////////////////////////////
+
+//! @relates cv::Vec
+//! @{
+
+template<typename _Tp1, typename _Tp2, int cn> static inline
+Vec<_Tp1, cn>& operator += (Vec<_Tp1, cn>& a, const Vec<_Tp2, cn>& b)
+{
+    for( int i = 0; i < cn; i++ )
+        a.val[i] = saturate_cast<_Tp1>(a.val[i] + b.val[i]);
+    return a;
+}
+
+template<typename _Tp1, typename _Tp2, int cn> static inline
+Vec<_Tp1, cn>& operator -= (Vec<_Tp1, cn>& a, const Vec<_Tp2, cn>& b)
+{
+    for( int i = 0; i < cn; i++ )
+        a.val[i] = saturate_cast<_Tp1>(a.val[i] - b.val[i]);
+    return a;
+}
+
+template<typename _Tp, int cn> static inline
+Vec<_Tp, cn> operator + (const Vec<_Tp, cn>& a, const Vec<_Tp, cn>& b)
+{
+    return Vec<_Tp, cn>(a, b, Matx_AddOp());
+}
+
+template<typename _Tp, int cn> static inline
+Vec<_Tp, cn> operator - (const Vec<_Tp, cn>& a, const Vec<_Tp, cn>& b)
+{
+    return Vec<_Tp, cn>(a, b, Matx_SubOp());
+}
+
+template<typename _Tp, int cn> static inline
+Vec<_Tp, cn>& operator *= (Vec<_Tp, cn>& a, int alpha)
+{
+    for( int i = 0; i < cn; i++ )
+        a[i] = saturate_cast<_Tp>(a[i]*alpha);
+    return a;
+}
+
+template<typename _Tp, int cn> static inline
+Vec<_Tp, cn>& operator *= (Vec<_Tp, cn>& a, float alpha)
+{
+    for( int i = 0; i < cn; i++ )
+        a[i] = saturate_cast<_Tp>(a[i]*alpha);
+    return a;
+}
+
+template<typename _Tp, int cn> static inline
+Vec<_Tp, cn>& operator *= (Vec<_Tp, cn>& a, double alpha)
+{
+    for( int i = 0; i < cn; i++ )
+        a[i] = saturate_cast<_Tp>(a[i]*alpha);
+    return a;
+}
+
+template<typename _Tp, int cn> static inline
+Vec<_Tp, cn>& operator /= (Vec<_Tp, cn>& a, int alpha)
+{
+   
