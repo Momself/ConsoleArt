@@ -157,4 +157,135 @@ public:
 
     bool imageSupport() const;
 
-    bool imageFromBufferSupport() 
+    bool imageFromBufferSupport() const;
+    uint imagePitchAlignment() const;
+    uint imageBaseAddressAlignment() const;
+
+    /// deprecated, use isExtensionSupported() method (probably with "cl_khr_subgroups" value)
+    bool intelSubgroupsSupport() const;
+
+    size_t image2DMaxWidth() const;
+    size_t image2DMaxHeight() const;
+
+    size_t image3DMaxWidth() const;
+    size_t image3DMaxHeight() const;
+    size_t image3DMaxDepth() const;
+
+    size_t imageMaxBufferSize() const;
+    size_t imageMaxArraySize() const;
+
+    enum
+    {
+        UNKNOWN_VENDOR=0,
+        VENDOR_AMD=1,
+        VENDOR_INTEL=2,
+        VENDOR_NVIDIA=3
+    };
+    int vendorID() const;
+    // FIXIT
+    // dev.isAMD() doesn't work for OpenCL CPU devices from AMD OpenCL platform.
+    // This method should use platform name instead of vendor name.
+    // After fix restore code in arithm.cpp: ocl_compare()
+    inline bool isAMD() const { return vendorID() == VENDOR_AMD; }
+    inline bool isIntel() const { return vendorID() == VENDOR_INTEL; }
+    inline bool isNVidia() const { return vendorID() == VENDOR_NVIDIA; }
+
+    int maxClockFrequency() const;
+    int maxComputeUnits() const;
+    int maxConstantArgs() const;
+    size_t maxConstantBufferSize() const;
+
+    size_t maxMemAllocSize() const;
+    size_t maxParameterSize() const;
+
+    int maxReadImageArgs() const;
+    int maxWriteImageArgs() const;
+    int maxSamplers() const;
+
+    size_t maxWorkGroupSize() const;
+    int maxWorkItemDims() const;
+    void maxWorkItemSizes(size_t*) const;
+
+    int memBaseAddrAlign() const;
+
+    int nativeVectorWidthChar() const;
+    int nativeVectorWidthShort() const;
+    int nativeVectorWidthInt() const;
+    int nativeVectorWidthLong() const;
+    int nativeVectorWidthFloat() const;
+    int nativeVectorWidthDouble() const;
+    int nativeVectorWidthHalf() const;
+
+    int preferredVectorWidthChar() const;
+    int preferredVectorWidthShort() const;
+    int preferredVectorWidthInt() const;
+    int preferredVectorWidthLong() const;
+    int preferredVectorWidthFloat() const;
+    int preferredVectorWidthDouble() const;
+    int preferredVectorWidthHalf() const;
+
+    size_t printfBufferSize() const;
+    size_t profilingTimerResolution() const;
+
+    static const Device& getDefault();
+
+protected:
+    struct Impl;
+    Impl* p;
+};
+
+
+class CV_EXPORTS Context
+{
+public:
+    Context();
+    explicit Context(int dtype);
+    ~Context();
+    Context(const Context& c);
+    Context& operator = (const Context& c);
+
+    bool create();
+    bool create(int dtype);
+    size_t ndevices() const;
+    const Device& device(size_t idx) const;
+    Program getProg(const ProgramSource& prog,
+                    const String& buildopt, String& errmsg);
+    void unloadProg(Program& prog);
+
+    static Context& getDefault(bool initialize = true);
+    void* ptr() const;
+
+    friend void initializeContextFromHandle(Context& ctx, void* platform, void* context, void* device);
+
+    bool useSVM() const;
+    void setUseSVM(bool enabled);
+
+    struct Impl;
+    inline Impl* getImpl() const { return (Impl*)p; }
+//protected:
+    Impl* p;
+};
+
+class CV_EXPORTS Platform
+{
+public:
+    Platform();
+    ~Platform();
+    Platform(const Platform& p);
+    Platform& operator = (const Platform& p);
+
+    void* ptr() const;
+    static Platform& getDefault();
+
+    friend void initializeContextFromHandle(Context& ctx, void* platform, void* context, void* device);
+protected:
+    struct Impl;
+    Impl* p;
+};
+
+/** @brief Attaches OpenCL context to OpenCV
+@note
+  OpenCV will check if available OpenCL platform has platformName name, then assign context to
+  OpenCV and call `clRetainContext` function. The deviceID device will be used as target device and
+  new command queue will be created.
+@param platformName name of OpenCL platform to attach, this string is used to check if platform is available to OpenCV at runti
