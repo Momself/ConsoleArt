@@ -288,4 +288,104 @@ protected:
   OpenCV will check if available OpenCL platform has platformName name, then assign context to
   OpenCV and call `clRetainContext` function. The deviceID device will be used as target device and
   new command queue will be created.
-@param platformName name of OpenCL platform to attach, this string is used to check if platform is available to OpenCV at runti
+@param platformName name of OpenCL platform to attach, this string is used to check if platform is available to OpenCV at runtime
+@param platformID ID of platform attached context was created for
+@param context OpenCL context to be attached to OpenCV
+@param deviceID ID of device, must be created from attached context
+*/
+CV_EXPORTS void attachContext(const String& platformName, void* platformID, void* context, void* deviceID);
+
+/** @brief Convert OpenCL buffer to UMat
+@note
+  OpenCL buffer (cl_mem_buffer) should contain 2D image data, compatible with OpenCV. Memory
+  content is not copied from `clBuffer` to UMat. Instead, buffer handle assigned to UMat and
+  `clRetainMemObject` is called.
+@param cl_mem_buffer source clBuffer handle
+@param step num of bytes in single row
+@param rows number of rows
+@param cols number of cols
+@param type OpenCV type of image
+@param dst destination UMat
+*/
+CV_EXPORTS void convertFromBuffer(void* cl_mem_buffer, size_t step, int rows, int cols, int type, UMat& dst);
+
+/** @brief Convert OpenCL image2d_t to UMat
+@note
+  OpenCL `image2d_t` (cl_mem_image), should be compatible with OpenCV UMat formats. Memory content
+  is copied from image to UMat with `clEnqueueCopyImageToBuffer` function.
+@param cl_mem_image source image2d_t handle
+@param dst destination UMat
+*/
+CV_EXPORTS void convertFromImage(void* cl_mem_image, UMat& dst);
+
+// TODO Move to internal header
+void initializeContextFromHandle(Context& ctx, void* platform, void* context, void* device);
+
+class CV_EXPORTS Queue
+{
+public:
+    Queue();
+    explicit Queue(const Context& c, const Device& d=Device());
+    ~Queue();
+    Queue(const Queue& q);
+    Queue& operator = (const Queue& q);
+
+    bool create(const Context& c=Context(), const Device& d=Device());
+    void finish();
+    void* ptr() const;
+    static Queue& getDefault();
+
+    /// @brief Returns OpenCL command queue with enable profiling mode support
+    const Queue& getProfilingQueue() const;
+
+    struct Impl; friend struct Impl;
+    inline Impl* getImpl() const { return p; }
+protected:
+    Impl* p;
+};
+
+
+class CV_EXPORTS KernelArg
+{
+public:
+    enum { LOCAL=1, READ_ONLY=2, WRITE_ONLY=4, READ_WRITE=6, CONSTANT=8, PTR_ONLY = 16, NO_SIZE=256 };
+    KernelArg(int _flags, UMat* _m, int wscale=1, int iwscale=1, const void* _obj=0, size_t _sz=0);
+    KernelArg();
+
+    static KernelArg Local() { return KernelArg(LOCAL, 0); }
+    static KernelArg PtrWriteOnly(const UMat& m)
+    { return KernelArg(PTR_ONLY+WRITE_ONLY, (UMat*)&m); }
+    static KernelArg PtrReadOnly(const UMat& m)
+    { return KernelArg(PTR_ONLY+READ_ONLY, (UMat*)&m); }
+    static KernelArg PtrReadWrite(const UMat& m)
+    { return KernelArg(PTR_ONLY+READ_WRITE, (UMat*)&m); }
+    static KernelArg ReadWrite(const UMat& m, int wscale=1, int iwscale=1)
+    { return KernelArg(READ_WRITE, (UMat*)&m, wscale, iwscale); }
+    static KernelArg ReadWriteNoSize(const UMat& m, int wscale=1, int iwscale=1)
+    { return KernelArg(READ_WRITE+NO_SIZE, (UMat*)&m, wscale, iwscale); }
+    static KernelArg ReadOnly(const UMat& m, int wscale=1, int iwscale=1)
+    { return KernelArg(READ_ONLY, (UMat*)&m, wscale, iwscale); }
+    static KernelArg WriteOnly(const UMat& m, int wscale=1, int iwscale=1)
+    { return KernelArg(WRITE_ONLY, (UMat*)&m, wscale, iwscale); }
+    static KernelArg ReadOnlyNoSize(const UMat& m, int wscale=1, int iwscale=1)
+    { return KernelArg(READ_ONLY+NO_SIZE, (UMat*)&m, wscale, iwscale); }
+    static KernelArg WriteOnlyNoSize(const UMat& m, int wscale=1, int iwscale=1)
+    { return KernelArg(WRITE_ONLY+NO_SIZE, (UMat*)&m, wscale, iwscale); }
+    static KernelArg Constant(const Mat& m);
+    template<typename _Tp> static KernelArg Constant(const _Tp* arr, size_t n)
+    { return KernelArg(CONSTANT, 0, 1, 1, (void*)arr, n); }
+
+    int flags;
+    UMat* m;
+    const void* obj;
+    size_t sz;
+    int wscale, iwscale;
+};
+
+
+class CV_EXPORTS Kernel
+{
+public:
+    Kernel();
+    Kernel(const char* kname, const Program& prog);
+    Kernel(const char* kname, const ProgramSource& prog,
