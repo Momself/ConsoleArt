@@ -544,4 +544,99 @@ public:
                  const _Tp12& a12, const _Tp13& a13, const _Tp14& a14)
     {
         int i = set(0, a0); i = set(i, a1); i = set(i, a2); i = set(i, a3); i = set(i, a4); i = set(i, a5);
-        i = set(i, a6); i 
+        i = set(i, a6); i = set(i, a7); i = set(i, a8); i = set(i, a9); i = set(i, a10); i = set(i, a11);
+        i = set(i, a12); i = set(i, a13); set(i, a14); return *this;
+    }
+
+    template<typename _Tp0, typename _Tp1, typename _Tp2, typename _Tp3,
+             typename _Tp4, typename _Tp5, typename _Tp6, typename _Tp7,
+             typename _Tp8, typename _Tp9, typename _Tp10, typename _Tp11, typename _Tp12,
+             typename _Tp13, typename _Tp14, typename _Tp15>
+    Kernel& args(const _Tp0& a0, const _Tp1& a1, const _Tp2& a2, const _Tp3& a3,
+                 const _Tp4& a4, const _Tp5& a5, const _Tp6& a6, const _Tp7& a7,
+                 const _Tp8& a8, const _Tp9& a9, const _Tp10& a10, const _Tp11& a11,
+                 const _Tp12& a12, const _Tp13& a13, const _Tp14& a14, const _Tp15& a15)
+    {
+        int i = set(0, a0); i = set(i, a1); i = set(i, a2); i = set(i, a3); i = set(i, a4); i = set(i, a5);
+        i = set(i, a6); i = set(i, a7); i = set(i, a8); i = set(i, a9); i = set(i, a10); i = set(i, a11);
+        i = set(i, a12); i = set(i, a13); i = set(i, a14); set(i, a15); return *this;
+    }
+    /** @brief Run the OpenCL kernel.
+    @param dims the work problem dimensions. It is the length of globalsize and localsize. It can be either 1, 2 or 3.
+    @param globalsize work items for each dimension. It is not the final globalsize passed to
+      OpenCL. Each dimension will be adjusted to the nearest integer divisible by the corresponding
+      value in localsize. If localsize is NULL, it will still be adjusted depending on dims. The
+      adjusted values are greater than or equal to the original values.
+    @param localsize work-group size for each dimension.
+    @param sync specify whether to wait for OpenCL computation to finish before return.
+    @param q command queue
+    */
+    bool run(int dims, size_t globalsize[],
+             size_t localsize[], bool sync, const Queue& q=Queue());
+    bool runTask(bool sync, const Queue& q=Queue());
+
+    /** @brief Similar to synchronized run() call with returning of kernel execution time
+     * Separate OpenCL command queue may be used (with CL_QUEUE_PROFILING_ENABLE)
+     * @return Execution time in nanoseconds or negative number on error
+     */
+    int64 runProfiling(int dims, size_t globalsize[], size_t localsize[], const Queue& q=Queue());
+
+    size_t workGroupSize() const;
+    size_t preferedWorkGroupSizeMultiple() const;
+    bool compileWorkGroupSize(size_t wsz[]) const;
+    size_t localMemSize() const;
+
+    void* ptr() const;
+    struct Impl;
+
+protected:
+    Impl* p;
+};
+
+class CV_EXPORTS Program
+{
+public:
+    Program();
+    Program(const ProgramSource& src,
+            const String& buildflags, String& errmsg);
+    Program(const Program& prog);
+
+    Program& operator = (const Program& prog);
+    ~Program();
+
+    bool create(const ProgramSource& src,
+                const String& buildflags, String& errmsg);
+
+    void* ptr() const;
+
+    /**
+     * @brief Query device-specific program binary.
+     *
+     * Returns RAW OpenCL executable binary without additional attachments.
+     *
+     * @sa ProgramSource::fromBinary
+     *
+     * @param[out] binary output buffer
+     */
+    void getBinary(std::vector<char>& binary) const;
+
+    struct Impl; friend struct Impl;
+    inline Impl* getImpl() const { return (Impl*)p; }
+protected:
+    Impl* p;
+public:
+#ifndef OPENCV_REMOVE_DEPRECATED_API
+    // TODO Remove this
+    CV_DEPRECATED bool read(const String& buf, const String& buildflags); // removed, use ProgramSource instead
+    CV_DEPRECATED bool write(String& buf) const; // removed, use getBinary() method instead (RAW OpenCL binary)
+    CV_DEPRECATED const ProgramSource& source() const; // implementation removed
+    CV_DEPRECATED String getPrefix() const; // deprecated, implementation replaced
+    CV_DEPRECATED static String getPrefix(const String& buildflags); // deprecated, implementation replaced
+#endif
+};
+
+
+class CV_EXPORTS ProgramSource
+{
+public:
+    t
