@@ -733,4 +733,110 @@ CV_EXPORTS const char* typeToStr(int t);
 CV_EXPORTS const char* memopTypeToStr(int t);
 CV_EXPORTS const char* vecopTypeToStr(int t);
 CV_EXPORTS const char* getOpenCLErrorString(int errorCode);
-CV_EXPORTS String kernelToStr(Inp
+CV_EXPORTS String kernelToStr(InputArray _kernel, int ddepth = -1, const char * name = NULL);
+CV_EXPORTS void getPlatfomsInfo(std::vector<PlatformInfo>& platform_info);
+
+
+enum OclVectorStrategy
+{
+    // all matrices have its own vector width
+    OCL_VECTOR_OWN = 0,
+    // all matrices have maximal vector width among all matrices
+    // (useful for cases when matrices have different data types)
+    OCL_VECTOR_MAX = 1,
+
+    // default strategy
+    OCL_VECTOR_DEFAULT = OCL_VECTOR_OWN
+};
+
+CV_EXPORTS int predictOptimalVectorWidth(InputArray src1, InputArray src2 = noArray(), InputArray src3 = noArray(),
+                                         InputArray src4 = noArray(), InputArray src5 = noArray(), InputArray src6 = noArray(),
+                                         InputArray src7 = noArray(), InputArray src8 = noArray(), InputArray src9 = noArray(),
+                                         OclVectorStrategy strat = OCL_VECTOR_DEFAULT);
+
+CV_EXPORTS int checkOptimalVectorWidth(const int *vectorWidths,
+                                       InputArray src1, InputArray src2 = noArray(), InputArray src3 = noArray(),
+                                       InputArray src4 = noArray(), InputArray src5 = noArray(), InputArray src6 = noArray(),
+                                       InputArray src7 = noArray(), InputArray src8 = noArray(), InputArray src9 = noArray(),
+                                       OclVectorStrategy strat = OCL_VECTOR_DEFAULT);
+
+// with OCL_VECTOR_MAX strategy
+CV_EXPORTS int predictOptimalVectorWidthMax(InputArray src1, InputArray src2 = noArray(), InputArray src3 = noArray(),
+                                            InputArray src4 = noArray(), InputArray src5 = noArray(), InputArray src6 = noArray(),
+                                            InputArray src7 = noArray(), InputArray src8 = noArray(), InputArray src9 = noArray());
+
+CV_EXPORTS void buildOptionsAddMatrixDescription(String& buildOptions, const String& name, InputArray _m);
+
+class CV_EXPORTS Image2D
+{
+public:
+    Image2D();
+
+    /**
+    @param src UMat object from which to get image properties and data
+    @param norm flag to enable the use of normalized channel data types
+    @param alias flag indicating that the image should alias the src UMat. If true, changes to the
+        image or src will be reflected in both objects.
+    */
+    explicit Image2D(const UMat &src, bool norm = false, bool alias = false);
+    Image2D(const Image2D & i);
+    ~Image2D();
+
+    Image2D & operator = (const Image2D & i);
+
+    /** Indicates if creating an aliased image should succeed.
+    Depends on the underlying platform and the dimensions of the UMat.
+    */
+    static bool canCreateAlias(const UMat &u);
+
+    /** Indicates if the image format is supported.
+    */
+    static bool isFormatSupported(int depth, int cn, bool norm);
+
+    void* ptr() const;
+protected:
+    struct Impl;
+    Impl* p;
+};
+
+class CV_EXPORTS Timer
+{
+public:
+    Timer(const Queue& q);
+    ~Timer();
+    void start();
+    void stop();
+
+    uint64 durationNS() const; //< duration in nanoseconds
+
+protected:
+    struct Impl;
+    Impl* const p;
+
+private:
+    Timer(const Timer&); // disabled
+    Timer& operator=(const Timer&); // disabled
+};
+
+CV_EXPORTS MatAllocator* getOpenCLAllocator();
+
+
+#ifdef __OPENCV_BUILD
+namespace internal {
+
+CV_EXPORTS bool isOpenCLForced();
+#define OCL_FORCE_CHECK(condition) (cv::ocl::internal::isOpenCLForced() || (condition))
+
+CV_EXPORTS bool isPerformanceCheckBypassed();
+#define OCL_PERFORMANCE_CHECK(condition) (cv::ocl::internal::isPerformanceCheckBypassed() || (condition))
+
+CV_EXPORTS bool isCLBuffer(UMat& u);
+
+} // namespace internal
+#endif
+
+//! @}
+
+}}
+
+#endif
