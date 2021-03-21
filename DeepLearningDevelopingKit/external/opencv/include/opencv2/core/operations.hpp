@@ -134,4 +134,122 @@ template<typename _Tp, int m, int n> struct Matx_FastSolveOp
 
 template<typename _Tp> struct Matx_FastSolveOp<_Tp, 2, 1>
 {
-    bool operator()(const Matx<_Tp, 2, 2>& a, const Matx<
+    bool operator()(const Matx<_Tp, 2, 2>& a, const Matx<_Tp, 2, 1>& b,
+                    Matx<_Tp, 2, 1>& x, int) const
+    {
+        _Tp d = (_Tp)determinant(a);
+        if( d == 0 )
+            return false;
+        d = 1/d;
+        x(0) = (b(0)*a(1,1) - b(1)*a(0,1))*d;
+        x(1) = (b(1)*a(0,0) - b(0)*a(1,0))*d;
+        return true;
+    }
+};
+
+template<typename _Tp> struct Matx_FastSolveOp<_Tp, 3, 1>
+{
+    bool operator()(const Matx<_Tp, 3, 3>& a, const Matx<_Tp, 3, 1>& b,
+                    Matx<_Tp, 3, 1>& x, int) const
+    {
+        _Tp d = (_Tp)determinant(a);
+        if( d == 0 )
+            return false;
+        d = 1/d;
+        x(0) = d*(b(0)*(a(1,1)*a(2,2) - a(1,2)*a(2,1)) -
+                a(0,1)*(b(1)*a(2,2) - a(1,2)*b(2)) +
+                a(0,2)*(b(1)*a(2,1) - a(1,1)*b(2)));
+
+        x(1) = d*(a(0,0)*(b(1)*a(2,2) - a(1,2)*b(2)) -
+                b(0)*(a(1,0)*a(2,2) - a(1,2)*a(2,0)) +
+                a(0,2)*(a(1,0)*b(2) - b(1)*a(2,0)));
+
+        x(2) = d*(a(0,0)*(a(1,1)*b(2) - b(1)*a(2,1)) -
+                a(0,1)*(a(1,0)*b(2) - b(1)*a(2,0)) +
+                b(0)*(a(1,0)*a(2,1) - a(1,1)*a(2,0)));
+        return true;
+    }
+};
+
+} // internal
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n> Matx<_Tp,m,n>::randu(_Tp a, _Tp b)
+{
+    Matx<_Tp,m,n> M;
+    cv::randu(M, Scalar(a), Scalar(b));
+    return M;
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp,m,n> Matx<_Tp,m,n>::randn(_Tp a, _Tp b)
+{
+    Matx<_Tp,m,n> M;
+    cv::randn(M, Scalar(a), Scalar(b));
+    return M;
+}
+
+template<typename _Tp, int m, int n> inline
+Matx<_Tp, n, m> Matx<_Tp, m, n>::inv(int method, bool *p_is_ok /*= NULL*/) const
+{
+    Matx<_Tp, n, m> b;
+    bool ok;
+    if( method == DECOMP_LU || method == DECOMP_CHOLESKY )
+        ok = cv::internal::Matx_FastInvOp<_Tp, m>()(*this, b, method);
+    else
+    {
+        Mat A(*this, false), B(b, false);
+        ok = (invert(A, B, method) != 0);
+    }
+    if( NULL != p_is_ok ) { *p_is_ok = ok; }
+    return ok ? b : Matx<_Tp, n, m>::zeros();
+}
+
+template<typename _Tp, int m, int n> template<int l> inline
+Matx<_Tp, n, l> Matx<_Tp, m, n>::solve(const Matx<_Tp, m, l>& rhs, int method) const
+{
+    Matx<_Tp, n, l> x;
+    bool ok;
+    if( method == DECOMP_LU || method == DECOMP_CHOLESKY )
+        ok = cv::internal::Matx_FastSolveOp<_Tp, m, l>()(*this, rhs, x, method);
+    else
+    {
+        Mat A(*this, false), B(rhs, false), X(x, false);
+        ok = cv::solve(A, B, X, method);
+    }
+
+    return ok ? x : Matx<_Tp, n, l>::zeros();
+}
+
+
+
+////////////////////////// Augmenting algebraic & logical operations //////////////////////////
+
+#define CV_MAT_AUG_OPERATOR1(op, cvop, A, B) \
+    static inline A& operator op (A& a, const B& b) { cvop; return a; }
+
+#define CV_MAT_AUG_OPERATOR(op, cvop, A, B)   \
+    CV_MAT_AUG_OPERATOR1(op, cvop, A, B)      \
+    CV_MAT_AUG_OPERATOR1(op, cvop, const A, B)
+
+#define CV_MAT_AUG_OPERATOR_T(op, cvop, A, B)                   \
+    template<typename _Tp> CV_MAT_AUG_OPERATOR1(op, cvop, A, B) \
+    template<typename _Tp> CV_MAT_AUG_OPERATOR1(op, cvop, const A, B)
+
+CV_MAT_AUG_OPERATOR  (+=, cv::add(a,b,a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (+=, cv::add(a,b,a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(+=, cv::add(a,b,a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(+=, cv::add(a,b,a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(+=, cv::add(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
+
+CV_MAT_AUG_OPERATOR  (-=, cv::subtract(a,b,a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (-=, cv::subtract(a,b,a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a,b,a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a,b,a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(-=, cv::subtract(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
+
+CV_MAT_AUG_OPERATOR  (*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat, Mat)
+CV_MAT_AUG_OPERATOR_T(*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (*=, a.convertTo(a, -1, b), Mat, double)
+CV_MAT_AUG_OPERATOR_T(*=,
