@@ -252,4 +252,92 @@ CV_MAT_AUG_OPERATOR  (*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat, Mat)
 CV_MAT_AUG_OPERATOR_T(*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat_<_Tp>, Mat)
 CV_MAT_AUG_OPERATOR_T(*=, cv::gemm(a, b, 1, Mat(), 0, a, 0), Mat_<_Tp>, Mat_<_Tp>)
 CV_MAT_AUG_OPERATOR  (*=, a.convertTo(a, -1, b), Mat, double)
-CV_MAT_AUG_OPERATOR_T(*=,
+CV_MAT_AUG_OPERATOR_T(*=, a.convertTo(a, -1, b), Mat_<_Tp>, double)
+
+CV_MAT_AUG_OPERATOR  (/=, cv::divide(a,b,a), Mat, Mat)
+CV_MAT_AUG_OPERATOR_T(/=, cv::divide(a,b,a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(/=, cv::divide(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
+CV_MAT_AUG_OPERATOR  (/=, a.convertTo((Mat&)a, -1, 1./b), Mat, double)
+CV_MAT_AUG_OPERATOR_T(/=, a.convertTo((Mat&)a, -1, 1./b), Mat_<_Tp>, double)
+
+CV_MAT_AUG_OPERATOR  (&=, cv::bitwise_and(a,b,a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (&=, cv::bitwise_and(a,b,a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a,b,a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a,b,a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(&=, cv::bitwise_and(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
+
+CV_MAT_AUG_OPERATOR  (|=, cv::bitwise_or(a,b,a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (|=, cv::bitwise_or(a,b,a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a,b,a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a,b,a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(|=, cv::bitwise_or(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
+
+CV_MAT_AUG_OPERATOR  (^=, cv::bitwise_xor(a,b,a), Mat, Mat)
+CV_MAT_AUG_OPERATOR  (^=, cv::bitwise_xor(a,b,a), Mat, Scalar)
+CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a,b,a), Mat_<_Tp>, Mat)
+CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a,b,a), Mat_<_Tp>, Scalar)
+CV_MAT_AUG_OPERATOR_T(^=, cv::bitwise_xor(a,b,a), Mat_<_Tp>, Mat_<_Tp>)
+
+#undef CV_MAT_AUG_OPERATOR_T
+#undef CV_MAT_AUG_OPERATOR
+#undef CV_MAT_AUG_OPERATOR1
+
+
+
+///////////////////////////////////////////// SVD /////////////////////////////////////////////
+
+inline SVD::SVD() {}
+inline SVD::SVD( InputArray m, int flags ) { operator ()(m, flags); }
+inline void SVD::solveZ( InputArray m, OutputArray _dst )
+{
+    Mat mtx = m.getMat();
+    SVD svd(mtx, (mtx.rows >= mtx.cols ? 0 : SVD::FULL_UV));
+    _dst.create(svd.vt.cols, 1, svd.vt.type());
+    Mat dst = _dst.getMat();
+    svd.vt.row(svd.vt.rows-1).reshape(1,svd.vt.cols).copyTo(dst);
+}
+
+template<typename _Tp, int m, int n, int nm> inline void
+    SVD::compute( const Matx<_Tp, m, n>& a, Matx<_Tp, nm, 1>& w, Matx<_Tp, m, nm>& u, Matx<_Tp, n, nm>& vt )
+{
+    CV_StaticAssert( nm == MIN(m, n), "Invalid size of output vector.");
+    Mat _a(a, false), _u(u, false), _w(w, false), _vt(vt, false);
+    SVD::compute(_a, _w, _u, _vt);
+    CV_Assert(_w.data == (uchar*)&w.val[0] && _u.data == (uchar*)&u.val[0] && _vt.data == (uchar*)&vt.val[0]);
+}
+
+template<typename _Tp, int m, int n, int nm> inline void
+SVD::compute( const Matx<_Tp, m, n>& a, Matx<_Tp, nm, 1>& w )
+{
+    CV_StaticAssert( nm == MIN(m, n), "Invalid size of output vector.");
+    Mat _a(a, false), _w(w, false);
+    SVD::compute(_a, _w);
+    CV_Assert(_w.data == (uchar*)&w.val[0]);
+}
+
+template<typename _Tp, int m, int n, int nm, int nb> inline void
+SVD::backSubst( const Matx<_Tp, nm, 1>& w, const Matx<_Tp, m, nm>& u,
+                const Matx<_Tp, n, nm>& vt, const Matx<_Tp, m, nb>& rhs,
+                Matx<_Tp, n, nb>& dst )
+{
+    CV_StaticAssert( nm == MIN(m, n), "Invalid size of output vector.");
+    Mat _u(u, false), _w(w, false), _vt(vt, false), _rhs(rhs, false), _dst(dst, false);
+    SVD::backSubst(_w, _u, _vt, _rhs, _dst);
+    CV_Assert(_dst.data == (uchar*)&dst.val[0]);
+}
+
+
+
+/////////////////////////////////// Multiply-with-Carry RNG ///////////////////////////////////
+
+inline RNG::RNG()              { state = 0xffffffff; }
+inline RNG::RNG(uint64 _state) { state = _state ? _state : 0xffffffff; }
+
+inline RNG::operator uchar()    { return (uchar)next(); }
+inline RNG::operator schar()    { return (schar)next(); }
+inline RNG::operator ushort()   { return (ushort)next(); }
+inline RNG::operator short()    { return (short)next(); }
+inline RNG::operator int()      { return (int)next(); }
+inline RNG::operator unsigned() { return next(); }
+inline RNG::operator float()    { return next()*2.3283064365386962890625e-10f; }
+inline RNG::operator double()   { unsign
