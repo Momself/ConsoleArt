@@ -114,4 +114,95 @@ Writing to a file storage.
 --------------------------
 You can store and then restore various OpenCV data structures to/from XML (<http://www.w3c.org/XML>),
 YAML (<http://www.yaml.org>) or JSON (<http://www.json.org/>) formats. Also, it is possible to store
-and load arbitrarily complex data structures, which include OpenCV data structures, a
+and load arbitrarily complex data structures, which include OpenCV data structures, as well as
+primitive data types (integer and floating-point numbers and text strings) as their elements.
+
+Use the following procedure to write something to XML, YAML or JSON:
+-# Create new FileStorage and open it for writing. It can be done with a single call to
+FileStorage::FileStorage constructor that takes a filename, or you can use the default constructor
+and then call FileStorage::open. Format of the file (XML, YAML or JSON) is determined from the filename
+extension (".xml", ".yml"/".yaml" and ".json", respectively)
+-# Write all the data you want using the streaming operator `<<`, just like in the case of STL
+streams.
+-# Close the file using FileStorage::release. FileStorage destructor also closes the file.
+
+Here is an example:
+@code
+    #include "opencv2/opencv.hpp"
+    #include <time.h>
+
+    using namespace cv;
+
+    int main(int, char** argv)
+    {
+        FileStorage fs("test.yml", FileStorage::WRITE);
+
+        fs << "frameCount" << 5;
+        time_t rawtime; time(&rawtime);
+        fs << "calibrationDate" << asctime(localtime(&rawtime));
+        Mat cameraMatrix = (Mat_<double>(3,3) << 1000, 0, 320, 0, 1000, 240, 0, 0, 1);
+        Mat distCoeffs = (Mat_<double>(5,1) << 0.1, 0.01, -0.001, 0, 0);
+        fs << "cameraMatrix" << cameraMatrix << "distCoeffs" << distCoeffs;
+        fs << "features" << "[";
+        for( int i = 0; i < 3; i++ )
+        {
+            int x = rand() % 640;
+            int y = rand() % 480;
+            uchar lbp = rand() % 256;
+
+            fs << "{:" << "x" << x << "y" << y << "lbp" << "[:";
+            for( int j = 0; j < 8; j++ )
+                fs << ((lbp >> j) & 1);
+            fs << "]" << "}";
+        }
+        fs << "]";
+        fs.release();
+        return 0;
+    }
+@endcode
+The sample above stores to YML an integer, a text string (calibration date), 2 matrices, and a custom
+structure "feature", which includes feature coordinates and LBP (local binary pattern) value. Here
+is output of the sample:
+@code{.yaml}
+%YAML:1.0
+frameCount: 5
+calibrationDate: "Fri Jun 17 14:09:29 2011\n"
+cameraMatrix: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [ 1000., 0., 320., 0., 1000., 240., 0., 0., 1. ]
+distCoeffs: !!opencv-matrix
+   rows: 5
+   cols: 1
+   dt: d
+   data: [ 1.0000000000000001e-01, 1.0000000000000000e-02,
+       -1.0000000000000000e-03, 0., 0. ]
+features:
+   - { x:167, y:49, lbp:[ 1, 0, 0, 1, 1, 0, 1, 1 ] }
+   - { x:298, y:130, lbp:[ 0, 0, 0, 1, 0, 0, 1, 1 ] }
+   - { x:344, y:158, lbp:[ 1, 1, 0, 0, 0, 0, 1, 0 ] }
+@endcode
+
+As an exercise, you can replace ".yml" with ".xml" or ".json" in the sample above and see, how the
+corresponding XML file will look like.
+
+Several things can be noted by looking at the sample code and the output:
+
+-   The produced YAML (and XML/JSON) consists of heterogeneous collections that can be nested. There are
+    2 types of collections: named collections (mappings) and unnamed collections (sequences). In mappings
+    each element has a name and is accessed by name. This is similar to structures and std::map in
+    C/C++ and dictionaries in Python. In sequences elements do not have names, they are accessed by
+    indices. This is similar to arrays and std::vector in C/C++ and lists, tuples in Python.
+    "Heterogeneous" means that elements of each single collection can have different types.
+
+    Top-level collection in YAML/XML/JSON is a mapping. Each matrix is stored as a mapping, and the matrix
+    elements are stored as a sequence. Then, there is a sequence of features, where each feature is
+    represented a mapping, and lbp value in a nested sequence.
+
+-   When you write to a mapping (a structure), you write element name followed by its value. When you
+    write to a sequence, you simply write the elements one by one. OpenCV data structures (such as
+    cv::Mat) are written in absolutely the same way as simple C data structures - using `<<`
+    operator.
+
+-   To write a mapping, you first write the special string `{` to
