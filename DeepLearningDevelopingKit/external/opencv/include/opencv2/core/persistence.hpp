@@ -301,4 +301,98 @@ A complete example using the FileStorage interface
 class CV_EXPORTS FileNode;
 class CV_EXPORTS FileNodeIterator;
 
-/** @br
+/** @brief XML/YAML/JSON file storage class that encapsulates all the information necessary for writing or
+reading data to/from a file.
+ */
+class CV_EXPORTS_W FileStorage
+{
+public:
+    //! file storage mode
+    enum Mode
+    {
+        READ        = 0, //!< value, open the file for reading
+        WRITE       = 1, //!< value, open the file for writing
+        APPEND      = 2, //!< value, open the file for appending
+        MEMORY      = 4, //!< flag, read data from source or write data to the internal buffer (which is
+                         //!< returned by FileStorage::release)
+        FORMAT_MASK = (7<<3), //!< mask for format flags
+        FORMAT_AUTO = 0,      //!< flag, auto format
+        FORMAT_XML  = (1<<3), //!< flag, XML format
+        FORMAT_YAML = (2<<3), //!< flag, YAML format
+        FORMAT_JSON = (3<<3), //!< flag, JSON format
+
+        BASE64      = 64,     //!< flag, write rawdata in Base64 by default. (consider using WRITE_BASE64)
+        WRITE_BASE64 = BASE64 | WRITE, //!< flag, enable both WRITE and BASE64
+    };
+    enum
+    {
+        UNDEFINED      = 0,
+        VALUE_EXPECTED = 1,
+        NAME_EXPECTED  = 2,
+        INSIDE_MAP     = 4
+    };
+
+    /** @brief The constructors.
+
+    The full constructor opens the file. Alternatively you can use the default constructor and then
+    call FileStorage::open.
+     */
+    CV_WRAP FileStorage();
+
+    /** @overload
+    @copydoc open()
+    */
+    CV_WRAP FileStorage(const String& filename, int flags, const String& encoding=String());
+
+    /** @overload */
+    FileStorage(CvFileStorage* fs, bool owning=true);
+
+    //! the destructor. calls release()
+    virtual ~FileStorage();
+
+    /** @brief Opens a file.
+
+    See description of parameters in FileStorage::FileStorage. The method calls FileStorage::release
+    before opening the file.
+    @param filename Name of the file to open or the text string to read the data from.
+       Extension of the file (.xml, .yml/.yaml or .json) determines its format (XML, YAML or JSON
+        respectively). Also you can append .gz to work with compressed files, for example myHugeMatrix.xml.gz. If both
+        FileStorage::WRITE and FileStorage::MEMORY flags are specified, source is used just to specify
+        the output file format (e.g. mydata.xml, .yml etc.). A file name can also contain parameters.
+        You can use this format, "*?base64" (e.g. "file.json?base64" (case sensitive)), as an alternative to
+        FileStorage::BASE64 flag.
+    @param flags Mode of operation. One of FileStorage::Mode
+    @param encoding Encoding of the file. Note that UTF-16 XML encoding is not supported currently and
+    you should use 8-bit encoding instead of it.
+     */
+    CV_WRAP virtual bool open(const String& filename, int flags, const String& encoding=String());
+
+    /** @brief Checks whether the file is opened.
+
+    @returns true if the object is associated with the current file and false otherwise. It is a
+    good practice to call this method after you tried to open a file.
+     */
+    CV_WRAP virtual bool isOpened() const;
+
+    /** @brief Closes the file and releases all the memory buffers.
+
+    Call this method after all I/O operations with the storage are finished.
+     */
+    CV_WRAP virtual void release();
+
+    /** @brief Closes the file and releases all the memory buffers.
+
+    Call this method after all I/O operations with the storage are finished. If the storage was
+    opened for writing data and FileStorage::WRITE was specified
+     */
+    CV_WRAP virtual String releaseAndGetString();
+
+    /** @brief Returns the first element of the top-level mapping.
+    @returns The first element of the top-level mapping.
+     */
+    CV_WRAP FileNode getFirstTopLevelNode() const;
+
+    /** @brief Returns the top-level mapping
+    @param streamidx Zero-based index of the stream. In most cases there is only one stream in the file.
+    However, YAML supports multiple streams and so there can be several.
+    @r
