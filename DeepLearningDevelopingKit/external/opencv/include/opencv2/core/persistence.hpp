@@ -205,4 +205,100 @@ Several things can be noted by looking at the sample code and the output:
     cv::Mat) are written in absolutely the same way as simple C data structures - using `<<`
     operator.
 
--   To write a mapping, you first write the special string `{` to
+-   To write a mapping, you first write the special string `{` to the storage, then write the
+    elements as pairs (`fs << <element_name> << <element_value>`) and then write the closing
+    `}`.
+
+-   To write a sequence, you first write the special string `[`, then write the elements, then
+    write the closing `]`.
+
+-   In YAML/JSON (but not XML), mappings and sequences can be written in a compact Python-like inline
+    form. In the sample above matrix elements, as well as each feature, including its lbp value, is
+    stored in such inline form. To store a mapping/sequence in a compact form, put `:` after the
+    opening character, e.g. use `{:` instead of `{` and `[:` instead of `[`. When the
+    data is written to XML, those extra `:` are ignored.
+
+Reading data from a file storage.
+---------------------------------
+To read the previously written XML, YAML or JSON file, do the following:
+-#  Open the file storage using FileStorage::FileStorage constructor or FileStorage::open method.
+    In the current implementation the whole file is parsed and the whole representation of file
+    storage is built in memory as a hierarchy of file nodes (see FileNode)
+
+-#  Read the data you are interested in. Use FileStorage::operator [], FileNode::operator []
+    and/or FileNodeIterator.
+
+-#  Close the storage using FileStorage::release.
+
+Here is how to read the file created by the code sample above:
+@code
+    FileStorage fs2("test.yml", FileStorage::READ);
+
+    // first method: use (type) operator on FileNode.
+    int frameCount = (int)fs2["frameCount"];
+
+    String date;
+    // second method: use FileNode::operator >>
+    fs2["calibrationDate"] >> date;
+
+    Mat cameraMatrix2, distCoeffs2;
+    fs2["cameraMatrix"] >> cameraMatrix2;
+    fs2["distCoeffs"] >> distCoeffs2;
+
+    cout << "frameCount: " << frameCount << endl
+         << "calibration date: " << date << endl
+         << "camera matrix: " << cameraMatrix2 << endl
+         << "distortion coeffs: " << distCoeffs2 << endl;
+
+    FileNode features = fs2["features"];
+    FileNodeIterator it = features.begin(), it_end = features.end();
+    int idx = 0;
+    std::vector<uchar> lbpval;
+
+    // iterate through a sequence using FileNodeIterator
+    for( ; it != it_end; ++it, idx++ )
+    {
+        cout << "feature #" << idx << ": ";
+        cout << "x=" << (int)(*it)["x"] << ", y=" << (int)(*it)["y"] << ", lbp: (";
+        // you can also easily read numerical arrays using FileNode >> std::vector operator.
+        (*it)["lbp"] >> lbpval;
+        for( int i = 0; i < (int)lbpval.size(); i++ )
+            cout << " " << (int)lbpval[i];
+        cout << ")" << endl;
+    }
+    fs2.release();
+@endcode
+
+Format specification    {#format_spec}
+--------------------
+`([count]{u|c|w|s|i|f|d})`... where the characters correspond to fundamental C++ types:
+-   `u` 8-bit unsigned number
+-   `c` 8-bit signed number
+-   `w` 16-bit unsigned number
+-   `s` 16-bit signed number
+-   `i` 32-bit signed number
+-   `f` single precision floating-point number
+-   `d` double precision floating-point number
+-   `r` pointer, 32 lower bits of which are written as a signed integer. The type can be used to
+    store structures with links between the elements.
+
+`count` is the optional counter of values of a given type. For example, `2if` means that each array
+element is a structure of 2 integers, followed by a single-precision floating-point number. The
+equivalent notations of the above specification are `iif`, `2i1f` and so forth. Other examples: `u`
+means that the array consists of bytes, and `2d` means the array consists of pairs of doubles.
+
+@see @ref filestorage.cpp
+*/
+
+//! @{
+
+/** @example filestorage.cpp
+A complete example using the FileStorage interface
+*/
+
+////////////////////////// XML & YAML I/O //////////////////////////
+
+class CV_EXPORTS FileNode;
+class CV_EXPORTS FileNodeIterator;
+
+/** @br
