@@ -395,4 +395,99 @@ public:
     /** @brief Returns the top-level mapping
     @param streamidx Zero-based index of the stream. In most cases there is only one stream in the file.
     However, YAML supports multiple streams and so there can be several.
-    @r
+    @returns The top-level mapping.
+     */
+    CV_WRAP FileNode root(int streamidx=0) const;
+
+    /** @brief Returns the specified element of the top-level mapping.
+    @param nodename Name of the file node.
+    @returns Node with the given name.
+     */
+    FileNode operator[](const String& nodename) const;
+
+    /** @overload */
+    CV_WRAP_AS(getNode) FileNode operator[](const char* nodename) const;
+
+    /** @brief Returns the obsolete C FileStorage structure.
+    @returns Pointer to the underlying C FileStorage structure
+     */
+    CvFileStorage* operator *() { return fs.get(); }
+
+    /** @overload */
+    const CvFileStorage* operator *() const { return fs.get(); }
+
+    /** @brief Writes multiple numbers.
+
+    Writes one or more numbers of the specified format to the currently written structure. Usually it is
+    more convenient to use operator `<<` instead of this method.
+    @param fmt Specification of each array element, see @ref format_spec "format specification"
+    @param vec Pointer to the written array.
+    @param len Number of the uchar elements to write.
+     */
+    void writeRaw( const String& fmt, const uchar* vec, size_t len );
+
+    /** @brief Writes the registered C structure (CvMat, CvMatND, CvSeq).
+    @param name Name of the written object.
+    @param obj Pointer to the object.
+    @see ocvWrite for details.
+     */
+    void writeObj( const String& name, const void* obj );
+
+    /**
+     * @brief Simplified writing API to use with bindings.
+     * @param name Name of the written object
+     * @param val Value of the written object
+     */
+    CV_WRAP void write(const String& name, double val);
+    /// @overload
+    CV_WRAP void write(const String& name, const String& val);
+    /// @overload
+    CV_WRAP void write(const String& name, InputArray val);
+
+    /** @brief Writes a comment.
+
+    The function writes a comment into file storage. The comments are skipped when the storage is read.
+    @param comment The written comment, single-line or multi-line
+    @param append If true, the function tries to put the comment at the end of current line.
+    Else if the comment is multi-line, or if it does not fit at the end of the current
+    line, the comment starts a new line.
+     */
+    CV_WRAP void writeComment(const String& comment, bool append = false);
+
+    /** @brief Returns the normalized object name for the specified name of a file.
+    @param filename Name of a file
+    @returns The normalized object name.
+     */
+    static String getDefaultObjectName(const String& filename);
+
+    /** @brief Returns the current format.
+     * @returns The current format, see FileStorage::Mode
+     */
+    CV_WRAP int getFormat() const;
+
+    Ptr<CvFileStorage> fs; //!< the underlying C FileStorage structure
+    String elname; //!< the currently written element
+    std::vector<char> structs; //!< the stack of written structures
+    int state; //!< the writer state
+};
+
+template<> CV_EXPORTS void DefaultDeleter<CvFileStorage>::operator ()(CvFileStorage* obj) const;
+
+/** @brief File Storage Node class.
+
+The node is used to store each and every element of the file storage opened for reading. When
+XML/YAML file is read, it is first parsed and stored in the memory as a hierarchical collection of
+nodes. Each node can be a "leaf" that is contain a single number or a string, or be a collection of
+other nodes. There can be named collections (mappings) where each element has a name and it is
+accessed by a name, and ordered collections (sequences) where elements do not have names but rather
+accessed by index. Type of the file node can be determined using FileNode::type method.
+
+Note that file nodes are only used for navigating file storages opened for reading. When a file
+storage is opened for writing, no data is stored in memory after it is written.
+ */
+class CV_EXPORTS_W_SIMPLE FileNode
+{
+public:
+    //! type of the file storage node
+    enum Type
+    {
