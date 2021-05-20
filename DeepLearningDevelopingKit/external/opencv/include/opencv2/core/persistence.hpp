@@ -587,4 +587,109 @@ public:
 
     /** @brief Reads node elements to the buffer with the specified format.
 
-   
+    Usually it is more convenient to use operator `>>` instead of this method.
+    @param fmt Specification of each array element. See @ref format_spec "format specification"
+    @param vec Pointer to the destination array.
+    @param len Number of elements to read. If it is greater than number of remaining elements then all
+    of them will be read.
+     */
+    void readRaw( const String& fmt, uchar* vec, size_t len ) const;
+
+    //! reads the registered object and returns pointer to it
+    void* readObj() const;
+
+    //! Simplified reading API to use with bindings.
+    CV_WRAP double real() const;
+    //! Simplified reading API to use with bindings.
+    CV_WRAP String string() const;
+    //! Simplified reading API to use with bindings.
+    CV_WRAP Mat mat() const;
+
+    // do not use wrapper pointer classes for better efficiency
+    const CvFileStorage* fs;
+    const CvFileNode* node;
+};
+
+
+/** @brief used to iterate through sequences and mappings.
+
+A standard STL notation, with node.begin(), node.end() denoting the beginning and the end of a
+sequence, stored in node. See the data reading sample in the beginning of the section.
+ */
+class CV_EXPORTS FileNodeIterator
+{
+public:
+    /** @brief The constructors.
+
+    These constructors are used to create a default iterator, set it to specific element in a file node
+    or construct it from another iterator.
+     */
+    FileNodeIterator();
+
+    /** @overload
+    @param fs File storage for the iterator.
+    @param node File node for the iterator.
+    @param ofs Index of the element in the node. The created iterator will point to this element.
+    */
+    FileNodeIterator(const CvFileStorage* fs, const CvFileNode* node, size_t ofs=0);
+
+    /** @overload
+    @param it Iterator to be used as initialization for the created iterator.
+    */
+    FileNodeIterator(const FileNodeIterator& it);
+
+    //! returns the currently observed element
+    FileNode operator *() const;
+    //! accesses the currently observed element methods
+    FileNode operator ->() const;
+
+    //! moves iterator to the next node
+    FileNodeIterator& operator ++ ();
+    //! moves iterator to the next node
+    FileNodeIterator operator ++ (int);
+    //! moves iterator to the previous node
+    FileNodeIterator& operator -- ();
+    //! moves iterator to the previous node
+    FileNodeIterator operator -- (int);
+    //! moves iterator forward by the specified offset (possibly negative)
+    FileNodeIterator& operator += (int ofs);
+    //! moves iterator backward by the specified offset (possibly negative)
+    FileNodeIterator& operator -= (int ofs);
+
+    /** @brief Reads node elements to the buffer with the specified format.
+
+    Usually it is more convenient to use operator `>>` instead of this method.
+    @param fmt Specification of each array element. See @ref format_spec "format specification"
+    @param vec Pointer to the destination array.
+    @param maxCount Number of elements to read. If it is greater than number of remaining elements then
+    all of them will be read.
+     */
+    FileNodeIterator& readRaw( const String& fmt, uchar* vec,
+                               size_t maxCount=(size_t)INT_MAX );
+
+    struct SeqReader
+    {
+      int          header_size;
+      void*        seq;        /* sequence, beign read; CvSeq      */
+      void*        block;      /* current block;        CvSeqBlock */
+      schar*       ptr;        /* pointer to element be read next */
+      schar*       block_min;  /* pointer to the beginning of block */
+      schar*       block_max;  /* pointer to the end of block */
+      int          delta_index;/* = seq->first->start_index   */
+      schar*       prev_elem;  /* pointer to previous element */
+    };
+
+    const CvFileStorage* fs;
+    const CvFileNode* container;
+    SeqReader reader;
+    size_t remaining;
+};
+
+//! @} core_xml
+
+/////////////////// XML & YAML I/O implementation //////////////////
+
+//! @relates cv::FileStorage
+//! @{
+
+CV_EXPORTS void write( Fil
