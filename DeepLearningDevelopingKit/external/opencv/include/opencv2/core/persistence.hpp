@@ -1203,4 +1203,132 @@ FileStorage& operator << (FileStorage& fs, char* value)
 
 //! @} FileStorage
 
-//! @relates c
+//! @relates cv::FileNodeIterator
+//! @{
+
+/** @brief Reads data from a file storage.
+ */
+template<typename _Tp> static inline
+FileNodeIterator& operator >> (FileNodeIterator& it, _Tp& value)
+{
+    read( *it, value, _Tp());
+    return ++it;
+}
+
+/** @brief Reads data from a file storage.
+ */
+template<typename _Tp> static inline
+FileNodeIterator& operator >> (FileNodeIterator& it, std::vector<_Tp>& vec)
+{
+    cv::internal::VecReaderProxy<_Tp, traits::SafeFmt<_Tp>::fmt != 0> r(&it);
+    r(vec, (size_t)INT_MAX);
+    return it;
+}
+
+//! @} FileNodeIterator
+
+//! @relates cv::FileNode
+//! @{
+
+/** @brief Reads data from a file storage.
+ */
+template<typename _Tp> static inline
+void operator >> (const FileNode& n, _Tp& value)
+{
+    read( n, value, _Tp());
+}
+
+/** @brief Reads data from a file storage.
+ */
+template<typename _Tp> static inline
+void operator >> (const FileNode& n, std::vector<_Tp>& vec)
+{
+    FileNodeIterator it = n.begin();
+    it >> vec;
+}
+
+/** @brief Reads KeyPoint from a file storage.
+*/
+//It needs special handling because it contains two types of fields, int & float.
+static inline
+void operator >> (const FileNode& n, KeyPoint& kpt)
+{
+    FileNodeIterator it = n.begin();
+    it >> kpt.pt.x >> kpt.pt.y >> kpt.size >> kpt.angle >> kpt.response >> kpt.octave >> kpt.class_id;
+}
+
+#ifdef CV__LEGACY_PERSISTENCE
+static inline
+void operator >> (const FileNode& n, std::vector<KeyPoint>& vec)
+{
+    read(n, vec);
+}
+static inline
+void operator >> (const FileNode& n, std::vector<DMatch>& vec)
+{
+    read(n, vec);
+}
+#endif
+
+/** @brief Reads DMatch from a file storage.
+*/
+//It needs special handling because it contains two types of fields, int & float.
+static inline
+void operator >> (const FileNode& n, DMatch& m)
+{
+    FileNodeIterator it = n.begin();
+    it >> m.queryIdx >> m.trainIdx >> m.imgIdx >> m.distance;
+}
+
+//! @} FileNode
+
+//! @relates cv::FileNodeIterator
+//! @{
+
+static inline
+bool operator == (const FileNodeIterator& it1, const FileNodeIterator& it2)
+{
+    return it1.fs == it2.fs && it1.container == it2.container &&
+        it1.reader.ptr == it2.reader.ptr && it1.remaining == it2.remaining;
+}
+
+static inline
+bool operator != (const FileNodeIterator& it1, const FileNodeIterator& it2)
+{
+    return !(it1 == it2);
+}
+
+static inline
+ptrdiff_t operator - (const FileNodeIterator& it1, const FileNodeIterator& it2)
+{
+    return it2.remaining - it1.remaining;
+}
+
+static inline
+bool operator < (const FileNodeIterator& it1, const FileNodeIterator& it2)
+{
+    return it1.remaining > it2.remaining;
+}
+
+//! @} FileNodeIterator
+
+//! @cond IGNORED
+
+inline FileNode FileStorage::getFirstTopLevelNode() const { FileNode r = root(); FileNodeIterator it = r.begin(); return it != r.end() ? *it : FileNode(); }
+inline FileNode::FileNode() : fs(0), node(0) {}
+inline FileNode::FileNode(const CvFileStorage* _fs, const CvFileNode* _node) : fs(_fs), node(_node) {}
+inline FileNode::FileNode(const FileNode& _node) : fs(_node.fs), node(_node.node) {}
+inline bool FileNode::empty() const    { return node   == 0;    }
+inline bool FileNode::isNone() const   { return type() == NONE; }
+inline bool FileNode::isSeq() const    { return type() == SEQ;  }
+inline bool FileNode::isMap() const    { return type() == MAP;  }
+inline bool FileNode::isInt() const    { return type() == INT;  }
+inline bool FileNode::isReal() const   { return type() == REAL; }
+inline bool FileNode::isString() const { return type() == STR;  }
+inline CvFileNode* FileNode::operator *() { return (CvFileNode*)node; }
+inline const CvFileNode* FileNode::operator* () const { return node; }
+inline FileNode::operator int() const    { int value;    read(*this, value, 0);     return value; }
+inline FileNode::operator float() const  { float value;  read(*this, value, 0.f);   return value; }
+inline FileNode::operator double() const { double value; read(*this, value, 0.);    return value; }
+inline FileNode::operator String() const { String value; read(*this, value, value); return value; }
+inline double FileNode::r
