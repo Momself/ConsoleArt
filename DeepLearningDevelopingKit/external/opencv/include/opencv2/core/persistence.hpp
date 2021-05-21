@@ -692,4 +692,74 @@ public:
 //! @relates cv::FileStorage
 //! @{
 
-CV_EXPORTS void write( Fil
+CV_EXPORTS void write( FileStorage& fs, const String& name, int value );
+CV_EXPORTS void write( FileStorage& fs, const String& name, float value );
+CV_EXPORTS void write( FileStorage& fs, const String& name, double value );
+CV_EXPORTS void write( FileStorage& fs, const String& name, const String& value );
+CV_EXPORTS void write( FileStorage& fs, const String& name, const Mat& value );
+CV_EXPORTS void write( FileStorage& fs, const String& name, const SparseMat& value );
+#ifdef CV__LEGACY_PERSISTENCE
+CV_EXPORTS void write( FileStorage& fs, const String& name, const std::vector<KeyPoint>& value);
+CV_EXPORTS void write( FileStorage& fs, const String& name, const std::vector<DMatch>& value);
+#endif
+
+CV_EXPORTS void writeScalar( FileStorage& fs, int value );
+CV_EXPORTS void writeScalar( FileStorage& fs, float value );
+CV_EXPORTS void writeScalar( FileStorage& fs, double value );
+CV_EXPORTS void writeScalar( FileStorage& fs, const String& value );
+
+//! @}
+
+//! @relates cv::FileNode
+//! @{
+
+CV_EXPORTS void read(const FileNode& node, int& value, int default_value);
+CV_EXPORTS void read(const FileNode& node, float& value, float default_value);
+CV_EXPORTS void read(const FileNode& node, double& value, double default_value);
+CV_EXPORTS void read(const FileNode& node, String& value, const String& default_value);
+CV_EXPORTS void read(const FileNode& node, std::string& value, const std::string& default_value);
+CV_EXPORTS void read(const FileNode& node, Mat& mat, const Mat& default_mat = Mat() );
+CV_EXPORTS void read(const FileNode& node, SparseMat& mat, const SparseMat& default_mat = SparseMat() );
+#ifdef CV__LEGACY_PERSISTENCE
+CV_EXPORTS void read(const FileNode& node, std::vector<KeyPoint>& keypoints);
+CV_EXPORTS void read(const FileNode& node, std::vector<DMatch>& matches);
+#endif
+CV_EXPORTS void read(const FileNode& node, KeyPoint& value, const KeyPoint& default_value);
+CV_EXPORTS void read(const FileNode& node, DMatch& value, const DMatch& default_value);
+
+template<typename _Tp> static inline void read(const FileNode& node, Point_<_Tp>& value, const Point_<_Tp>& default_value)
+{
+    std::vector<_Tp> temp; FileNodeIterator it = node.begin(); it >> temp;
+    value = temp.size() != 2 ? default_value : Point_<_Tp>(saturate_cast<_Tp>(temp[0]), saturate_cast<_Tp>(temp[1]));
+}
+
+template<typename _Tp> static inline void read(const FileNode& node, Point3_<_Tp>& value, const Point3_<_Tp>& default_value)
+{
+    std::vector<_Tp> temp; FileNodeIterator it = node.begin(); it >> temp;
+    value = temp.size() != 3 ? default_value : Point3_<_Tp>(saturate_cast<_Tp>(temp[0]), saturate_cast<_Tp>(temp[1]),
+                                                            saturate_cast<_Tp>(temp[2]));
+}
+
+template<typename _Tp> static inline void read(const FileNode& node, Size_<_Tp>& value, const Size_<_Tp>& default_value)
+{
+    std::vector<_Tp> temp; FileNodeIterator it = node.begin(); it >> temp;
+    value = temp.size() != 2 ? default_value : Size_<_Tp>(saturate_cast<_Tp>(temp[0]), saturate_cast<_Tp>(temp[1]));
+}
+
+template<typename _Tp> static inline void read(const FileNode& node, Complex<_Tp>& value, const Complex<_Tp>& default_value)
+{
+    std::vector<_Tp> temp; FileNodeIterator it = node.begin(); it >> temp;
+    value = temp.size() != 2 ? default_value : Complex<_Tp>(saturate_cast<_Tp>(temp[0]), saturate_cast<_Tp>(temp[1]));
+}
+
+template<typename _Tp> static inline void read(const FileNode& node, Rect_<_Tp>& value, const Rect_<_Tp>& default_value)
+{
+    std::vector<_Tp> temp; FileNodeIterator it = node.begin(); it >> temp;
+    value = temp.size() != 4 ? default_value : Rect_<_Tp>(saturate_cast<_Tp>(temp[0]), saturate_cast<_Tp>(temp[1]),
+                                                          saturate_cast<_Tp>(temp[2]), saturate_cast<_Tp>(temp[3]));
+}
+
+template<typename _Tp, int cn> static inline void read(const FileNode& node, Vec<_Tp, cn>& value, const Vec<_Tp, cn>& default_value)
+{
+    std::vector<_Tp> temp; FileNodeIterator it = node.begin(); it >> temp;
+    value = temp.size() 
