@@ -897,4 +897,157 @@ void write( FileStorage& fs, const double& value )
 template<> inline
 void write( FileStorage& fs, const String& value )
 {
-    writeScalar(
+    writeScalar(fs, value);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const Point_<_Tp>& pt )
+{
+    write(fs, pt.x);
+    write(fs, pt.y);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const Point3_<_Tp>& pt )
+{
+    write(fs, pt.x);
+    write(fs, pt.y);
+    write(fs, pt.z);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const Size_<_Tp>& sz )
+{
+    write(fs, sz.width);
+    write(fs, sz.height);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const Complex<_Tp>& c )
+{
+    write(fs, c.re);
+    write(fs, c.im);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const Rect_<_Tp>& r )
+{
+    write(fs, r.x);
+    write(fs, r.y);
+    write(fs, r.width);
+    write(fs, r.height);
+}
+
+template<typename _Tp, int cn> static inline
+void write(FileStorage& fs, const Vec<_Tp, cn>& v )
+{
+    for(int i = 0; i < cn; i++)
+        write(fs, v.val[i]);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const Scalar_<_Tp>& s )
+{
+    write(fs, s.val[0]);
+    write(fs, s.val[1]);
+    write(fs, s.val[2]);
+    write(fs, s.val[3]);
+}
+
+static inline
+void write(FileStorage& fs, const Range& r )
+{
+    write(fs, r.start);
+    write(fs, r.end);
+}
+
+template<typename _Tp> static inline
+void write( FileStorage& fs, const std::vector<_Tp>& vec )
+{
+    cv::internal::VecWriterProxy<_Tp, traits::SafeFmt<_Tp>::fmt != 0> w(&fs);
+    w(vec);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const String& name, const Point_<_Tp>& pt )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, pt);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const String& name, const Point3_<_Tp>& pt )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, pt);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const String& name, const Size_<_Tp>& sz )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, sz);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const String& name, const Complex<_Tp>& c )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, c);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const String& name, const Rect_<_Tp>& r )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, r);
+}
+
+template<typename _Tp, int cn> static inline
+void write(FileStorage& fs, const String& name, const Vec<_Tp, cn>& v )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, v);
+}
+
+template<typename _Tp> static inline
+void write(FileStorage& fs, const String& name, const Scalar_<_Tp>& s )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, s);
+}
+
+static inline
+void write(FileStorage& fs, const String& name, const Range& r )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, r);
+}
+
+static inline
+void write(FileStorage& fs, const String& name, const KeyPoint& kpt)
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, kpt.pt.x);
+    write(fs, kpt.pt.y);
+    write(fs, kpt.size);
+    write(fs, kpt.angle);
+    write(fs, kpt.response);
+    write(fs, kpt.octave);
+    write(fs, kpt.class_id);
+}
+
+static inline
+void write(FileStorage& fs, const String& name, const DMatch& m)
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+FileNode::FLOW);
+    write(fs, m.queryIdx);
+    write(fs, m.trainIdx);
+    write(fs, m.imgIdx);
+    write(fs, m.distance);
+}
+
+template<typename _Tp> static inline
+void write( FileStorage& fs, const String& name, const std::vector<_Tp>& vec )
+{
+    cv::internal::WriteStruct
