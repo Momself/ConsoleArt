@@ -1050,4 +1050,157 @@ void write(FileStorage& fs, const String& name, const DMatch& m)
 template<typename _Tp> static inline
 void write( FileStorage& fs, const String& name, const std::vector<_Tp>& vec )
 {
-    cv::internal::WriteStruct
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ+(traits::SafeFmt<_Tp>::fmt != 0 ? FileNode::FLOW : 0));
+    write(fs, vec);
+}
+
+template<typename _Tp> static inline
+void write( FileStorage& fs, const String& name, const std::vector< std::vector<_Tp> >& vec )
+{
+    cv::internal::WriteStructContext ws(fs, name, FileNode::SEQ);
+    for(size_t i = 0; i < vec.size(); i++)
+    {
+        cv::internal::WriteStructContext ws_(fs, name, FileNode::SEQ+(traits::SafeFmt<_Tp>::fmt != 0 ? FileNode::FLOW : 0));
+        write(fs, vec[i]);
+    }
+}
+
+#ifdef CV__LEGACY_PERSISTENCE
+// This code is not needed anymore, but it is preserved here to keep source compatibility
+// Implementation is similar to templates instantiations
+static inline void write(FileStorage& fs, const KeyPoint& kpt) { write(fs, String(), kpt); }
+static inline void write(FileStorage& fs, const DMatch& m) { write(fs, String(), m); }
+static inline void write(FileStorage& fs, const std::vector<KeyPoint>& vec)
+{
+    cv::internal::VecWriterProxy<KeyPoint, 0> w(&fs);
+    w(vec);
+}
+static inline void write(FileStorage& fs, const std::vector<DMatch>& vec)
+{
+    cv::internal::VecWriterProxy<DMatch, 0> w(&fs);
+    w(vec);
+
+}
+#endif
+
+//! @} FileStorage
+
+//! @relates cv::FileNode
+//! @{
+
+static inline
+void read(const FileNode& node, bool& value, bool default_value)
+{
+    int temp;
+    read(node, temp, (int)default_value);
+    value = temp != 0;
+}
+
+static inline
+void read(const FileNode& node, uchar& value, uchar default_value)
+{
+    int temp;
+    read(node, temp, (int)default_value);
+    value = saturate_cast<uchar>(temp);
+}
+
+static inline
+void read(const FileNode& node, schar& value, schar default_value)
+{
+    int temp;
+    read(node, temp, (int)default_value);
+    value = saturate_cast<schar>(temp);
+}
+
+static inline
+void read(const FileNode& node, ushort& value, ushort default_value)
+{
+    int temp;
+    read(node, temp, (int)default_value);
+    value = saturate_cast<ushort>(temp);
+}
+
+static inline
+void read(const FileNode& node, short& value, short default_value)
+{
+    int temp;
+    read(node, temp, (int)default_value);
+    value = saturate_cast<short>(temp);
+}
+
+template<typename _Tp> static inline
+void read( FileNodeIterator& it, std::vector<_Tp>& vec, size_t maxCount = (size_t)INT_MAX )
+{
+    cv::internal::VecReaderProxy<_Tp, traits::SafeFmt<_Tp>::fmt != 0> r(&it);
+    r(vec, maxCount);
+}
+
+template<typename _Tp> static inline
+void read( const FileNode& node, std::vector<_Tp>& vec, const std::vector<_Tp>& default_value = std::vector<_Tp>() )
+{
+    if(!node.node)
+        vec = default_value;
+    else
+    {
+        FileNodeIterator it = node.begin();
+        read( it, vec );
+    }
+}
+
+static inline
+void read( const FileNode& node, std::vector<KeyPoint>& vec, const std::vector<KeyPoint>& default_value )
+{
+    if(!node.node)
+        vec = default_value;
+    else
+        read(node, vec);
+}
+
+static inline
+void read( const FileNode& node, std::vector<DMatch>& vec, const std::vector<DMatch>& default_value )
+{
+    if(!node.node)
+        vec = default_value;
+    else
+        read(node, vec);
+}
+
+//! @} FileNode
+
+//! @relates cv::FileStorage
+//! @{
+
+/** @brief Writes data to a file storage.
+ */
+template<typename _Tp> static inline
+FileStorage& operator << (FileStorage& fs, const _Tp& value)
+{
+    if( !fs.isOpened() )
+        return fs;
+    if( fs.state == FileStorage::NAME_EXPECTED + FileStorage::INSIDE_MAP )
+        CV_Error( Error::StsError, "No element name has been given" );
+    write( fs, fs.elname, value );
+    if( fs.state & FileStorage::INSIDE_MAP )
+        fs.state = FileStorage::NAME_EXPECTED + FileStorage::INSIDE_MAP;
+    return fs;
+}
+
+/** @brief Writes data to a file storage.
+ */
+static inline
+FileStorage& operator << (FileStorage& fs, const char* str)
+{
+    return (fs << String(str));
+}
+
+/** @brief Writes data to a file storage.
+ */
+static inline
+FileStorage& operator << (FileStorage& fs, char* value)
+{
+    return (fs << String(value));
+}
+
+//! @} FileStorage
+
+//! @relates c
