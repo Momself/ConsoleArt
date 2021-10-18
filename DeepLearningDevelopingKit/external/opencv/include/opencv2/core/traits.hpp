@@ -95,4 +95,136 @@ DataType itself that is used but its specialized versions, such as:
 The main purpose of this class is to convert compilation-time type information to an
 OpenCV-compatible data type identifier, for example:
 @code
-    // allocates a 30x40 float
+    // allocates a 30x40 floating-point matrix
+    Mat A(30, 40, DataType<float>::type);
+
+    Mat B = Mat_<std::complex<double> >(3, 3);
+    // the statement below will print 6, 2 , that is depth == CV_64F, channels == 2
+    cout << B.depth() << ", " << B.channels() << endl;
+@endcode
+So, such traits are used to tell OpenCV which data type you are working with, even if such a type is
+not native to OpenCV. For example, the matrix B initialization above is compiled because OpenCV
+defines the proper specialized template class DataType\<complex\<_Tp\> \> . This mechanism is also
+useful (and used in OpenCV this way) for generic algorithms implementations.
+
+@note Default values were dropped to stop confusing developers about using of unsupported types (see #7599)
+*/
+template<typename _Tp> class DataType
+{
+public:
+#ifdef OPENCV_TRAITS_ENABLE_DEPRECATED
+    typedef _Tp         value_type;
+    typedef value_type  work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 1,
+           depth        = -1,
+           channels     = 1,
+           fmt          = 0,
+           type = CV_MAKETYPE(depth, channels)
+         };
+#endif
+};
+
+template<> class DataType<bool>
+{
+public:
+    typedef bool        value_type;
+    typedef int         work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_8U,
+           channels     = 1,
+           fmt          = (int)'u',
+           type         = CV_MAKETYPE(depth, channels)
+         };
+};
+
+template<> class DataType<uchar>
+{
+public:
+    typedef uchar       value_type;
+    typedef int         work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_8U,
+           channels     = 1,
+           fmt          = (int)'u',
+           type         = CV_MAKETYPE(depth, channels)
+         };
+};
+
+template<> class DataType<schar>
+{
+public:
+    typedef schar       value_type;
+    typedef int         work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_8S,
+           channels     = 1,
+           fmt          = (int)'c',
+           type         = CV_MAKETYPE(depth, channels)
+         };
+};
+
+template<> class DataType<char>
+{
+public:
+    typedef schar       value_type;
+    typedef int         work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_8S,
+           channels     = 1,
+           fmt          = (int)'c',
+           type         = CV_MAKETYPE(depth, channels)
+         };
+};
+
+template<> class DataType<ushort>
+{
+public:
+    typedef ushort      value_type;
+    typedef int         work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_16U,
+           channels     = 1,
+           fmt          = (int)'w',
+           type         = CV_MAKETYPE(depth, channels)
+         };
+};
+
+template<> class DataType<short>
+{
+public:
+    typedef short       value_type;
+    typedef int         work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_16S,
+           channels     = 1,
+           fmt          = (int)'s',
+           type         = CV_MAKETYPE(depth, channels)
+         };
+};
+
+template<> class DataType<int>
+{
+public:
+    typedef int         value_type;
+    typedef value_type  work_type;
+    typedef value_type  channel_type;
+    typedef value_type  vec_type;
+    enum { generic_type = 0,
+           depth        = CV_32S,
+           channels     = 1,
+           fmt          = (int)'i',
+  
