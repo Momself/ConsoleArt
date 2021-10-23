@@ -261,4 +261,104 @@ VSX_FINLINE(rt) fnm(const rg& a, const rg& b)  \
 
 // vec_packs doesn't support double words in gcc4 and old versions of gcc5
 #   undef vec_packs
-    VSX_REDIRECT_2RG(vec_char16,  vec_short8,  vec_packs, __builti
+    VSX_REDIRECT_2RG(vec_char16,  vec_short8,  vec_packs, __builtin_vec_packs)
+    VSX_REDIRECT_2RG(vec_uchar16, vec_ushort8, vec_packs, __builtin_vec_packs)
+    VSX_REDIRECT_2RG(vec_short8,  vec_int4,    vec_packs, __builtin_vec_packs)
+    VSX_REDIRECT_2RG(vec_ushort8, vec_uint4,   vec_packs, __builtin_vec_packs)
+
+    VSX_IMPL_2VRG_F(vec_int4,  vec_dword2,  "vpksdss %0,%2,%1", vec_packs)
+    VSX_IMPL_2VRG_F(vec_uint4, vec_udword2, "vpkudus %0,%2,%1", vec_packs)
+#endif // __GNUG__ < 6
+
+#if __GNUG__ < 5
+// vec_xxpermdi in gcc4 missing little-endian supports just like clang
+#   define vec_permi(a, b, c) vec_xxpermdi(b, a, (3 ^ ((c & 1) << 1 | c >> 1)))
+#else
+#   define vec_permi vec_xxpermdi
+#endif // __GNUG__ < 5
+
+// shift left double by word immediate
+#ifndef vec_sldw
+#   define vec_sldw __builtin_vsx_xxsldwi
+#endif
+
+// vector population count
+VSX_IMPL_1VRG(vec_uchar16, vec_uchar16, vpopcntb, vec_popcntu)
+VSX_IMPL_1VRG(vec_uchar16, vec_char16,  vpopcntb, vec_popcntu)
+VSX_IMPL_1VRG(vec_ushort8, vec_ushort8, vpopcnth, vec_popcntu)
+VSX_IMPL_1VRG(vec_ushort8, vec_short8,  vpopcnth, vec_popcntu)
+VSX_IMPL_1VRG(vec_uint4,   vec_uint4,   vpopcntw, vec_popcntu)
+VSX_IMPL_1VRG(vec_uint4,   vec_int4,    vpopcntw, vec_popcntu)
+VSX_IMPL_1VRG(vec_udword2, vec_udword2, vpopcntd, vec_popcntu)
+VSX_IMPL_1VRG(vec_udword2, vec_dword2,  vpopcntd, vec_popcntu)
+
+// converts between single and double-precision
+VSX_REDIRECT_1RG(vec_float4,  vec_double2, vec_cvfo, __builtin_vsx_xvcvdpsp)
+VSX_REDIRECT_1RG(vec_double2, vec_float4,  vec_cvfo, __builtin_vsx_xvcvspdp)
+
+// converts word and doubleword to double-precision
+#ifdef vec_ctd
+#   undef vec_ctd
+#endif
+VSX_IMPL_1RG(vec_double2, wd, vec_int4,    wa, xvcvsxwdp, vec_ctdo)
+VSX_IMPL_1RG(vec_double2, wd, vec_uint4,   wa, xvcvuxwdp, vec_ctdo)
+VSX_IMPL_1RG(vec_double2, wd, vec_dword2,  wi, xvcvsxddp, vec_ctd)
+VSX_IMPL_1RG(vec_double2, wd, vec_udword2, wi, xvcvuxddp, vec_ctd)
+
+// converts word and doubleword to single-precision
+#undef vec_ctf
+VSX_IMPL_1RG(vec_float4, wf, vec_int4,    wa, xvcvsxwsp, vec_ctf)
+VSX_IMPL_1RG(vec_float4, wf, vec_uint4,   wa, xvcvuxwsp, vec_ctf)
+VSX_IMPL_1RG(vec_float4, wf, vec_dword2,  wi, xvcvsxdsp, vec_ctfo)
+VSX_IMPL_1RG(vec_float4, wf, vec_udword2, wi, xvcvuxdsp, vec_ctfo)
+
+// converts single and double precision to signed word
+#undef vec_cts
+VSX_IMPL_1RG(vec_int4,  wa, vec_double2, wd, xvcvdpsxws, vec_ctso)
+VSX_IMPL_1RG(vec_int4,  wa, vec_float4,  wf, xvcvspsxws, vec_cts)
+
+// converts single and double precision to unsigned word
+#undef vec_ctu
+VSX_IMPL_1RG(vec_uint4, wa, vec_double2, wd, xvcvdpuxws, vec_ctuo)
+VSX_IMPL_1RG(vec_uint4, wa, vec_float4,  wf, xvcvspuxws, vec_ctu)
+
+// converts single and double precision to signed doubleword
+#ifdef vec_ctsl
+#   undef vec_ctsl
+#endif
+VSX_IMPL_1RG(vec_dword2, wi, vec_double2, wd, xvcvdpsxds, vec_ctsl)
+VSX_IMPL_1RG(vec_dword2, wi, vec_float4,  wf, xvcvspsxds, vec_ctslo)
+
+// converts single and double precision to unsigned doubleword
+#ifdef vec_ctul
+#   undef vec_ctul
+#endif
+VSX_IMPL_1RG(vec_udword2, wi, vec_double2, wd, xvcvdpuxds, vec_ctul)
+VSX_IMPL_1RG(vec_udword2, wi, vec_float4,  wf, xvcvspuxds, vec_ctulo)
+
+// just in case if GCC doesn't define it
+#ifndef vec_xl
+#   define vec_xl vec_vsx_ld
+#   define vec_xst vec_vsx_st
+#endif
+
+#endif // GCC VSX compatibility
+
+/*
+ * CLANG VSX compatibility
+**/
+#if defined(__clang__) && !defined(__IBMCPP__)
+
+/*
+ * CLANG doesn't support %x<n> in the inline asm template which fixes register number
+ * when using any of the register constraints wa, wd, wf
+ *
+ * For more explanation checkout PowerPC and IBM RS6000 in https://gcc.gnu.org/onlinedocs/gcc/Machine-Constraints.html
+ * Also there's already an open bug https://bugs.llvm.org/show_bug.cgi?id=31837
+ *
+ * So we're not able to use inline asm and only use built-in functions that CLANG supports
+ * and use __builtin_convertvector if clang missng any of vector conversions built-in functions
+*/
+
+// convert vector helper
+#d
