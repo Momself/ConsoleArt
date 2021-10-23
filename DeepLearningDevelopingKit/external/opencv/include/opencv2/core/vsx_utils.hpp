@@ -179,4 +179,86 @@ VSX_FINLINE(rt) fnm(const rg& a, const rg& b) { return fn2(a, b); }
 #if defined(__GNUG__) && !defined(__clang__)
 
 // inline asm helper
-#define VS
+#define VSX_IMPL_1RG(rt, rto, rg, rgo, opc, fnm) \
+VSX_FINLINE(rt) fnm(const rg& a)                 \
+{ rt rs; __asm__ __volatile__(#opc" %x0,%x1" : "="#rto (rs) : #rgo (a)); return rs; }
+
+#define VSX_IMPL_1VRG(rt, rg, opc, fnm) \
+VSX_FINLINE(rt) fnm(const rg& a)        \
+{ rt rs; __asm__ __volatile__(#opc" %0,%1" : "=v" (rs) : "v" (a)); return rs; }
+
+#define VSX_IMPL_2VRG_F(rt, rg, fopc, fnm)     \
+VSX_FINLINE(rt) fnm(const rg& a, const rg& b)  \
+{ rt rs; __asm__ __volatile__(fopc : "=v" (rs) : "v" (a), "v" (b)); return rs; }
+
+#define VSX_IMPL_2VRG(rt, rg, opc, fnm) VSX_IMPL_2VRG_F(rt, rg, #opc" %0,%1,%2", fnm)
+
+#if __GNUG__ < 7
+// up to GCC 6 vec_mul only supports precisions and llong
+#   ifdef vec_mul
+#       undef vec_mul
+#   endif
+/*
+ * there's no a direct instruction for supporting 16-bit multiplication in ISA 2.07,
+ * XLC Implement it by using instruction "multiply even", "multiply odd" and "permute"
+ * todo: Do I need to support 8-bit ?
+**/
+#   define VSX_IMPL_MULH(Tvec, Tcast)                                               \
+    VSX_FINLINE(Tvec) vec_mul(const Tvec& a, const Tvec& b)                         \
+    {                                                                               \
+        static const vec_uchar16 even_perm = {0, 1, 16, 17, 4, 5, 20, 21,           \
+                                              8, 9, 24, 25, 12, 13, 28, 29};        \
+        return vec_perm(Tcast(vec_mule(a, b)), Tcast(vec_mulo(a, b)), even_perm);   \
+    }
+    VSX_IMPL_MULH(vec_short8,  vec_short8_c)
+    VSX_IMPL_MULH(vec_ushort8, vec_ushort8_c)
+    // vmuluwm can be used for unsigned or signed integers, that's what they said
+    VSX_IMPL_2VRG(vec_int4,  vec_int4,  vmuluwm, vec_mul)
+    VSX_IMPL_2VRG(vec_uint4, vec_uint4, vmuluwm, vec_mul)
+    // redirect to GCC builtin vec_mul, since it already supports precisions and llong
+    VSX_REDIRECT_2RG(vec_float4,  vec_float4,  vec_mul, __builtin_vec_mul)
+    VSX_REDIRECT_2RG(vec_double2, vec_double2, vec_mul, __builtin_vec_mul)
+    VSX_REDIRECT_2RG(vec_dword2,  vec_dword2,  vec_mul, __builtin_vec_mul)
+    VSX_REDIRECT_2RG(vec_udword2, vec_udword2, vec_mul, __builtin_vec_mul)
+#endif // __GNUG__ < 7
+
+#if __GNUG__ < 6
+/*
+ * Instruction "compare greater than or equal" in ISA 2.07 only supports single
+ * and double precision.
+ * In XLC and new versions of GCC implement integers by using instruction "greater than" and NOR.
+**/
+#   ifdef vec_cmpge
+#       undef vec_cmpge
+#   endif
+#   ifdef vec_cmple
+#       undef vec_cmple
+#   endif
+#   define vec_cmple(a, b) vec_cmpge(b, a)
+#   define VSX_IMPL_CMPGE(rt, rg, opc, fnm) \
+    VSX_IMPL_2VRG_F(rt, rg, #opc" %0,%2,%1\n\t xxlnor %x0,%x0,%x0", fnm)
+
+    VSX_IMPL_CMPGE(vec_bchar16, vec_char16,  vcmpgtsb, vec_cmpge)
+    VSX_IMPL_CMPGE(vec_bchar16, vec_uchar16, vcmpgtub, vec_cmpge)
+    VSX_IMPL_CMPGE(vec_bshort8, vec_short8,  vcmpgtsh, vec_cmpge)
+    VSX_IMPL_CMPGE(vec_bshort8, vec_ushort8, vcmpgtuh, vec_cmpge)
+    VSX_IMPL_CMPGE(vec_bint4,   vec_int4,    vcmpgtsw, vec_cmpge)
+    VSX_IMPL_CMPGE(vec_bint4,   vec_uint4,   vcmpgtuw, vec_cmpge)
+    VSX_IMPL_CMPGE(vec_bdword2, vec_dword2,  vcmpgtsd, vec_cmpge)
+    VSX_IMPL_CMPGE(vec_bdword2, vec_udword2, vcmpgtud, vec_cmpge)
+
+// redirect to GCC builtin cmpge, since it already supports precisions
+    VSX_REDIRECT_2RG(vec_bint4,   vec_float4,  vec_cmpge, __builtin_vec_cmpge)
+    VSX_REDIRECT_2RG(vec_bdword2, vec_double2, vec_cmpge, __builtin_vec_cmpge)
+
+// up to gcc5 vec_nor doesn't support bool long long
+#   undef vec_nor
+    template<typename T>
+    VSX_REDIRECT_2RG(T, T, vec_nor, __builtin_vec_nor)
+
+    VSX_FINLINE(vec_bdword2) vec_nor(const vec_bdword2& a, const vec_bdword2& b)
+    { return vec_bdword2_c(__builtin_vec_nor(vec_dword2_c(a), vec_dword2_c(b))); }
+
+// vec_packs doesn't support double words in gcc4 and old versions of gcc5
+#   undef vec_packs
+    VSX_REDIRECT_2RG(vec_char16,  vec_short8,  vec_packs, __builti
