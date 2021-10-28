@@ -361,4 +361,95 @@ VSX_IMPL_1RG(vec_udword2, wi, vec_float4,  wf, xvcvspuxds, vec_ctulo)
 */
 
 // convert vector helper
-#d
+#define VSX_IMPL_CONVERT(rt, rg, fnm) \
+VSX_FINLINE(rt) fnm(const rg& a) { return __builtin_convertvector(a, rt); }
+
+#if __clang_major__ < 5
+// implement vec_permi in a dirty way
+#   define VSX_IMPL_CLANG_4_PERMI(Tvec)                                                 \
+    VSX_FINLINE(Tvec) vec_permi(const Tvec& a, const Tvec& b, unsigned const char c)    \
+    {                                                                                   \
+        switch (c)                                                                      \
+        {                                                                               \
+        case 0:                                                                         \
+            return vec_mergeh(a, b);                                                    \
+        case 1:                                                                         \
+            return vec_mergel(vec_mergeh(a, a), b);                                     \
+        case 2:                                                                         \
+            return vec_mergeh(vec_mergel(a, a), b);                                     \
+        default:                                                                        \
+            return vec_mergel(a, b);                                                    \
+        }                                                                               \
+    }
+    VSX_IMPL_CLANG_4_PERMI(vec_udword2)
+    VSX_IMPL_CLANG_4_PERMI(vec_dword2)
+    VSX_IMPL_CLANG_4_PERMI(vec_double2)
+
+// vec_xxsldwi is missing in clang 4
+#   define vec_xxsldwi(a, b, c) vec_sld(a, b, (c) * 4)
+#else
+// vec_xxpermdi is missing little-endian supports in clang 4 just like gcc4
+#   define vec_permi(a, b, c) vec_xxpermdi(b, a, (3 ^ ((c & 1) << 1 | c >> 1)))
+#endif // __clang_major__ < 5
+
+// shift left double by word immediate
+#ifndef vec_sldw
+#   define vec_sldw vec_xxsldwi
+#endif
+
+// Implement vec_rsqrt since clang only supports vec_rsqrte
+#ifndef vec_rsqrt
+    VSX_FINLINE(vec_float4) vec_rsqrt(const vec_float4& a)
+    { return vec_div(vec_float4_sp(1), vec_sqrt(a)); }
+
+    VSX_FINLINE(vec_double2) vec_rsqrt(const vec_double2& a)
+    { return vec_div(vec_double2_sp(1), vec_sqrt(a)); }
+#endif
+
+// vec_promote missing support for doubleword
+VSX_FINLINE(vec_dword2) vec_promote(long long a, int b)
+{
+    vec_dword2 ret = vec_dword2_z;
+    ret[b & 1] = a;
+    return ret;
+}
+
+VSX_FINLINE(vec_udword2) vec_promote(unsigned long long a, int b)
+{
+    vec_udword2 ret = vec_udword2_z;
+    ret[b & 1] = a;
+    return ret;
+}
+
+// vec_popcnt should return unsigned but clang has different thought just like gcc in vec_vpopcnt
+#define VSX_IMPL_POPCNTU(Tvec, Tvec2, ucast)   \
+VSX_FINLINE(Tvec) vec_popcntu(const Tvec2& a)  \
+{ return ucast(vec_popcnt(a)); }
+VSX_IMPL_POPCNTU(vec_uchar16, vec_char16, vec_uchar16_c);
+VSX_IMPL_POPCNTU(vec_ushort8, vec_short8, vec_ushort8_c);
+VSX_IMPL_POPCNTU(vec_uint4,   vec_int4,   vec_uint4_c);
+// redirect unsigned types
+VSX_REDIRECT_1RG(vec_uchar16, vec_uchar16, vec_popcntu, vec_popcnt)
+VSX_REDIRECT_1RG(vec_ushort8, vec_ushort8, vec_popcntu, vec_popcnt)
+VSX_REDIRECT_1RG(vec_uint4,   vec_uint4,   vec_popcntu, vec_popcnt)
+
+// converts between single and double precision
+VSX_REDIRECT_1RG(vec_float4,  vec_double2, vec_cvfo, __builtin_vsx_xvcvdpsp)
+VSX_REDIRECT_1RG(vec_double2, vec_float4,  vec_cvfo, __builtin_vsx_xvcvspdp)
+
+// converts word and doubleword to double-precision
+#ifdef vec_ctd
+#   undef vec_ctd
+#endif
+VSX_REDIRECT_1RG(vec_double2, vec_int4,  vec_ctdo, __builtin_vsx_xvcvsxwdp)
+VSX_REDIRECT_1RG(vec_double2, vec_uint4, vec_ctdo, __builtin_vsx_xvcvuxwdp)
+
+VSX_IMPL_CONVERT(vec_double2, vec_dword2,  vec_ctd)
+VSX_IMPL_CONVERT(vec_double2, vec_udword2, vec_ctd)
+
+// converts word and doubleword to single-precision
+#if __clang_major__ > 4
+#   undef vec_ctf
+#endif
+VSX_IMPL_CONVERT(vec_float4, vec_int4,    vec_ctf)
+VSX_IMP
