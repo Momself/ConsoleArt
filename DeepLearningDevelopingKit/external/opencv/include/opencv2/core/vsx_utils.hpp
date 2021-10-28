@@ -452,4 +452,109 @@ VSX_IMPL_CONVERT(vec_double2, vec_udword2, vec_ctd)
 #   undef vec_ctf
 #endif
 VSX_IMPL_CONVERT(vec_float4, vec_int4,    vec_ctf)
-VSX_IMP
+VSX_IMPL_CONVERT(vec_float4, vec_uint4,   vec_ctf)
+VSX_REDIRECT_1RG(vec_float4, vec_dword2,  vec_ctfo, __builtin_vsx_xvcvsxdsp)
+VSX_REDIRECT_1RG(vec_float4, vec_udword2, vec_ctfo, __builtin_vsx_xvcvuxdsp)
+
+// converts single and double precision to signed word
+#if __clang_major__ > 4
+#   undef vec_cts
+#endif
+VSX_REDIRECT_1RG(vec_int4,  vec_double2, vec_ctso, __builtin_vsx_xvcvdpsxws)
+VSX_IMPL_CONVERT(vec_int4,  vec_float4,  vec_cts)
+
+// converts single and double precision to unsigned word
+#if __clang_major__ > 4
+#   undef vec_ctu
+#endif
+VSX_REDIRECT_1RG(vec_uint4, vec_double2, vec_ctuo, __builtin_vsx_xvcvdpuxws)
+VSX_IMPL_CONVERT(vec_uint4, vec_float4,  vec_ctu)
+
+// converts single and double precision to signed doubleword
+#ifdef vec_ctsl
+#   undef vec_ctsl
+#endif
+VSX_IMPL_CONVERT(vec_dword2, vec_double2, vec_ctsl)
+// __builtin_convertvector unable to convert, xvcvspsxds is missing on it
+VSX_FINLINE(vec_dword2) vec_ctslo(const vec_float4& a)
+{ return vec_ctsl(vec_cvfo(a)); }
+
+// converts single and double precision to unsigned doubleword
+#ifdef vec_ctul
+#   undef vec_ctul
+#endif
+VSX_IMPL_CONVERT(vec_udword2, vec_double2, vec_ctul)
+// __builtin_convertvector unable to convert, xvcvspuxds is missing on it
+VSX_FINLINE(vec_udword2) vec_ctulo(const vec_float4& a)
+{ return vec_ctul(vec_cvfo(a)); }
+
+#endif // CLANG VSX compatibility
+
+/*
+ * Common GCC, CLANG compatibility
+**/
+#if defined(__GNUG__) && !defined(__IBMCPP__)
+
+#ifdef vec_cvf
+#   undef vec_cvf
+#endif
+
+#define VSX_IMPL_CONV_EVEN_4_2(rt, rg, fnm, fn2) \
+VSX_FINLINE(rt) fnm(const rg& a)                 \
+{ return fn2(vec_sldw(a, a, 1)); }
+
+VSX_IMPL_CONV_EVEN_4_2(vec_double2, vec_float4, vec_cvf,  vec_cvfo)
+VSX_IMPL_CONV_EVEN_4_2(vec_double2, vec_int4,   vec_ctd,  vec_ctdo)
+VSX_IMPL_CONV_EVEN_4_2(vec_double2, vec_uint4,  vec_ctd,  vec_ctdo)
+
+VSX_IMPL_CONV_EVEN_4_2(vec_dword2,  vec_float4, vec_ctsl, vec_ctslo)
+VSX_IMPL_CONV_EVEN_4_2(vec_udword2, vec_float4, vec_ctul, vec_ctulo)
+
+#define VSX_IMPL_CONV_EVEN_2_4(rt, rg, fnm, fn2) \
+VSX_FINLINE(rt) fnm(const rg& a)                 \
+{                                                \
+    rt v4 = fn2(a);                              \
+    return vec_sldw(v4, v4, 3);                  \
+}
+
+VSX_IMPL_CONV_EVEN_2_4(vec_float4, vec_double2, vec_cvf, vec_cvfo)
+VSX_IMPL_CONV_EVEN_2_4(vec_float4, vec_dword2,  vec_ctf, vec_ctfo)
+VSX_IMPL_CONV_EVEN_2_4(vec_float4, vec_udword2, vec_ctf, vec_ctfo)
+
+VSX_IMPL_CONV_EVEN_2_4(vec_int4,   vec_double2, vec_cts, vec_ctso)
+VSX_IMPL_CONV_EVEN_2_4(vec_uint4,  vec_double2, vec_ctu, vec_ctuo)
+
+// Only for Eigen!
+/*
+ * changing behavior of conversion intrinsics for gcc has effect on Eigen
+ * so we redfine old behavior again only on gcc, clang
+*/
+#if !defined(__clang__) || __clang_major__ > 4
+    // ignoring second arg since Eigen only truncates toward zero
+#   define VSX_IMPL_CONV_2VARIANT(rt, rg, fnm, fn2)     \
+    VSX_FINLINE(rt) fnm(const rg& a, int only_truncate) \
+    {                                                   \
+        assert(only_truncate == 0);                     \
+        (void)only_truncate;                            \
+        return fn2(a);                                  \
+    }
+    VSX_IMPL_CONV_2VARIANT(vec_int4,   vec_float4,  vec_cts, vec_cts)
+    VSX_IMPL_CONV_2VARIANT(vec_float4, vec_int4,    vec_ctf, vec_ctf)
+    // define vec_cts for converting double precision to signed doubleword
+    // which isn't combitable with xlc but its okay since Eigen only use it for gcc
+    VSX_IMPL_CONV_2VARIANT(vec_dword2, vec_double2, vec_cts, vec_ctsl)
+#endif // Eigen
+
+#endif // Common GCC, CLANG compatibility
+
+/*
+ * XLC VSX compatibility
+**/
+#if defined(__IBMCPP__)
+
+// vector population count
+#define vec_popcntu vec_popcnt
+
+// overload and redirect with setting second arg to zero
+// since we only support conversions without the second arg
+#define VSX_IMPL_OVER
