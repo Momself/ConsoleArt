@@ -658,4 +658,103 @@ VSX_IMPL_CONV_ODD_2_4(vec_uint4,  vec_double2, vec_ctuo, vec_ctu)
 /*
  * implement vsx_ld2(offset, pointer), vsx_st2(vector, offset, pointer) to load and store double words
  * In GCC vec_xl and vec_xst it maps to vec_vsx_ld, vec_vsx_st which doesn't support long long
- * and in CLANG we are using vec_vsx_ld, vec_vsx_st 
+ * and in CLANG we are using vec_vsx_ld, vec_vsx_st because vec_xl, vec_xst fails to load unaligned addresses
+ *
+ * In XLC vec_xl and vec_xst fail to cast int64(long int) to long long
+*/
+#if (defined(__GNUG__) || defined(__clang__)) && !defined(__IBMCPP__)
+    VSX_FINLINE(vec_udword2) vsx_ld2(long o, const uint64* p)
+    { return vec_udword2_c(vsx_ldf(VSX_OFFSET(o, p), (unsigned int*)p)); }
+
+    VSX_FINLINE(vec_dword2) vsx_ld2(long o, const int64* p)
+    { return vec_dword2_c(vsx_ldf(VSX_OFFSET(o, p), (int*)p)); }
+
+    VSX_FINLINE(void) vsx_st2(const vec_udword2& vec, long o, uint64* p)
+    { vsx_stf(vec_uint4_c(vec), VSX_OFFSET(o, p), (unsigned int*)p); }
+
+    VSX_FINLINE(void) vsx_st2(const vec_dword2& vec, long o, int64* p)
+    { vsx_stf(vec_int4_c(vec), VSX_OFFSET(o, p), (int*)p); }
+#else // XLC
+    VSX_FINLINE(vec_udword2) vsx_ld2(long o, const uint64* p)
+    { return vsx_ldf(VSX_OFFSET(o, p), (unsigned long long*)p); }
+
+    VSX_FINLINE(vec_dword2) vsx_ld2(long o, const int64* p)
+    { return vsx_ldf(VSX_OFFSET(o, p), (long long*)p); }
+
+    VSX_FINLINE(void) vsx_st2(const vec_udword2& vec, long o, uint64* p)
+    { vsx_stf(vec, VSX_OFFSET(o, p), (unsigned long long*)p); }
+
+    VSX_FINLINE(void) vsx_st2(const vec_dword2& vec, long o, int64* p)
+    { vsx_stf(vec, VSX_OFFSET(o, p), (long long*)p); }
+#endif
+
+// load 4 unsigned bytes into uint4 vector
+#define vec_ld_buw(p) vec_uint4_set((p)[0], (p)[1], (p)[2], (p)[3])
+
+// load 4 signed bytes into int4 vector
+#define vec_ld_bsw(p) vec_int4_set((p)[0], (p)[1], (p)[2], (p)[3])
+
+// load 4 unsigned bytes into float vector
+#define vec_ld_bps(p) vec_ctf(vec_ld_buw(p), 0)
+
+// Store lower 8 byte
+#define vec_st_l8(v, p) *((uint64*)(p)) = vec_extract(vec_udword2_c(v), 0)
+
+// Store higher 8 byte
+#define vec_st_h8(v, p) *((uint64*)(p)) = vec_extract(vec_udword2_c(v), 1)
+
+/*
+ * vec_ld_l8(ptr) -> Load 64-bits of integer data to lower part
+ * vec_ldz_l8(ptr) -> Load 64-bits of integer data to lower part and zero upper part
+**/
+#define VSX_IMPL_LOAD_L8(Tvec, Tp)                                              \
+VSX_FINLINE(Tvec) vec_ld_l8(const Tp *p)                                        \
+{ return ((Tvec)vec_promote(*((uint64*)p), 0)); }                               \
+VSX_FINLINE(Tvec) vec_ldz_l8(const Tp *p)                                       \
+{                                                                               \
+    /* TODO: try (Tvec)(vec_udword2{*((uint64*)p), 0}) */                       \
+    static const vec_bdword2 mask = {0xFFFFFFFFFFFFFFFF, 0x0000000000000000};   \
+    return vec_and(vec_ld_l8(p), (Tvec)mask);                                   \
+}
+VSX_IMPL_LOAD_L8(vec_uchar16, uchar)
+VSX_IMPL_LOAD_L8(vec_char16,  schar)
+VSX_IMPL_LOAD_L8(vec_ushort8, ushort)
+VSX_IMPL_LOAD_L8(vec_short8,  short)
+VSX_IMPL_LOAD_L8(vec_uint4,   uint)
+VSX_IMPL_LOAD_L8(vec_int4,    int)
+VSX_IMPL_LOAD_L8(vec_float4,  float)
+VSX_IMPL_LOAD_L8(vec_udword2, uint64)
+VSX_IMPL_LOAD_L8(vec_dword2,  int64)
+VSX_IMPL_LOAD_L8(vec_double2, double)
+
+// logical not
+#define vec_not(a) vec_nor(a, a)
+
+// power9 yaya
+// not equal
+#ifndef vec_cmpne
+#   define vec_cmpne(a, b) vec_not(vec_cmpeq(a, b))
+#endif
+
+// absolute difference
+#ifndef vec_absd
+#   define vec_absd(a, b) vec_sub(vec_max(a, b), vec_min(a, b))
+#endif
+
+/*
+ * Implement vec_unpacklu and vec_unpackhu
+ * since vec_unpackl, vec_unpackh only support signed integers
+**/
+#define VSX_IMPL_UNPACKU(rt, rg, zero)                 \
+VSX_FINLINE(rt) vec_unpacklu(const rg& a)              \
+{ return reinterpret_cast<rt>(vec_mergel(a, zero)); }  \
+VSX_FINLINE(rt) vec_unpackhu(const rg& a)              \
+{ return reinterpret_cast<rt>(vec_mergeh(a, zero));  }
+
+VSX_IMPL_UNPACKU(vec_ushort8, vec_uchar16, vec_uchar16_z)
+VSX_IMPL_UNPACKU(vec_uint4,   vec_ushort8, vec_ushort8_z)
+VSX_IMPL_UNPACKU(vec_udword2, vec_uint4,   vec_uint4_z)
+
+/*
+ * Implement vec_mergesqe and vec_mergesqo
+ * Merges the sequence values of even and odd el
