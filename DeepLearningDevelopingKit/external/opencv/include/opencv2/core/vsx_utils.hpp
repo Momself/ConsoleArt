@@ -557,4 +557,105 @@ VSX_IMPL_CONV_EVEN_2_4(vec_uint4,  vec_double2, vec_ctu, vec_ctuo)
 
 // overload and redirect with setting second arg to zero
 // since we only support conversions without the second arg
-#define VSX_IMPL_OVER
+#define VSX_IMPL_OVERLOAD_Z2(rt, rg, fnm) \
+VSX_FINLINE(rt) fnm(const rg& a) { return fnm(a, 0); }
+
+VSX_IMPL_OVERLOAD_Z2(vec_double2, vec_int4,    vec_ctd)
+VSX_IMPL_OVERLOAD_Z2(vec_double2, vec_uint4,   vec_ctd)
+VSX_IMPL_OVERLOAD_Z2(vec_double2, vec_dword2,  vec_ctd)
+VSX_IMPL_OVERLOAD_Z2(vec_double2, vec_udword2, vec_ctd)
+
+VSX_IMPL_OVERLOAD_Z2(vec_float4,  vec_int4,    vec_ctf)
+VSX_IMPL_OVERLOAD_Z2(vec_float4,  vec_uint4,   vec_ctf)
+VSX_IMPL_OVERLOAD_Z2(vec_float4,  vec_dword2,  vec_ctf)
+VSX_IMPL_OVERLOAD_Z2(vec_float4,  vec_udword2, vec_ctf)
+
+VSX_IMPL_OVERLOAD_Z2(vec_int4,    vec_double2, vec_cts)
+VSX_IMPL_OVERLOAD_Z2(vec_int4,    vec_float4,  vec_cts)
+
+VSX_IMPL_OVERLOAD_Z2(vec_uint4,   vec_double2, vec_ctu)
+VSX_IMPL_OVERLOAD_Z2(vec_uint4,   vec_float4,  vec_ctu)
+
+VSX_IMPL_OVERLOAD_Z2(vec_dword2,  vec_double2, vec_ctsl)
+VSX_IMPL_OVERLOAD_Z2(vec_dword2,  vec_float4,  vec_ctsl)
+
+VSX_IMPL_OVERLOAD_Z2(vec_udword2, vec_double2, vec_ctul)
+VSX_IMPL_OVERLOAD_Z2(vec_udword2, vec_float4,  vec_ctul)
+
+// fixme: implement conversions of odd-numbered elements in a dirty way
+// since xlc doesn't support VSX registers operand in inline asm.
+#define VSX_IMPL_CONV_ODD_4_2(rt, rg, fnm, fn2) \
+VSX_FINLINE(rt) fnm(const rg& a) { return fn2(vec_sldw(a, a, 3)); }
+
+VSX_IMPL_CONV_ODD_4_2(vec_double2, vec_float4, vec_cvfo,  vec_cvf)
+VSX_IMPL_CONV_ODD_4_2(vec_double2, vec_int4,   vec_ctdo,  vec_ctd)
+VSX_IMPL_CONV_ODD_4_2(vec_double2, vec_uint4,  vec_ctdo,  vec_ctd)
+
+VSX_IMPL_CONV_ODD_4_2(vec_dword2,  vec_float4, vec_ctslo, vec_ctsl)
+VSX_IMPL_CONV_ODD_4_2(vec_udword2, vec_float4, vec_ctulo, vec_ctul)
+
+#define VSX_IMPL_CONV_ODD_2_4(rt, rg, fnm, fn2)  \
+VSX_FINLINE(rt) fnm(const rg& a)                 \
+{                                                \
+    rt v4 = fn2(a);                              \
+    return vec_sldw(v4, v4, 1);                  \
+}
+
+VSX_IMPL_CONV_ODD_2_4(vec_float4, vec_double2, vec_cvfo, vec_cvf)
+VSX_IMPL_CONV_ODD_2_4(vec_float4, vec_dword2,  vec_ctfo, vec_ctf)
+VSX_IMPL_CONV_ODD_2_4(vec_float4, vec_udword2, vec_ctfo, vec_ctf)
+
+VSX_IMPL_CONV_ODD_2_4(vec_int4,   vec_double2, vec_ctso, vec_cts)
+VSX_IMPL_CONV_ODD_2_4(vec_uint4,  vec_double2, vec_ctuo, vec_ctu)
+
+#endif // XLC VSX compatibility
+
+// ignore GCC warning that caused by -Wunused-but-set-variable in rare cases
+#if defined(__GNUG__) && !defined(__clang__)
+#   define VSX_UNUSED(Tvec) Tvec __attribute__((__unused__))
+#else // CLANG, XLC
+#   define VSX_UNUSED(Tvec) Tvec
+#endif
+
+// gcc can find his way in casting log int and XLC, CLANG ambiguous
+#if defined(__clang__) || defined(__IBMCPP__)
+    VSX_FINLINE(vec_udword2) vec_splats(uint64 v)
+    { return vec_splats((unsigned long long) v); }
+
+    VSX_FINLINE(vec_dword2) vec_splats(int64 v)
+    { return vec_splats((long long) v); }
+
+    VSX_FINLINE(vec_udword2) vec_promote(uint64 a, int b)
+    { return vec_promote((unsigned long long) a, b); }
+
+    VSX_FINLINE(vec_dword2) vec_promote(int64 a, int b)
+    { return vec_promote((long long) a, b); }
+#endif
+
+/*
+ * implement vsx_ld(offset, pointer), vsx_st(vector, offset, pointer)
+ * load and set using offset depend on the pointer type
+ *
+ * implement vsx_ldf(offset, pointer), vsx_stf(vector, offset, pointer)
+ * load and set using offset depend on fixed bytes size
+ *
+ * Note: In clang vec_xl and vec_xst fails to load unaligned addresses
+ * so we are using vec_vsx_ld, vec_vsx_st instead
+*/
+
+#if defined(__clang__) && !defined(__IBMCPP__)
+#   define vsx_ldf  vec_vsx_ld
+#   define vsx_stf  vec_vsx_st
+#else // GCC , XLC
+#   define vsx_ldf  vec_xl
+#   define vsx_stf  vec_xst
+#endif
+
+#define VSX_OFFSET(o, p) ((o) * sizeof(*(p)))
+#define vsx_ld(o, p) vsx_ldf(VSX_OFFSET(o, p), p)
+#define vsx_st(v, o, p) vsx_stf(v, VSX_OFFSET(o, p), p)
+
+/*
+ * implement vsx_ld2(offset, pointer), vsx_st2(vector, offset, pointer) to load and store double words
+ * In GCC vec_xl and vec_xst it maps to vec_vsx_ld, vec_vsx_st which doesn't support long long
+ * and in CLANG we are using vec_vsx_ld, vec_vsx_st 
