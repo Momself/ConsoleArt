@@ -757,4 +757,75 @@ VSX_IMPL_UNPACKU(vec_udword2, vec_uint4,   vec_uint4_z)
 
 /*
  * Implement vec_mergesqe and vec_mergesqo
- * Merges the sequence values of even and odd el
+ * Merges the sequence values of even and odd elements of two vectors
+*/
+#define VSX_IMPL_PERM(rt, fnm, ...)            \
+VSX_FINLINE(rt) fnm(const rt& a, const rt& b)  \
+{ static const vec_uchar16 perm = {__VA_ARGS__}; return vec_perm(a, b, perm); }
+
+// 16
+#define perm16_mergesqe 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30
+#define perm16_mergesqo 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31
+VSX_IMPL_PERM(vec_uchar16, vec_mergesqe, perm16_mergesqe)
+VSX_IMPL_PERM(vec_uchar16, vec_mergesqo, perm16_mergesqo)
+VSX_IMPL_PERM(vec_char16,  vec_mergesqe, perm16_mergesqe)
+VSX_IMPL_PERM(vec_char16,  vec_mergesqo, perm16_mergesqo)
+// 8
+#define perm8_mergesqe 0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29
+#define perm8_mergesqo 2, 3, 6, 7, 10, 11, 14, 15, 18, 19, 22, 23, 26, 27, 30, 31
+VSX_IMPL_PERM(vec_ushort8, vec_mergesqe, perm8_mergesqe)
+VSX_IMPL_PERM(vec_ushort8, vec_mergesqo, perm8_mergesqo)
+VSX_IMPL_PERM(vec_short8,  vec_mergesqe, perm8_mergesqe)
+VSX_IMPL_PERM(vec_short8,  vec_mergesqo, perm8_mergesqo)
+// 4
+#define perm4_mergesqe 0, 1, 2, 3, 8, 9, 10, 11, 16, 17, 18, 19, 24, 25, 26, 27
+#define perm4_mergesqo 4, 5, 6, 7, 12, 13, 14, 15, 20, 21, 22, 23, 28, 29, 30, 31
+VSX_IMPL_PERM(vec_uint4,  vec_mergesqe, perm4_mergesqe)
+VSX_IMPL_PERM(vec_uint4,  vec_mergesqo, perm4_mergesqo)
+VSX_IMPL_PERM(vec_int4,   vec_mergesqe, perm4_mergesqe)
+VSX_IMPL_PERM(vec_int4,   vec_mergesqo, perm4_mergesqo)
+VSX_IMPL_PERM(vec_float4, vec_mergesqe, perm4_mergesqe)
+VSX_IMPL_PERM(vec_float4, vec_mergesqo, perm4_mergesqo)
+// 2
+VSX_REDIRECT_2RG(vec_double2, vec_double2, vec_mergesqe, vec_mergeh)
+VSX_REDIRECT_2RG(vec_double2, vec_double2, vec_mergesqo, vec_mergel)
+VSX_REDIRECT_2RG(vec_dword2,  vec_dword2,  vec_mergesqe, vec_mergeh)
+VSX_REDIRECT_2RG(vec_dword2,  vec_dword2,  vec_mergesqo, vec_mergel)
+VSX_REDIRECT_2RG(vec_udword2, vec_udword2, vec_mergesqe, vec_mergeh)
+VSX_REDIRECT_2RG(vec_udword2, vec_udword2, vec_mergesqo, vec_mergel)
+
+/*
+ * Implement vec_mergesqh and vec_mergesql
+ * Merges the sequence most and least significant halves of two vectors
+*/
+#define VSX_IMPL_MERGESQHL(Tvec)                                    \
+VSX_FINLINE(Tvec) vec_mergesqh(const Tvec& a, const Tvec& b)        \
+{ return (Tvec)vec_mergeh(vec_udword2_c(a), vec_udword2_c(b)); }    \
+VSX_FINLINE(Tvec) vec_mergesql(const Tvec& a, const Tvec& b)        \
+{ return (Tvec)vec_mergel(vec_udword2_c(a), vec_udword2_c(b)); }
+VSX_IMPL_MERGESQHL(vec_uchar16)
+VSX_IMPL_MERGESQHL(vec_char16)
+VSX_IMPL_MERGESQHL(vec_ushort8)
+VSX_IMPL_MERGESQHL(vec_short8)
+VSX_IMPL_MERGESQHL(vec_uint4)
+VSX_IMPL_MERGESQHL(vec_int4)
+VSX_IMPL_MERGESQHL(vec_float4)
+VSX_REDIRECT_2RG(vec_udword2, vec_udword2, vec_mergesqh, vec_mergeh)
+VSX_REDIRECT_2RG(vec_udword2, vec_udword2, vec_mergesql, vec_mergel)
+VSX_REDIRECT_2RG(vec_dword2,  vec_dword2,  vec_mergesqh, vec_mergeh)
+VSX_REDIRECT_2RG(vec_dword2,  vec_dword2,  vec_mergesql, vec_mergel)
+VSX_REDIRECT_2RG(vec_double2, vec_double2, vec_mergesqh, vec_mergeh)
+VSX_REDIRECT_2RG(vec_double2, vec_double2, vec_mergesql, vec_mergel)
+
+
+// 2 and 4 channels interleave for all types except 2 lanes
+#define VSX_IMPL_ST_INTERLEAVE(Tp, Tvec)                                    \
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b, Tp* ptr)  \
+{                                                                           \
+    vsx_stf(vec_mergeh(a, b), 0, ptr);                                      \
+    vsx_stf(vec_mergel(a, b), 16, ptr);                                     \
+}                                                                           \
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,           \
+                                     const Tvec& c, const Tvec& d, Tp* ptr) \
+{                                                                           \
+    Tvec ac = vec_mergeh(a, c);                                 
