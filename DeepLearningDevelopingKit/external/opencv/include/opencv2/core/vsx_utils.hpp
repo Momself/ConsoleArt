@@ -828,4 +828,63 @@ VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b, Tp* ptr)  \
 VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,           \
                                      const Tvec& c, const Tvec& d, Tp* ptr) \
 {                                                                           \
-    Tvec ac = vec_mergeh(a, c);                                 
+    Tvec ac = vec_mergeh(a, c);                                             \
+    Tvec bd = vec_mergeh(b, d);                                             \
+    vsx_stf(vec_mergeh(ac, bd), 0, ptr);                                    \
+    vsx_stf(vec_mergel(ac, bd), 16, ptr);                                   \
+    ac = vec_mergel(a, c);                                                  \
+    bd = vec_mergel(b, d);                                                  \
+    vsx_stf(vec_mergeh(ac, bd), 32, ptr);                                   \
+    vsx_stf(vec_mergel(ac, bd), 48, ptr);                                   \
+}
+VSX_IMPL_ST_INTERLEAVE(uchar,  vec_uchar16)
+VSX_IMPL_ST_INTERLEAVE(schar,  vec_char16)
+VSX_IMPL_ST_INTERLEAVE(ushort, vec_ushort8)
+VSX_IMPL_ST_INTERLEAVE(short,  vec_short8)
+VSX_IMPL_ST_INTERLEAVE(uint,   vec_uint4)
+VSX_IMPL_ST_INTERLEAVE(int,    vec_int4)
+VSX_IMPL_ST_INTERLEAVE(float,  vec_float4)
+
+// 2 and 4 channels deinterleave for 16 lanes
+#define VSX_IMPL_ST_DINTERLEAVE_8(Tp, Tvec)                                 \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b)      \
+{                                                                           \
+    Tvec v0 = vsx_ld(0, ptr);                                               \
+    Tvec v1 = vsx_ld(16, ptr);                                              \
+    a = vec_mergesqe(v0, v1);                                               \
+    b = vec_mergesqo(v0, v1);                                               \
+}                                                                           \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b,      \
+                                       Tvec& c, Tvec& d)                    \
+{                                                                           \
+    Tvec v0 = vsx_ld(0, ptr);                                               \
+    Tvec v1 = vsx_ld(16, ptr);                                              \
+    Tvec v2 = vsx_ld(32, ptr);                                              \
+    Tvec v3 = vsx_ld(48, ptr);                                              \
+    Tvec m0 = vec_mergesqe(v0, v1);                                         \
+    Tvec m1 = vec_mergesqe(v2, v3);                                         \
+    a = vec_mergesqe(m0, m1);                                               \
+    c = vec_mergesqo(m0, m1);                                               \
+    m0 = vec_mergesqo(v0, v1);                                              \
+    m1 = vec_mergesqo(v2, v3);                                              \
+    b = vec_mergesqe(m0, m1);                                               \
+    d = vec_mergesqo(m0, m1);                                               \
+}
+VSX_IMPL_ST_DINTERLEAVE_8(uchar, vec_uchar16)
+VSX_IMPL_ST_DINTERLEAVE_8(schar, vec_char16)
+
+// 2 and 4 channels deinterleave for 8 lanes
+#define VSX_IMPL_ST_DINTERLEAVE_16(Tp, Tvec)                                \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b)      \
+{                                                                           \
+    Tvec v0 = vsx_ld(0, ptr);                                               \
+    Tvec v1 = vsx_ld(8, ptr);                                               \
+    a = vec_mergesqe(v0, v1);                                               \
+    b = vec_mergesqo(v0, v1);                                               \
+}                                                                           \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b,      \
+                                       Tvec& c, Tvec& d)                    \
+{                                                                           \
+    Tvec v0 = vsx_ld(0, ptr);                                               \
+    Tvec v1 = vsx_ld(8, ptr);                                               \
+    Tvec m0 = vec
