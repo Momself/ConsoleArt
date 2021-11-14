@@ -887,4 +887,60 @@ VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b,      \
 {                                                                           \
     Tvec v0 = vsx_ld(0, ptr);                                               \
     Tvec v1 = vsx_ld(8, ptr);                                               \
-    Tvec m0 = vec
+    Tvec m0 = vec_mergeh(v0, v1);                                           \
+    Tvec m1 = vec_mergel(v0, v1);                                           \
+    Tvec ab0 = vec_mergeh(m0, m1);                                          \
+    Tvec cd0 = vec_mergel(m0, m1);                                          \
+    v0 = vsx_ld(16, ptr);                                                   \
+    v1 = vsx_ld(24, ptr);                                                   \
+    m0 = vec_mergeh(v0, v1);                                                \
+    m1 = vec_mergel(v0, v1);                                                \
+    Tvec ab1 = vec_mergeh(m0, m1);                                          \
+    Tvec cd1 = vec_mergel(m0, m1);                                          \
+    a = vec_mergesqh(ab0, ab1);                                             \
+    b = vec_mergesql(ab0, ab1);                                             \
+    c = vec_mergesqh(cd0, cd1);                                             \
+    d = vec_mergesql(cd0, cd1);                                             \
+}
+VSX_IMPL_ST_DINTERLEAVE_16(ushort, vec_ushort8)
+VSX_IMPL_ST_DINTERLEAVE_16(short,  vec_short8)
+
+// 2 and 4 channels deinterleave for 4 lanes
+#define VSX_IMPL_ST_DINTERLEAVE_32(Tp, Tvec)                                \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b)      \
+{                                                                           \
+    a = vsx_ld(0, ptr);                                                     \
+    b = vsx_ld(4, ptr);                                                     \
+    Tvec m0 = vec_mergeh(a, b);                                             \
+    Tvec m1 = vec_mergel(a, b);                                             \
+    a = vec_mergeh(m0, m1);                                                 \
+    b = vec_mergel(m0, m1);                                                 \
+}                                                                           \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b,      \
+                                       Tvec& c, Tvec& d)                    \
+{                                                                           \
+    Tvec v0 = vsx_ld(0, ptr);                                               \
+    Tvec v1 = vsx_ld(4, ptr);                                               \
+    Tvec v2 = vsx_ld(8, ptr);                                               \
+    Tvec v3 = vsx_ld(12, ptr);                                              \
+    Tvec m0 = vec_mergeh(v0, v2);                                           \
+    Tvec m1 = vec_mergeh(v1, v3);                                           \
+    a = vec_mergeh(m0, m1);                                                 \
+    b = vec_mergel(m0, m1);                                                 \
+    m0 = vec_mergel(v0, v2);                                                \
+    m1 = vec_mergel(v1, v3);                                                \
+    c = vec_mergeh(m0, m1);                                                 \
+    d = vec_mergel(m0, m1);                                                 \
+}
+VSX_IMPL_ST_DINTERLEAVE_32(uint,  vec_uint4)
+VSX_IMPL_ST_DINTERLEAVE_32(int,   vec_int4)
+VSX_IMPL_ST_DINTERLEAVE_32(float, vec_float4)
+
+// 2 and 4 channels interleave and deinterleave for 2 lanes
+#define VSX_IMPL_ST_D_INTERLEAVE_64(Tp, Tvec, ld_func, st_func)             \
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b, Tp* ptr)  \
+{                                                                           \
+    st_func(vec_mergeh(a, b), 0, ptr);                                      \
+    st_func(vec_mergel(a, b), 2, ptr);                                      \
+}                                                                           \
+VSX_FINLINE(void) vec_st_interleav
