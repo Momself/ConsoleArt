@@ -1033,4 +1033,56 @@ VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b, Tvec& c) 
     static const vec_uchar16 b123_perm = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 17, 22, 23, 28, 29};  \
     b = vec_perm(vec_perm(v1, v2, b12_perm), v3, b123_perm);                                      \
     static const vec_uchar16 c12_perm = {4, 5, 10, 11, 16, 17, 22, 23, 28, 29, 0, 0, 0, 0, 0, 0}; \
-    static const vec_uchar16 c123_
+    static const vec_uchar16 c123_perm = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 18, 19, 24, 25, 30, 31};  \
+    c = vec_perm(vec_perm(v1, v2, c12_perm), v3, c123_perm);                                      \
+}
+VSX_IMPL_ST_INTERLEAVE_3CH_8(ushort, vec_ushort8)
+VSX_IMPL_ST_INTERLEAVE_3CH_8(short,  vec_short8)
+
+#define VSX_IMPL_ST_INTERLEAVE_3CH_4(Tp, Tvec)                                                     \
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,                                  \
+                                     const Tvec& c, Tp* ptr)                                       \
+{                                                                                                  \
+    Tvec hbc = vec_mergeh(b, c);                                                                   \
+    static const vec_uchar16 ahbc = {0, 1, 2, 3, 16, 17, 18, 19, 20, 21, 22, 23, 4, 5, 6, 7};      \
+    vsx_st(vec_perm(a, hbc, ahbc), 0, ptr);                                                        \
+    Tvec lab = vec_mergel(a, b);                                                                   \
+    vsx_st(vec_sld(lab, hbc, 8), 4, ptr);                                                          \
+    static const vec_uchar16 clab = {8, 9, 10, 11, 24, 25, 26, 27, 28, 29, 30, 31, 12, 13, 14, 15};\
+    vsx_st(vec_perm(c, lab, clab), 8, ptr);                                                        \
+}                                                                                                  \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b, Tvec& c)                    \
+{                                                                                                  \
+    Tvec v1 = vsx_ld(0, ptr);                                                                      \
+    Tvec v2 = vsx_ld(4, ptr);                                                                      \
+    Tvec v3 = vsx_ld(8, ptr);                                                                      \
+    static const vec_uchar16 flp = {0, 1, 2, 3, 12, 13, 14, 15, 16, 17, 18, 19, 28, 29, 30, 31};   \
+    a = vec_perm(v1, vec_sld(v3, v2, 8), flp);                                                     \
+    static const vec_uchar16 flp2 = {28, 29, 30, 31, 0, 1, 2, 3, 12, 13, 14, 15, 16, 17, 18, 19};  \
+    b = vec_perm(v2, vec_sld(v1, v3, 8), flp2);                                                    \
+    c = vec_perm(vec_sld(v2, v1, 8), v3, flp);                                                     \
+}
+VSX_IMPL_ST_INTERLEAVE_3CH_4(uint,  vec_uint4)
+VSX_IMPL_ST_INTERLEAVE_3CH_4(int,   vec_int4)
+VSX_IMPL_ST_INTERLEAVE_3CH_4(float, vec_float4)
+
+#define VSX_IMPL_ST_INTERLEAVE_3CH_2(Tp, Tvec, ld_func, st_func)     \
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,    \
+                                     const Tvec& c, Tp* ptr)         \
+{                                                                    \
+    st_func(vec_mergeh(a, b), 0, ptr);                               \
+    st_func(vec_permi(c, a, 1), 2, ptr);                             \
+    st_func(vec_mergel(b, c), 4, ptr);                               \
+}                                                                    \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a,        \
+                                       Tvec& b, Tvec& c)             \
+{                                                                    \
+    Tvec v1 = ld_func(0, ptr);                                       \
+    Tvec v2 = ld_func(2, ptr);                                       \
+    Tvec v3 = ld_func(4, ptr);                                       \
+    a = vec_permi(v1, v2, 1);                                        \
+    b = vec_permi(v1, v3, 2);                                        \
+    c = vec_permi(v2, v3, 1);                                        \
+}
+VSX_IMPL_ST_INTERLEAVE_3CH_2(int64,  vec_dword2,  vsx_ld2, vsx_st2)
+VSX_IMPL_ST_INTERL
