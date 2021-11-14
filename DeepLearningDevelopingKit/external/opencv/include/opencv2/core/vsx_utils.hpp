@@ -991,4 +991,46 @@ VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,               
 }                                                                                                 \
 VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b, Tvec& c)                   \
 {                                                                                                 \
-    Tvec v1 = vsx_ld(0, ptr);                          
+    Tvec v1 = vsx_ld(0, ptr);                                                                     \
+    Tvec v2 = vsx_ld(16, ptr);                                                                    \
+    Tvec v3 = vsx_ld(32, ptr);                                                                    \
+    static const vec_uchar16 a12_perm = {0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 0, 0, 0, 0, 0};  \
+    static const vec_uchar16 a123_perm = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 20, 23, 26, 29};  \
+    a = vec_perm(vec_perm(v1, v2, a12_perm), v3, a123_perm);                                      \
+    static const vec_uchar16 b12_perm = {1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 0, 0, 0, 0, 0}; \
+    static const vec_uchar16 b123_perm = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 21, 24, 27, 30};  \
+    b = vec_perm(vec_perm(v1, v2, b12_perm), v3, b123_perm);                                      \
+    static const vec_uchar16 c12_perm = {2, 5, 8, 11, 14, 17, 20, 23, 26, 29, 0, 0, 0, 0, 0, 0};  \
+    static const vec_uchar16 c123_perm = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 19, 22, 25, 28, 31};  \
+    c = vec_perm(vec_perm(v1, v2, c12_perm), v3, c123_perm);                                      \
+}
+VSX_IMPL_ST_INTERLEAVE_3CH_16(uchar, vec_uchar16)
+VSX_IMPL_ST_INTERLEAVE_3CH_16(schar, vec_char16)
+
+#define VSX_IMPL_ST_INTERLEAVE_3CH_8(Tp, Tvec)                                                    \
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,                                 \
+                                     const Tvec& c, Tp* ptr)                                      \
+{                                                                                                 \
+    static const vec_uchar16 a12 = {0, 1, 16, 17, 0, 0, 2, 3, 18, 19, 0, 0, 4, 5, 20, 21};        \
+    static const vec_uchar16 a123 = {0, 1, 2, 3, 16, 17, 6, 7, 8, 9, 18, 19, 12, 13, 14, 15};     \
+    vsx_st(vec_perm(vec_perm(a, b, a12), c, a123), 0, ptr);                                       \
+    static const vec_uchar16 b12 = {0, 0, 6, 7, 22, 23, 0, 0, 8, 9, 24, 25, 0, 0, 10, 11};        \
+    static const vec_uchar16 b123 = {20, 21, 2, 3, 4, 5, 22, 23, 8, 9, 10, 11, 24, 25, 14, 15};   \
+    vsx_st(vec_perm(vec_perm(a, b, b12), c, b123), 8, ptr);                                       \
+    static const vec_uchar16 c12 = {26, 27, 0, 0, 12, 13, 28, 29, 0, 0, 14, 15, 30, 31, 0, 0};    \
+    static const vec_uchar16 c123 = {0, 1, 26, 27, 4, 5, 6, 7, 28, 29, 10, 11, 12, 13, 30, 31};   \
+    vsx_st(vec_perm(vec_perm(a, b, c12), c, c123), 16, ptr);                                      \
+}                                                                                                 \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b, Tvec& c)                   \
+{                                                                                                 \
+    Tvec v1 = vsx_ld(0, ptr);                                                                     \
+    Tvec v2 = vsx_ld(8, ptr);                                                                     \
+    Tvec v3 = vsx_ld(16, ptr);                                                                    \
+    static const vec_uchar16 a12_perm = {0, 1, 6, 7, 12, 13, 18, 19, 24, 25, 30, 31, 0, 0, 0, 0}; \
+    static const vec_uchar16 a123_perm = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 20, 21, 26, 27};  \
+    a = vec_perm(vec_perm(v1, v2, a12_perm), v3, a123_perm);                                      \
+    static const vec_uchar16 b12_perm = {2, 3, 8, 9, 14, 15, 20, 21, 26, 27, 0, 0, 0, 0, 0, 0};   \
+    static const vec_uchar16 b123_perm = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 16, 17, 22, 23, 28, 29};  \
+    b = vec_perm(vec_perm(v1, v2, b12_perm), v3, b123_perm);                                      \
+    static const vec_uchar16 c12_perm = {4, 5, 10, 11, 16, 17, 22, 23, 28, 29, 0, 0, 0, 0, 0, 0}; \
+    static const vec_uchar16 c123_
