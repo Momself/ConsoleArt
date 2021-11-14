@@ -943,4 +943,52 @@ VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b, Tp* ptr)  \
     st_func(vec_mergeh(a, b), 0, ptr);                                      \
     st_func(vec_mergel(a, b), 2, ptr);                                      \
 }                                                                           \
-VSX_FINLINE(void) vec_st_interleav
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,           \
+                                     const Tvec& c, const Tvec& d, Tp* ptr) \
+{                                                                           \
+    st_func(vec_mergeh(a, b), 0, ptr);                                      \
+    st_func(vec_mergeh(c, d), 2, ptr);                                      \
+    st_func(vec_mergel(a, b), 4, ptr);                                      \
+    st_func(vec_mergel(c, d), 6, ptr);                                      \
+}                                                                           \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b)      \
+{                                                                           \
+    Tvec m0 = ld_func(0, ptr);                                              \
+    Tvec m1 = ld_func(2, ptr);                                              \
+    a = vec_mergeh(m0, m1);                                                 \
+    b = vec_mergel(m0, m1);                                                 \
+}                                                                           \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b,      \
+                                       Tvec& c, Tvec& d)                    \
+{                                                                           \
+    Tvec v0 = ld_func(0, ptr);                                              \
+    Tvec v1 = ld_func(2, ptr);                                              \
+    Tvec v2 = ld_func(4, ptr);                                              \
+    Tvec v3 = ld_func(6, ptr);                                              \
+    a = vec_mergeh(v0, v2);                                                 \
+    b = vec_mergel(v0, v2);                                                 \
+    c = vec_mergeh(v1, v3);                                                 \
+    d = vec_mergel(v1, v3);                                                 \
+}
+VSX_IMPL_ST_D_INTERLEAVE_64(int64,  vec_dword2,  vsx_ld2, vsx_st2)
+VSX_IMPL_ST_D_INTERLEAVE_64(uint64, vec_udword2, vsx_ld2, vsx_st2)
+VSX_IMPL_ST_D_INTERLEAVE_64(double, vec_double2, vsx_ld,  vsx_st)
+
+/* 3 channels */
+#define VSX_IMPL_ST_INTERLEAVE_3CH_16(Tp, Tvec)                                                   \
+VSX_FINLINE(void) vec_st_interleave(const Tvec& a, const Tvec& b,                                 \
+                                     const Tvec& c, Tp* ptr)                                      \
+{                                                                                                 \
+    static const vec_uchar16 a12 = {0, 16, 0, 1, 17, 0, 2, 18, 0, 3, 19, 0, 4, 20, 0, 5};         \
+    static const vec_uchar16 a123 = {0, 1, 16, 3, 4, 17, 6, 7, 18, 9, 10, 19, 12, 13, 20, 15};    \
+    vsx_st(vec_perm(vec_perm(a, b, a12), c, a123), 0, ptr);                                       \
+    static const vec_uchar16 b12 = {21, 0, 6, 22, 0, 7, 23, 0, 8, 24, 0, 9, 25, 0, 10, 26};       \
+    static const vec_uchar16 b123 = {0, 21, 2, 3, 22, 5, 6, 23, 8, 9, 24, 11, 12, 25, 14, 15};    \
+    vsx_st(vec_perm(vec_perm(a, b, b12), c, b123), 16, ptr);                                      \
+    static const vec_uchar16 c12 = {0, 11, 27, 0, 12, 28, 0, 13, 29, 0, 14, 30, 0, 15, 31, 0};    \
+    static const vec_uchar16 c123 = {26, 1, 2, 27, 4, 5, 28, 7, 8, 29, 10, 11, 30, 13, 14, 31};   \
+    vsx_st(vec_perm(vec_perm(a, b, c12), c, c123), 32, ptr);                                      \
+}                                                                                                 \
+VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a, Tvec& b, Tvec& c)                   \
+{                                                                                                 \
+    Tvec v1 = vsx_ld(0, ptr);                          
