@@ -187,4 +187,62 @@
 /* #undef HAVE_VIDEOIO */
 
 /* Win32 UI */
-#define HAVE_WIN3
+#define HAVE_WIN32UI
+
+/* XIMEA camera support */
+/* #undef HAVE_XIMEA */
+
+/* Xine video library */
+/* #undef HAVE_XINE */
+
+/* Define if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+/* #undef WORDS_BIGENDIAN */
+
+/* gPhoto2 library */
+/* #undef HAVE_GPHOTO2 */
+
+/* VA library (libva) */
+/* #undef HAVE_VA */
+
+/* Intel VA-API/OpenCL */
+/* #undef HAVE_VA_INTEL */
+
+/* Intel Media SDK */
+/* #undef HAVE_MFX */
+
+/* Lapack */
+/* #undef HAVE_LAPACK */
+
+/* Library was compiled with functions instrumentation */
+/* #undef ENABLE_INSTRUMENTATION */
+
+/* OpenVX */
+/* #undef HAVE_OPENVX */
+
+#if defined(HAVE_XINE)         || \
+    defined(HAVE_GSTREAMER)    || \
+    defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
+    defined(HAVE_AVFOUNDATION) || \
+    /*defined(HAVE_OPENNI)     || too specialized */ \
+    defined(HAVE_FFMPEG)       || \
+    defined(HAVE_MSMF)
+#define HAVE_VIDEO_INPUT
+#endif
+
+#if /*defined(HAVE_XINE)       || */\
+    defined(HAVE_GSTREAMER)    || \
+    defined(HAVE_QUICKTIME)    || \
+    defined(HAVE_QTKIT)        || \
+    defined(HAVE_AVFOUNDATION) || \
+    defined(HAVE_FFMPEG)       || \
+    defined(HAVE_MSMF)
+#define HAVE_VIDEO_OUTPUT
+#endif
+
+/* OpenCV trace utilities */
+#define OPENCV_TRACE
+
+
+#endif // OPENCV_CVCONFIG_H_INCLUDED
