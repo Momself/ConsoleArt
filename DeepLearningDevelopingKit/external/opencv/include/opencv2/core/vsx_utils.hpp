@@ -1085,4 +1085,11 @@ VSX_FINLINE(void) vec_ld_deinterleave(const Tp* ptr, Tvec& a,        \
     c = vec_permi(v2, v3, 1);                                        \
 }
 VSX_IMPL_ST_INTERLEAVE_3CH_2(int64,  vec_dword2,  vsx_ld2, vsx_st2)
-VSX_IMPL_ST_INTERL
+VSX_IMPL_ST_INTERLEAVE_3CH_2(uint64, vec_udword2, vsx_ld2, vsx_st2)
+VSX_IMPL_ST_INTERLEAVE_3CH_2(double, vec_double2, vsx_ld,  vsx_st)
+
+#endif // CV_VSX
+
+//! @}
+
+#endif // OPENCV_HAL_VSX_UTILS_HPP
