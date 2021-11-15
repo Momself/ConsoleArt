@@ -3083,3 +3083,184 @@ public:
     CV_WRAP virtual void read(const FileNode& fn) { (void)fn; }
 
     /** @brief Returns true if the Algorithm is empty (e.g. in the very beginning or after unsuccessful read
+     */
+    CV_WRAP virtual bool empty() const { return false; }
+
+    /** @brief Reads algorithm from the file node
+
+     This is static template method of Algorithm. It's usage is following (in the case of SVM):
+     @code
+     cv::FileStorage fsRead("example.xml", FileStorage::READ);
+     Ptr<SVM> svm = Algorithm::read<SVM>(fsRead.root());
+     @endcode
+     In order to make this method work, the derived class must overwrite Algorithm::read(const
+     FileNode& fn) and also have static create() method without parameters
+     (or with all the optional parameters)
+     */
+    template<typename _Tp> static Ptr<_Tp> read(const FileNode& fn)
+    {
+        Ptr<_Tp> obj = _Tp::create();
+        obj->read(fn);
+        return !obj->empty() ? obj : Ptr<_Tp>();
+    }
+
+    /** @brief Loads algorithm from the file
+
+     @param filename Name of the file to read.
+     @param objname The optional name of the node to read (if empty, the first top-level node will be used)
+
+     This is static template method of Algorithm. It's usage is following (in the case of SVM):
+     @code
+     Ptr<SVM> svm = Algorithm::load<SVM>("my_svm_model.xml");
+     @endcode
+     In order to make this method work, the derived class must overwrite Algorithm::read(const
+     FileNode& fn).
+     */
+    template<typename _Tp> static Ptr<_Tp> load(const String& filename, const String& objname=String())
+    {
+        FileStorage fs(filename, FileStorage::READ);
+        CV_Assert(fs.isOpened());
+        FileNode fn = objname.empty() ? fs.getFirstTopLevelNode() : fs[objname];
+        if (fn.empty()) return Ptr<_Tp>();
+        Ptr<_Tp> obj = _Tp::create();
+        obj->read(fn);
+        return !obj->empty() ? obj : Ptr<_Tp>();
+    }
+
+    /** @brief Loads algorithm from a String
+
+     @param strModel The string variable containing the model you want to load.
+     @param objname The optional name of the node to read (if empty, the first top-level node will be used)
+
+     This is static template method of Algorithm. It's usage is following (in the case of SVM):
+     @code
+     Ptr<SVM> svm = Algorithm::loadFromString<SVM>(myStringModel);
+     @endcode
+     */
+    template<typename _Tp> static Ptr<_Tp> loadFromString(const String& strModel, const String& objname=String())
+    {
+        FileStorage fs(strModel, FileStorage::READ + FileStorage::MEMORY);
+        FileNode fn = objname.empty() ? fs.getFirstTopLevelNode() : fs[objname];
+        Ptr<_Tp> obj = _Tp::create();
+        obj->read(fn);
+        return !obj->empty() ? obj : Ptr<_Tp>();
+    }
+
+    /** Saves the algorithm to a file.
+     In order to make this method work, the derived class must implement Algorithm::write(FileStorage& fs). */
+    CV_WRAP virtual void save(const String& filename) const;
+
+    /** Returns the algorithm string identifier.
+     This string is used as top level xml/yml node tag when the object is saved to a file or string. */
+    CV_WRAP virtual String getDefaultName() const;
+
+protected:
+    void writeFormat(FileStorage& fs) const;
+};
+
+struct Param {
+    enum { INT=0, BOOLEAN=1, REAL=2, STRING=3, MAT=4, MAT_VECTOR=5, ALGORITHM=6, FLOAT=7,
+           UNSIGNED_INT=8, UINT64=9, UCHAR=11 };
+};
+
+
+
+template<> struct ParamType<bool>
+{
+    typedef bool const_param_type;
+    typedef bool member_type;
+
+    enum { type = Param::BOOLEAN };
+};
+
+template<> struct ParamType<int>
+{
+    typedef int const_param_type;
+    typedef int member_type;
+
+    enum { type = Param::INT };
+};
+
+template<> struct ParamType<double>
+{
+    typedef double const_param_type;
+    typedef double member_type;
+
+    enum { type = Param::REAL };
+};
+
+template<> struct ParamType<String>
+{
+    typedef const String& const_param_type;
+    typedef String member_type;
+
+    enum { type = Param::STRING };
+};
+
+template<> struct ParamType<Mat>
+{
+    typedef const Mat& const_param_type;
+    typedef Mat member_type;
+
+    enum { type = Param::MAT };
+};
+
+template<> struct ParamType<std::vector<Mat> >
+{
+    typedef const std::vector<Mat>& const_param_type;
+    typedef std::vector<Mat> member_type;
+
+    enum { type = Param::MAT_VECTOR };
+};
+
+template<> struct ParamType<Algorithm>
+{
+    typedef const Ptr<Algorithm>& const_param_type;
+    typedef Ptr<Algorithm> member_type;
+
+    enum { type = Param::ALGORITHM };
+};
+
+template<> struct ParamType<float>
+{
+    typedef float const_param_type;
+    typedef float member_type;
+
+    enum { type = Param::FLOAT };
+};
+
+template<> struct ParamType<unsigned>
+{
+    typedef unsigned const_param_type;
+    typedef unsigned member_type;
+
+    enum { type = Param::UNSIGNED_INT };
+};
+
+template<> struct ParamType<uint64>
+{
+    typedef uint64 const_param_type;
+    typedef uint64 member_type;
+
+    enum { type = Param::UINT64 };
+};
+
+template<> struct ParamType<uchar>
+{
+    typedef uchar const_param_type;
+    typedef uchar member_type;
+
+    enum { type = Param::UCHAR };
+};
+
+//! @} core_basic
+
+} //namespace cv
+
+#include "opencv2/core/operations.hpp"
+#include "opencv2/core/cvstd.inl.hpp"
+#include "opencv2/core/utility.hpp"
+#include "opencv2/core/optim.hpp"
+#include "opencv2/core/ovx.hpp"
+
+#endif /*OPENCV_CORE_HPP*/
