@@ -360,4 +360,14 @@ inline const T &Dict::set(const String &key, const T &value)
 inline std::ostream &operator<<(std::ostream &stream, const Dict &dict)
 {
     Dict::_Dict::const_iterator it;
-    for (it = dict.dict.begin
+    for (it = dict.dict.begin(); it != dict.dict.end(); it++)
+        stream << it->first << " : " << it->second << "\n";
+
+    return stream;
+}
+
+CV__DNN_EXPERIMENTAL_NS_END
+}
+}
+
+#endif
