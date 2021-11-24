@@ -984,3 +984,442 @@ public:
         FileStorage fs(fileName, FileStorage::WRITE);
         write(fs);
     }
+
+    CV_WRAP void read( const String& fileName )
+    {
+        FileStorage fs(fileName, FileStorage::READ);
+        read(fs.root());
+    }
+    // Reads matcher object from a file node
+    // see corresponding cv::Algorithm method
+    CV_WRAP virtual void read( const FileNode& );
+    // Writes matcher object to a file storage
+    virtual void write( FileStorage& ) const;
+
+    /** @brief Clones the matcher.
+
+    @param emptyTrainData If emptyTrainData is false, the method creates a deep copy of the object,
+    that is, copies both parameters and train data. If emptyTrainData is true, the method creates an
+    object copy with the current parameters but with empty train data.
+     */
+    CV_WRAP virtual Ptr<DescriptorMatcher> clone( bool emptyTrainData=false ) const = 0;
+
+    /** @brief Creates a descriptor matcher of a given type with the default parameters (using default
+    constructor).
+
+    @param descriptorMatcherType Descriptor matcher type. Now the following matcher types are
+    supported:
+    -   `BruteForce` (it uses L2 )
+    -   `BruteForce-L1`
+    -   `BruteForce-Hamming`
+    -   `BruteForce-Hamming(2)`
+    -   `FlannBased`
+     */
+    CV_WRAP static Ptr<DescriptorMatcher> create( const String& descriptorMatcherType );
+
+    CV_WRAP static Ptr<DescriptorMatcher> create( int matcherType );
+
+
+    // see corresponding cv::Algorithm method
+    CV_WRAP inline void write(const Ptr<FileStorage>& fs, const String& name = String()) const { Algorithm::write(fs, name); }
+
+protected:
+    /**
+     * Class to work with descriptors from several images as with one merged matrix.
+     * It is used e.g. in FlannBasedMatcher.
+     */
+    class CV_EXPORTS DescriptorCollection
+    {
+    public:
+        DescriptorCollection();
+        DescriptorCollection( const DescriptorCollection& collection );
+        virtual ~DescriptorCollection();
+
+        // Vector of matrices "descriptors" will be merged to one matrix "mergedDescriptors" here.
+        void set( const std::vector<Mat>& descriptors );
+        virtual void clear();
+
+        const Mat& getDescriptors() const;
+        const Mat getDescriptor( int imgIdx, int localDescIdx ) const;
+        const Mat getDescriptor( int globalDescIdx ) const;
+        void getLocalIdx( int globalDescIdx, int& imgIdx, int& localDescIdx ) const;
+
+        int size() const;
+
+    protected:
+        Mat mergedDescriptors;
+        std::vector<int> startIdxs;
+    };
+
+    //! In fact the matching is implemented only by the following two methods. These methods suppose
+    //! that the class object has been trained already. Public match methods call these methods
+    //! after calling train().
+    virtual void knnMatchImpl( InputArray queryDescriptors, std::vector<std::vector<DMatch> >& matches, int k,
+        InputArrayOfArrays masks=noArray(), bool compactResult=false ) = 0;
+    virtual void radiusMatchImpl( InputArray queryDescriptors, std::vector<std::vector<DMatch> >& matches, float maxDistance,
+        InputArrayOfArrays masks=noArray(), bool compactResult=false ) = 0;
+
+    static bool isPossibleMatch( InputArray mask, int queryIdx, int trainIdx );
+    static bool isMaskedOut( InputArrayOfArrays masks, int queryIdx );
+
+    static Mat clone_op( Mat m ) { return m.clone(); }
+    void checkMasks( InputArrayOfArrays masks, int queryDescriptorsCount ) const;
+
+    //! Collection of descriptors from train images.
+    std::vector<Mat> trainDescCollection;
+    std::vector<UMat> utrainDescCollection;
+};
+
+/** @brief Brute-force descriptor matcher.
+
+For each descriptor in the first set, this matcher finds the closest descriptor in the second set
+by trying each one. This descriptor matcher supports masking permissible matches of descriptor
+sets.
+ */
+class CV_EXPORTS_W BFMatcher : public DescriptorMatcher
+{
+public:
+    /** @brief Brute-force matcher constructor (obsolete). Please use BFMatcher.create()
+     *
+     *
+    */
+    CV_WRAP BFMatcher( int normType=NORM_L2, bool crossCheck=false );
+
+    virtual ~BFMatcher() {}
+
+    virtual bool isMaskSupported() const { return true; }
+
+    /** @brief Brute-force matcher create method.
+    @param normType One of NORM_L1, NORM_L2, NORM_HAMMING, NORM_HAMMING2. L1 and L2 norms are
+    preferable choices for SIFT and SURF descriptors, NORM_HAMMING should be used with ORB, BRISK and
+    BRIEF, NORM_HAMMING2 should be used with ORB when WTA_K==3 or 4 (see ORB::ORB constructor
+    description).
+    @param crossCheck If it is false, this is will be default BFMatcher behaviour when it finds the k
+    nearest neighbors for each query descriptor. If crossCheck==true, then the knnMatch() method with
+    k=1 will only return pairs (i,j) such that for i-th query descriptor the j-th descriptor in the
+    matcher's collection is the nearest and vice versa, i.e. the BFMatcher will only return consistent
+    pairs. Such technique usually produces best results with minimal number of outliers when there are
+    enough matches. This is alternative to the ratio test, used by D. Lowe in SIFT paper.
+     */
+    CV_WRAP static Ptr<BFMatcher> create( int normType=NORM_L2, bool crossCheck=false ) ;
+
+    virtual Ptr<DescriptorMatcher> clone( bool emptyTrainData=false ) const;
+protected:
+    virtual void knnMatchImpl( InputArray queryDescriptors, std::vector<std::vector<DMatch> >& matches, int k,
+        InputArrayOfArrays masks=noArray(), bool compactResult=false );
+    virtual void radiusMatchImpl( InputArray queryDescriptors, std::vector<std::vector<DMatch> >& matches, float maxDistance,
+        InputArrayOfArrays masks=noArray(), bool compactResult=false );
+
+    int normType;
+    bool crossCheck;
+};
+
+#if defined(HAVE_OPENCV_FLANN) || defined(CV_DOXYGEN)
+
+/** @brief Flann-based descriptor matcher.
+
+This matcher trains cv::flann::Index on a train descriptor collection and calls its nearest search
+methods to find the best matches. So, this matcher may be faster when matching a large train
+collection than the brute force matcher. FlannBasedMatcher does not support masking permissible
+matches of descriptor sets because flann::Index does not support this. :
+ */
+class CV_EXPORTS_W FlannBasedMatcher : public DescriptorMatcher
+{
+public:
+    CV_WRAP FlannBasedMatcher( const Ptr<flann::IndexParams>& indexParams=makePtr<flann::KDTreeIndexParams>(),
+                       const Ptr<flann::SearchParams>& searchParams=makePtr<flann::SearchParams>() );
+
+    virtual void add( InputArrayOfArrays descriptors );
+    virtual void clear();
+
+    // Reads matcher object from a file node
+    virtual void read( const FileNode& );
+    // Writes matcher object to a file storage
+    virtual void write( FileStorage& ) const;
+
+    virtual void train();
+    virtual bool isMaskSupported() const;
+
+    CV_WRAP static Ptr<FlannBasedMatcher> create();
+
+    virtual Ptr<DescriptorMatcher> clone( bool emptyTrainData=false ) const;
+protected:
+    static void convertToDMatches( const DescriptorCollection& descriptors,
+                                   const Mat& indices, const Mat& distances,
+                                   std::vector<std::vector<DMatch> >& matches );
+
+    virtual void knnMatchImpl( InputArray queryDescriptors, std::vector<std::vector<DMatch> >& matches, int k,
+        InputArrayOfArrays masks=noArray(), bool compactResult=false );
+    virtual void radiusMatchImpl( InputArray queryDescriptors, std::vector<std::vector<DMatch> >& matches, float maxDistance,
+        InputArrayOfArrays masks=noArray(), bool compactResult=false );
+
+    Ptr<flann::IndexParams> indexParams;
+    Ptr<flann::SearchParams> searchParams;
+    Ptr<flann::Index> flannIndex;
+
+    DescriptorCollection mergedDescriptors;
+    int addedDescCount;
+};
+
+#endif
+
+//! @} features2d_match
+
+/****************************************************************************************\
+*                                   Drawing functions                                    *
+\****************************************************************************************/
+
+//! @addtogroup features2d_draw
+//! @{
+
+struct CV_EXPORTS DrawMatchesFlags
+{
+    enum{ DEFAULT = 0, //!< Output image matrix will be created (Mat::create),
+                       //!< i.e. existing memory of output image may be reused.
+                       //!< Two source image, matches and single keypoints will be drawn.
+                       //!< For each keypoint only the center point will be drawn (without
+                       //!< the circle around keypoint with keypoint size and orientation).
+          DRAW_OVER_OUTIMG = 1, //!< Output image matrix will not be created (Mat::create).
+                                //!< Matches will be drawn on existing content of output image.
+          NOT_DRAW_SINGLE_POINTS = 2, //!< Single keypoints will not be drawn.
+          DRAW_RICH_KEYPOINTS = 4 //!< For each keypoint the circle around keypoint with keypoint size and
+                                  //!< orientation will be drawn.
+        };
+};
+
+/** @brief Draws keypoints.
+
+@param image Source image.
+@param keypoints Keypoints from the source image.
+@param outImage Output image. Its content depends on the flags value defining what is drawn in the
+output image. See possible flags bit values below.
+@param color Color of keypoints.
+@param flags Flags setting drawing features. Possible flags bit values are defined by
+DrawMatchesFlags. See details above in drawMatches .
+
+@note
+For Python API, flags are modified as cv2.DRAW_MATCHES_FLAGS_DEFAULT,
+cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS, cv2.DRAW_MATCHES_FLAGS_DRAW_OVER_OUTIMG,
+cv2.DRAW_MATCHES_FLAGS_NOT_DRAW_SINGLE_POINTS
+ */
+CV_EXPORTS_W void drawKeypoints( InputArray image, const std::vector<KeyPoint>& keypoints, InputOutputArray outImage,
+                               const Scalar& color=Scalar::all(-1), int flags=DrawMatchesFlags::DEFAULT );
+
+/** @brief Draws the found matches of keypoints from two images.
+
+@param img1 First source image.
+@param keypoints1 Keypoints from the first source image.
+@param img2 Second source image.
+@param keypoints2 Keypoints from the second source image.
+@param matches1to2 Matches from the first image to the second one, which means that keypoints1[i]
+has a corresponding point in keypoints2[matches[i]] .
+@param outImg Output image. Its content depends on the flags value defining what is drawn in the
+output image. See possible flags bit values below.
+@param matchColor Color of matches (lines and connected keypoints). If matchColor==Scalar::all(-1)
+, the color is generated randomly.
+@param singlePointColor Color of single keypoints (circles), which means that keypoints do not
+have the matches. If singlePointColor==Scalar::all(-1) , the color is generated randomly.
+@param matchesMask Mask determining which matches are drawn. If the mask is empty, all matches are
+drawn.
+@param flags Flags setting drawing features. Possible flags bit values are defined by
+DrawMatchesFlags.
+
+This function draws matches of keypoints from two images in the output image. Match is a line
+connecting two keypoints (circles). See cv::DrawMatchesFlags.
+ */
+CV_EXPORTS_W void drawMatches( InputArray img1, const std::vector<KeyPoint>& keypoints1,
+                             InputArray img2, const std::vector<KeyPoint>& keypoints2,
+                             const std::vector<DMatch>& matches1to2, InputOutputArray outImg,
+                             const Scalar& matchColor=Scalar::all(-1), const Scalar& singlePointColor=Scalar::all(-1),
+                             const std::vector<char>& matchesMask=std::vector<char>(), int flags=DrawMatchesFlags::DEFAULT );
+
+/** @overload */
+CV_EXPORTS_AS(drawMatchesKnn) void drawMatches( InputArray img1, const std::vector<KeyPoint>& keypoints1,
+                             InputArray img2, const std::vector<KeyPoint>& keypoints2,
+                             const std::vector<std::vector<DMatch> >& matches1to2, InputOutputArray outImg,
+                             const Scalar& matchColor=Scalar::all(-1), const Scalar& singlePointColor=Scalar::all(-1),
+                             const std::vector<std::vector<char> >& matchesMask=std::vector<std::vector<char> >(), int flags=DrawMatchesFlags::DEFAULT );
+
+//! @} features2d_draw
+
+/****************************************************************************************\
+*   Functions to evaluate the feature detectors and [generic] descriptor extractors      *
+\****************************************************************************************/
+
+CV_EXPORTS void evaluateFeatureDetector( const Mat& img1, const Mat& img2, const Mat& H1to2,
+                                         std::vector<KeyPoint>* keypoints1, std::vector<KeyPoint>* keypoints2,
+                                         float& repeatability, int& correspCount,
+                                         const Ptr<FeatureDetector>& fdetector=Ptr<FeatureDetector>() );
+
+CV_EXPORTS void computeRecallPrecisionCurve( const std::vector<std::vector<DMatch> >& matches1to2,
+                                             const std::vector<std::vector<uchar> >& correctMatches1to2Mask,
+                                             std::vector<Point2f>& recallPrecisionCurve );
+
+CV_EXPORTS float getRecall( const std::vector<Point2f>& recallPrecisionCurve, float l_precision );
+CV_EXPORTS int getNearestPoint( const std::vector<Point2f>& recallPrecisionCurve, float l_precision );
+
+/****************************************************************************************\
+*                                     Bag of visual words                                *
+\****************************************************************************************/
+
+//! @addtogroup features2d_category
+//! @{
+
+/** @brief Abstract base class for training the *bag of visual words* vocabulary from a set of descriptors.
+
+For details, see, for example, *Visual Categorization with Bags of Keypoints* by Gabriella Csurka,
+Christopher R. Dance, Lixin Fan, Jutta Willamowski, Cedric Bray, 2004. :
+ */
+class CV_EXPORTS_W BOWTrainer
+{
+public:
+    BOWTrainer();
+    virtual ~BOWTrainer();
+
+    /** @brief Adds descriptors to a training set.
+
+    @param descriptors Descriptors to add to a training set. Each row of the descriptors matrix is a
+    descriptor.
+
+    The training set is clustered using clustermethod to construct the vocabulary.
+     */
+    CV_WRAP void add( const Mat& descriptors );
+
+    /** @brief Returns a training set of descriptors.
+    */
+    CV_WRAP const std::vector<Mat>& getDescriptors() const;
+
+    /** @brief Returns the count of all descriptors stored in the training set.
+    */
+    CV_WRAP int descriptorsCount() const;
+
+    CV_WRAP virtual void clear();
+
+    /** @overload */
+    CV_WRAP virtual Mat cluster() const = 0;
+
+    /** @brief Clusters train descriptors.
+
+    @param descriptors Descriptors to cluster. Each row of the descriptors matrix is a descriptor.
+    Descriptors are not added to the inner train descriptor set.
+
+    The vocabulary consists of cluster centers. So, this method returns the vocabulary. In the first
+    variant of the method, train descriptors stored in the object are clustered. In the second variant,
+    input descriptors are clustered.
+     */
+    CV_WRAP virtual Mat cluster( const Mat& descriptors ) const = 0;
+
+protected:
+    std::vector<Mat> descriptors;
+    int size;
+};
+
+/** @brief kmeans -based class to train visual vocabulary using the *bag of visual words* approach. :
+ */
+class CV_EXPORTS_W BOWKMeansTrainer : public BOWTrainer
+{
+public:
+    /** @brief The constructor.
+
+    @see cv::kmeans
+    */
+    CV_WRAP BOWKMeansTrainer( int clusterCount, const TermCriteria& termcrit=TermCriteria(),
+                      int attempts=3, int flags=KMEANS_PP_CENTERS );
+    virtual ~BOWKMeansTrainer();
+
+    // Returns trained vocabulary (i.e. cluster centers).
+    CV_WRAP virtual Mat cluster() const;
+    CV_WRAP virtual Mat cluster( const Mat& descriptors ) const;
+
+protected:
+
+    int clusterCount;
+    TermCriteria termcrit;
+    int attempts;
+    int flags;
+};
+
+/** @brief Class to compute an image descriptor using the *bag of visual words*.
+
+Such a computation consists of the following steps:
+
+1.  Compute descriptors for a given image and its keypoints set.
+2.  Find the nearest visual words from the vocabulary for each keypoint descriptor.
+3.  Compute the bag-of-words image descriptor as is a normalized histogram of vocabulary words
+encountered in the image. The i-th bin of the histogram is a frequency of i-th word of the
+vocabulary in the given image.
+ */
+class CV_EXPORTS_W BOWImgDescriptorExtractor
+{
+public:
+    /** @brief The constructor.
+
+    @param dextractor Descriptor extractor that is used to compute descriptors for an input image and
+    its keypoints.
+    @param dmatcher Descriptor matcher that is used to find the nearest word of the trained vocabulary
+    for each keypoint descriptor of the image.
+     */
+    CV_WRAP BOWImgDescriptorExtractor( const Ptr<DescriptorExtractor>& dextractor,
+                               const Ptr<DescriptorMatcher>& dmatcher );
+    /** @overload */
+    BOWImgDescriptorExtractor( const Ptr<DescriptorMatcher>& dmatcher );
+    virtual ~BOWImgDescriptorExtractor();
+
+    /** @brief Sets a visual vocabulary.
+
+    @param vocabulary Vocabulary (can be trained using the inheritor of BOWTrainer ). Each row of the
+    vocabulary is a visual word (cluster center).
+     */
+    CV_WRAP void setVocabulary( const Mat& vocabulary );
+
+    /** @brief Returns the set vocabulary.
+    */
+    CV_WRAP const Mat& getVocabulary() const;
+
+    /** @brief Computes an image descriptor using the set visual vocabulary.
+
+    @param image Image, for which the descriptor is computed.
+    @param keypoints Keypoints detected in the input image.
+    @param imgDescriptor Computed output image descriptor.
+    @param pointIdxsOfClusters Indices of keypoints that belong to the cluster. This means that
+    pointIdxsOfClusters[i] are keypoint indices that belong to the i -th cluster (word of vocabulary)
+    returned if it is non-zero.
+    @param descriptors Descriptors of the image keypoints that are returned if they are non-zero.
+     */
+    void compute( InputArray image, std::vector<KeyPoint>& keypoints, OutputArray imgDescriptor,
+                  std::vector<std::vector<int> >* pointIdxsOfClusters=0, Mat* descriptors=0 );
+    /** @overload
+    @param keypointDescriptors Computed descriptors to match with vocabulary.
+    @param imgDescriptor Computed output image descriptor.
+    @param pointIdxsOfClusters Indices of keypoints that belong to the cluster. This means that
+    pointIdxsOfClusters[i] are keypoint indices that belong to the i -th cluster (word of vocabulary)
+    returned if it is non-zero.
+    */
+    void compute( InputArray keypointDescriptors, OutputArray imgDescriptor,
+                  std::vector<std::vector<int> >* pointIdxsOfClusters=0 );
+    // compute() is not constant because DescriptorMatcher::match is not constant
+
+    CV_WRAP_AS(compute) void compute2( const Mat& image, std::vector<KeyPoint>& keypoints, CV_OUT Mat& imgDescriptor )
+    { compute(image,keypoints,imgDescriptor); }
+
+    /** @brief Returns an image descriptor size if the vocabulary is set. Otherwise, it returns 0.
+    */
+    CV_WRAP int descriptorSize() const;
+
+    /** @brief Returns an image descriptor type.
+     */
+    CV_WRAP int descriptorType() const;
+
+protected:
+    Mat vocabulary;
+    Ptr<DescriptorExtractor> dextractor;
+    Ptr<DescriptorMatcher> dmatcher;
+};
+
+//! @} features2d_category
+
+//! @} features2d
+
+} /* namespace cv */
+
+#endif
