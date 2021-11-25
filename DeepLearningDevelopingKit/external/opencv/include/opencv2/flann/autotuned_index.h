@@ -261,4 +261,106 @@ private:
         t.start();
         kdtree.buildIndex();
         t.stop();
-        float buildTime =
+        float buildTime = (float)t.value;
+
+        //measure search time
+        float searchTime = test_index_precision(kdtree, sampledDataset_, testDataset_, gt_matches_, target_precision_, checks, distance_, nn);
+
+        float datasetMemory = float(sampledDataset_.rows * sampledDataset_.cols * sizeof(float));
+        cost.memoryCost = (kdtree.usedMemory() + datasetMemory) / datasetMemory;
+        cost.searchTimeCost = searchTime;
+        cost.buildTimeCost = buildTime;
+        Logger::info("KDTree buildTime=%g, searchTime=%g\n", buildTime, searchTime);
+    }
+
+
+    //    struct KMeansSimpleDownhillFunctor {
+    //
+    //        Autotune& autotuner;
+    //        KMeansSimpleDownhillFunctor(Autotune& autotuner_) : autotuner(autotuner_) {}
+    //
+    //        float operator()(int* params) {
+    //
+    //            float maxFloat = numeric_limits<float>::max();
+    //
+    //            if (params[0]<2) return maxFloat;
+    //            if (params[1]<0) return maxFloat;
+    //
+    //            CostData c;
+    //            c.params["algorithm"] = KMEANS;
+    //            c.params["centers-init"] = CENTERS_RANDOM;
+    //            c.params["branching"] = params[0];
+    //            c.params["max-iterations"] = params[1];
+    //
+    //            autotuner.evaluate_kmeans(c);
+    //
+    //            return c.timeCost;
+    //
+    //        }
+    //    };
+    //
+    //    struct KDTreeSimpleDownhillFunctor {
+    //
+    //        Autotune& autotuner;
+    //        KDTreeSimpleDownhillFunctor(Autotune& autotuner_) : autotuner(autotuner_) {}
+    //
+    //        float operator()(int* params) {
+    //            float maxFloat = numeric_limits<float>::max();
+    //
+    //            if (params[0]<1) return maxFloat;
+    //
+    //            CostData c;
+    //            c.params["algorithm"] = KDTREE;
+    //            c.params["trees"] = params[0];
+    //
+    //            autotuner.evaluate_kdtree(c);
+    //
+    //            return c.timeCost;
+    //
+    //        }
+    //    };
+
+
+
+    void optimizeKMeans(std::vector<CostData>& costs)
+    {
+        Logger::info("KMEANS, Step 1: Exploring parameter space\n");
+
+        // explore kmeans parameters space using combinations of the parameters below
+        int maxIterations[] = { 1, 5, 10, 15 };
+        int branchingFactors[] = { 16, 32, 64, 128, 256 };
+
+        int kmeansParamSpaceSize = FLANN_ARRAY_LEN(maxIterations) * FLANN_ARRAY_LEN(branchingFactors);
+        costs.reserve(costs.size() + kmeansParamSpaceSize);
+
+        // evaluate kmeans for all parameter combinations
+        for (size_t i = 0; i < FLANN_ARRAY_LEN(maxIterations); ++i) {
+            for (size_t j = 0; j < FLANN_ARRAY_LEN(branchingFactors); ++j) {
+                CostData cost;
+                cost.params["algorithm"] = FLANN_INDEX_KMEANS;
+                cost.params["centers_init"] = FLANN_CENTERS_RANDOM;
+                cost.params["iterations"] = maxIterations[i];
+                cost.params["branching"] = branchingFactors[j];
+
+                evaluate_kmeans(cost);
+                costs.push_back(cost);
+            }
+        }
+
+        //         Logger::info("KMEANS, Step 2: simplex-downhill optimization\n");
+        //
+        //         const int n = 2;
+        //         // choose initial simplex points as the best parameters so far
+        //         int kmeansNMPoints[n*(n+1)];
+        //         float kmeansVals[n+1];
+        //         for (int i=0;i<n+1;++i) {
+        //             kmeansNMPoints[i*n] = (int)kmeansCosts[i].params["branching"];
+        //             kmeansNMPoints[i*n+1] = (int)kmeansCosts[i].params["max-iterations"];
+        //             kmeansVals[i] = kmeansCosts[i].timeCost;
+        //         }
+        //         KMeansSimpleDownhillFunctor kmeans_cost_func(*this);
+        //         // run optimization
+        //         optimizeSimplexDownhill(kmeansNMPoints,n,kmeans_cost_func,kmeansVals);
+        //         // store results
+        //         for (int i=0;i<n+1;++i) {
+        //             kmeansCosts[i].pa
