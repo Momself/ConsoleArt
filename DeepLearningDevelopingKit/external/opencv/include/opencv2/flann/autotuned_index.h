@@ -117,4 +117,148 @@ public:
         print_params(bestSearchParams_, stream);
         Logger::info("----------------------------------------------------\n");
         Logger::info("Search parameters:\n");
- 
+        Logger::info("%s", stream.str().c_str());
+        Logger::info("----------------------------------------------------\n");
+    }
+
+    /**
+     *  Saves the index to a stream
+     */
+    virtual void saveIndex(FILE* stream)
+    {
+        save_value(stream, (int)bestIndex_->getType());
+        bestIndex_->saveIndex(stream);
+        save_value(stream, get_param<int>(bestSearchParams_, "checks"));
+    }
+
+    /**
+     *  Loads the index from a stream
+     */
+    virtual void loadIndex(FILE* stream)
+    {
+        int index_type;
+
+        load_value(stream, index_type);
+        IndexParams params;
+        params["algorithm"] = (flann_algorithm_t)index_type;
+        bestIndex_ = create_index_by_type<Distance>(dataset_, params, distance_);
+        bestIndex_->loadIndex(stream);
+        int checks;
+        load_value(stream, checks);
+        bestSearchParams_["checks"] = checks;
+    }
+
+    /**
+     *      Method that searches for nearest-neighbors
+     */
+    virtual void findNeighbors(ResultSet<DistanceType>& result, const ElementType* vec, const SearchParams& searchParams)
+    {
+        int checks = get_param<int>(searchParams,"checks",FLANN_CHECKS_AUTOTUNED);
+        if (checks == FLANN_CHECKS_AUTOTUNED) {
+            bestIndex_->findNeighbors(result, vec, bestSearchParams_);
+        }
+        else {
+            bestIndex_->findNeighbors(result, vec, searchParams);
+        }
+    }
+
+
+    IndexParams getParameters() const
+    {
+        return bestIndex_->getParameters();
+    }
+
+    SearchParams getSearchParameters() const
+    {
+        return bestSearchParams_;
+    }
+
+    float getSpeedup() const
+    {
+        return speedup_;
+    }
+
+
+    /**
+     *      Number of features in this index.
+     */
+    virtual size_t size() const
+    {
+        return bestIndex_->size();
+    }
+
+    /**
+     *  The length of each vector in this index.
+     */
+    virtual size_t veclen() const
+    {
+        return bestIndex_->veclen();
+    }
+
+    /**
+     * The amount of memory (in bytes) this index uses.
+     */
+    virtual int usedMemory() const
+    {
+        return bestIndex_->usedMemory();
+    }
+
+    /**
+     * Algorithm name
+     */
+    virtual flann_algorithm_t getType() const
+    {
+        return FLANN_INDEX_AUTOTUNED;
+    }
+
+private:
+
+    struct CostData
+    {
+        float searchTimeCost;
+        float buildTimeCost;
+        float memoryCost;
+        float totalCost;
+        IndexParams params;
+    };
+
+    void evaluate_kmeans(CostData& cost)
+    {
+        StartStopTimer t;
+        int checks;
+        const int nn = 1;
+
+        Logger::info("KMeansTree using params: max_iterations=%d, branching=%d\n",
+                     get_param<int>(cost.params,"iterations"),
+                     get_param<int>(cost.params,"branching"));
+        KMeansIndex<Distance> kmeans(sampledDataset_, cost.params, distance_);
+        // measure index build time
+        t.start();
+        kmeans.buildIndex();
+        t.stop();
+        float buildTime = (float)t.value;
+
+        // measure search time
+        float searchTime = test_index_precision(kmeans, sampledDataset_, testDataset_, gt_matches_, target_precision_, checks, distance_, nn);
+
+        float datasetMemory = float(sampledDataset_.rows * sampledDataset_.cols * sizeof(float));
+        cost.memoryCost = (kmeans.usedMemory() + datasetMemory) / datasetMemory;
+        cost.searchTimeCost = searchTime;
+        cost.buildTimeCost = buildTime;
+        Logger::info("KMeansTree buildTime=%g, searchTime=%g, build_weight=%g\n", buildTime, searchTime, build_weight_);
+    }
+
+
+    void evaluate_kdtree(CostData& cost)
+    {
+        StartStopTimer t;
+        int checks;
+        const int nn = 1;
+
+        Logger::info("KDTree using params: trees=%d\n", get_param<int>(cost.params,"trees"));
+        KDTreeIndex<Distance> kdtree(sampledDataset_, cost.params, distance_);
+
+        t.start();
+        kdtree.buildIndex();
+        t.stop();
+        float buildTime =
