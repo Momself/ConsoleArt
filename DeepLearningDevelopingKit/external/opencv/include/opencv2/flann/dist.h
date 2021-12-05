@@ -424,4 +424,111 @@ struct Hamming
     template<typename Iterator1, typename Iterator2>
     ResultType operator()(Iterator1 a, Iterator2 b, size_t size, ResultType /*worst_dist*/ = -1) const
     {
-        ResultType re
+        ResultType result = 0;
+#ifdef __ARM_NEON__
+        {
+            uint32x4_t bits = vmovq_n_u32(0);
+            for (size_t i = 0; i < size; i += 16) {
+                uint8x16_t A_vec = vld1q_u8 (a + i);
+                uint8x16_t B_vec = vld1q_u8 (b + i);
+                uint8x16_t AxorB = veorq_u8 (A_vec, B_vec);
+                uint8x16_t bitsSet = vcntq_u8 (AxorB);
+                uint16x8_t bitSet8 = vpaddlq_u8 (bitsSet);
+                uint32x4_t bitSet4 = vpaddlq_u16 (bitSet8);
+                bits = vaddq_u32(bits, bitSet4);
+            }
+            uint64x2_t bitSet2 = vpaddlq_u32 (bits);
+            result = vgetq_lane_s32 (vreinterpretq_s32_u64(bitSet2),0);
+            result += vgetq_lane_s32 (vreinterpretq_s32_u64(bitSet2),2);
+        }
+#elif __GNUC__
+        {
+            //for portability just use unsigned long -- and use the __builtin_popcountll (see docs for __builtin_popcountll)
+            typedef unsigned long long pop_t;
+            const size_t modulo = size % sizeof(pop_t);
+            const pop_t* a2 = reinterpret_cast<const pop_t*> (a);
+            const pop_t* b2 = reinterpret_cast<const pop_t*> (b);
+            const pop_t* a2_end = a2 + (size / sizeof(pop_t));
+
+            for (; a2 != a2_end; ++a2, ++b2) result += __builtin_popcountll((*a2) ^ (*b2));
+
+            if (modulo) {
+                //in the case where size is not dividable by sizeof(size_t)
+                //need to mask off the bits at the end
+                pop_t a_final = 0, b_final = 0;
+                memcpy(&a_final, a2, modulo);
+                memcpy(&b_final, b2, modulo);
+                result += __builtin_popcountll(a_final ^ b_final);
+            }
+        }
+#else // NO NEON and NOT GNUC
+        typedef unsigned long long pop_t;
+        HammingLUT lut;
+        result = lut(reinterpret_cast<const unsigned char*> (a),
+                     reinterpret_cast<const unsigned char*> (b), size * sizeof(pop_t));
+#endif
+        return result;
+    }
+};
+
+template<typename T>
+struct Hamming2
+{
+    typedef False is_kdtree_distance;
+    typedef False is_vector_space_distance;
+
+    typedef T ElementType;
+    typedef int ResultType;
+
+    /** This is popcount_3() from:
+     * http://en.wikipedia.org/wiki/Hamming_weight */
+    unsigned int popcnt32(uint32_t n) const
+    {
+        n -= ((n >> 1) & 0x55555555);
+        n = (n & 0x33333333) + ((n >> 2) & 0x33333333);
+        return (((n + (n >> 4))& 0xF0F0F0F)* 0x1010101) >> 24;
+    }
+
+#ifdef FLANN_PLATFORM_64_BIT
+    unsigned int popcnt64(uint64_t n) const
+    {
+        n -= ((n >> 1) & 0x5555555555555555);
+        n = (n & 0x3333333333333333) + ((n >> 2) & 0x3333333333333333);
+        return (((n + (n >> 4))& 0x0f0f0f0f0f0f0f0f)* 0x0101010101010101) >> 56;
+    }
+#endif
+
+    template <typename Iterator1, typename Iterator2>
+    ResultType operator()(Iterator1 a, Iterator2 b, size_t size, ResultType /*worst_dist*/ = -1) const
+    {
+#ifdef FLANN_PLATFORM_64_BIT
+        const uint64_t* pa = reinterpret_cast<const uint64_t*>(a);
+        const uint64_t* pb = reinterpret_cast<const uint64_t*>(b);
+        ResultType result = 0;
+        size /= (sizeof(uint64_t)/sizeof(unsigned char));
+        for(size_t i = 0; i < size; ++i ) {
+            result += popcnt64(*pa ^ *pb);
+            ++pa;
+            ++pb;
+        }
+#else
+        const uint32_t* pa = reinterpret_cast<const uint32_t*>(a);
+        const uint32_t* pb = reinterpret_cast<const uint32_t*>(b);
+        ResultType result = 0;
+        size /= (sizeof(uint32_t)/sizeof(unsigned char));
+        for(size_t i = 0; i < size; ++i ) {
+            result += popcnt32(*pa ^ *pb);
+            ++pa;
+            ++pb;
+        }
+#endif
+        return result;
+    }
+};
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<class T>
+struct HistIntersecti
