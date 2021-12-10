@@ -656,4 +656,165 @@ struct ChiSquareDistance
         while (a < last) {
             sum = (ResultType)(*a + *b);
             if (sum>0) {
-          
+                diff = (ResultType)(*a - *b);
+                result += diff*diff/sum;
+            }
+            ++a;
+            ++b;
+
+            if ((worst_dist>0)&&(result>worst_dist)) {
+                return result;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Partial distance, used by the kd-tree.
+     */
+    template <typename U, typename V>
+    inline ResultType accum_dist(const U& a, const V& b, int) const
+    {
+        ResultType result = ResultType();
+        ResultType sum, diff;
+
+        sum = (ResultType)(a+b);
+        if (sum>0) {
+            diff = (ResultType)(a-b);
+            result = diff*diff/sum;
+        }
+        return result;
+    }
+};
+
+
+template<class T>
+struct KL_Divergence
+{
+    typedef True is_kdtree_distance;
+    typedef True is_vector_space_distance;
+
+    typedef T ElementType;
+    typedef typename Accumulator<T>::Type ResultType;
+
+    /**
+     *  Compute the Kullback-Leibler divergence
+     */
+    template <typename Iterator1, typename Iterator2>
+    ResultType operator()(Iterator1 a, Iterator2 b, size_t size, ResultType worst_dist = -1) const
+    {
+        ResultType result = ResultType();
+        Iterator1 last = a + size;
+
+        while (a < last) {
+            if (* b != 0) {
+                ResultType ratio = (ResultType)(*a / *b);
+                if (ratio>0) {
+                    result += *a * log(ratio);
+                }
+            }
+            ++a;
+            ++b;
+
+            if ((worst_dist>0)&&(result>worst_dist)) {
+                return result;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Partial distance, used by the kd-tree.
+     */
+    template <typename U, typename V>
+    inline ResultType accum_dist(const U& a, const V& b, int) const
+    {
+        ResultType result = ResultType();
+        if( *b != 0 ) {
+            ResultType ratio = (ResultType)(a / b);
+            if (ratio>0) {
+                result = a * log(ratio);
+            }
+        }
+        return result;
+    }
+};
+
+
+
+/*
+ * This is a "zero iterator". It basically behaves like a zero filled
+ * array to all algorithms that use arrays as iterators (STL style).
+ * It's useful when there's a need to compute the distance between feature
+ * and origin it and allows for better compiler optimisation than using a
+ * zero-filled array.
+ */
+template <typename T>
+struct ZeroIterator
+{
+
+    T operator*()
+    {
+        return 0;
+    }
+
+    T operator[](int)
+    {
+        return 0;
+    }
+
+    const ZeroIterator<T>& operator ++()
+    {
+        return *this;
+    }
+
+    ZeroIterator<T> operator ++(int)
+    {
+        return *this;
+    }
+
+    ZeroIterator<T>& operator+=(int)
+    {
+        return *this;
+    }
+
+};
+
+
+/*
+ * Depending on processed distances, some of them are already squared (e.g. L2)
+ * and some are not (e.g.Hamming). In KMeans++ for instance we want to be sure
+ * we are working on ^2 distances, thus following templates to ensure that.
+ */
+template <typename Distance, typename ElementType>
+struct squareDistance
+{
+    typedef typename Distance::ResultType ResultType;
+    ResultType operator()( ResultType dist ) { return dist*dist; }
+};
+
+
+template <typename ElementType>
+struct squareDistance<L2_Simple<ElementType>, ElementType>
+{
+    typedef typename L2_Simple<ElementType>::ResultType ResultType;
+    ResultType operator()( ResultType dist ) { return dist; }
+};
+
+template <typename ElementType>
+struct squareDistance<L2<ElementType>, ElementType>
+{
+    typedef typename L2<ElementType>::ResultType ResultType;
+    ResultType operator()( ResultType dist ) { return dist; }
+};
+
+
+template <typename ElementType>
+struct squareDistance<MinkowskiDistance<ElementType>, ElementType>
+{
+    typedef typename MinkowskiDistance<ElementType>::ResultType ResultType;
+    ResultType operator()( ResultType dist ) { return dist; }
+};
+
+template <typename ElementType>
+struct squareDistance<HellingerDistance<ElementTy
