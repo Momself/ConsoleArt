@@ -207,4 +207,134 @@ public:
      * \param[in] queries The query points for which to find the nearest neighbors
      * \param[out] indices The indices of the nearest neighbors found
      * \param[out] dists Distances to the nearest neighbors found
-     * \param[in] knn Number of ne
+     * \param[in] knn Number of nearest neighbors to return
+     * \param[in] params Search parameters
+     */
+    void knnSearch(const Matrix<ElementType>& queries, Matrix<int>& indices, Matrix<DistanceType>& dists, int knn, const SearchParams& params)
+    {
+        assert(queries.cols == veclen());
+        assert(indices.rows >= queries.rows);
+        assert(dists.rows >= queries.rows);
+        assert(int(indices.cols) >= knn);
+        assert(int(dists.cols) >= knn);
+
+        KNNSimpleResultSet<DistanceType> resultSet(knn);
+        for (size_t i = 0; i < queries.rows; i++) {
+            resultSet.init(indices[i], dists[i]);
+            findNeighbors(resultSet, queries[i], params);
+        }
+    }
+
+    IndexParams getParameters() const
+    {
+        return index_params_;
+    }
+
+    /**
+     * Find set of nearest neighbors to vec. Their indices are stored inside
+     * the result object.
+     *
+     * Params:
+     *     result = the result object in which the indices of the nearest-neighbors are stored
+     *     vec = the vector for which to search the nearest neighbors
+     *     maxCheck = the maximum number of restarts (in a best-bin-first manner)
+     */
+    void findNeighbors(ResultSet<DistanceType>& result, const ElementType* vec, const SearchParams& searchParams)
+    {
+        float epsError = 1+get_param(searchParams,"eps",0.0f);
+
+        std::vector<DistanceType> dists(dim_,0);
+        DistanceType distsq = computeInitialDistances(vec, dists);
+        searchLevel(result, vec, root_node_, distsq, dists, epsError);
+    }
+
+private:
+
+
+    /*--------------------- Internal Data Structures --------------------------*/
+    struct Node
+    {
+        /**
+         * Indices of points in leaf node
+         */
+        int left, right;
+        /**
+         * Dimension used for subdivision.
+         */
+        int divfeat;
+        /**
+         * The values used for subdivision.
+         */
+        DistanceType divlow, divhigh;
+        /**
+         * The child nodes.
+         */
+        Node* child1, * child2;
+    };
+    typedef Node* NodePtr;
+
+
+    struct Interval
+    {
+        DistanceType low, high;
+    };
+
+    typedef std::vector<Interval> BoundingBox;
+
+    typedef BranchStruct<NodePtr, DistanceType> BranchSt;
+    typedef BranchSt* Branch;
+
+
+
+
+    void save_tree(FILE* stream, NodePtr tree)
+    {
+        save_value(stream, *tree);
+        if (tree->child1!=NULL) {
+            save_tree(stream, tree->child1);
+        }
+        if (tree->child2!=NULL) {
+            save_tree(stream, tree->child2);
+        }
+    }
+
+
+    void load_tree(FILE* stream, NodePtr& tree)
+    {
+        tree = pool_.allocate<Node>();
+        load_value(stream, *tree);
+        if (tree->child1!=NULL) {
+            load_tree(stream, tree->child1);
+        }
+        if (tree->child2!=NULL) {
+            load_tree(stream, tree->child2);
+        }
+    }
+
+
+    void computeBoundingBox(BoundingBox& bbox)
+    {
+        bbox.resize(dim_);
+        for (size_t i=0; i<dim_; ++i) {
+            bbox[i].low = (DistanceType)dataset_[0][i];
+            bbox[i].high = (DistanceType)dataset_[0][i];
+        }
+        for (size_t k=1; k<dataset_.rows; ++k) {
+            for (size_t i=0; i<dim_; ++i) {
+                if (dataset_[k][i]<bbox[i].low) bbox[i].low = (DistanceType)dataset_[k][i];
+                if (dataset_[k][i]>bbox[i].high) bbox[i].high = (DistanceType)dataset_[k][i];
+            }
+        }
+    }
+
+
+    /**
+     * Create a tree node that subdivides the list of vecs from vind[first]
+     * to vind[last].  The routine is called recursively on each sublist.
+     * Place a pointer to this new tree node in the location pTree.
+     *
+     * Params: pTree = the new node to create
+     *                  first = index of the first vector
+     *                  last = index of the last vector
+     */
+    NodePtr divideTree(int left, 
