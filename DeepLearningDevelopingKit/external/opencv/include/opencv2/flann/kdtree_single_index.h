@@ -337,4 +337,112 @@ private:
      *                  first = index of the first vector
      *                  last = index of the last vector
      */
-    NodePtr divideTree(int left, 
+    NodePtr divideTree(int left, int right, BoundingBox& bbox)
+    {
+        NodePtr node = pool_.allocate<Node>(); // allocate memory
+
+        /* If too few exemplars remain, then make this a leaf node. */
+        if ( (right-left) <= leaf_max_size_) {
+            node->child1 = node->child2 = NULL;    /* Mark as leaf node. */
+            node->left = left;
+            node->right = right;
+
+            // compute bounding-box of leaf points
+            for (size_t i=0; i<dim_; ++i) {
+                bbox[i].low = (DistanceType)dataset_[vind_[left]][i];
+                bbox[i].high = (DistanceType)dataset_[vind_[left]][i];
+            }
+            for (int k=left+1; k<right; ++k) {
+                for (size_t i=0; i<dim_; ++i) {
+                    if (bbox[i].low>dataset_[vind_[k]][i]) bbox[i].low=(DistanceType)dataset_[vind_[k]][i];
+                    if (bbox[i].high<dataset_[vind_[k]][i]) bbox[i].high=(DistanceType)dataset_[vind_[k]][i];
+                }
+            }
+        }
+        else {
+            int idx;
+            int cutfeat;
+            DistanceType cutval;
+            middleSplit_(&vind_[0]+left, right-left, idx, cutfeat, cutval, bbox);
+
+            node->divfeat = cutfeat;
+
+            BoundingBox left_bbox(bbox);
+            left_bbox[cutfeat].high = cutval;
+            node->child1 = divideTree(left, left+idx, left_bbox);
+
+            BoundingBox right_bbox(bbox);
+            right_bbox[cutfeat].low = cutval;
+            node->child2 = divideTree(left+idx, right, right_bbox);
+
+            node->divlow = left_bbox[cutfeat].high;
+            node->divhigh = right_bbox[cutfeat].low;
+
+            for (size_t i=0; i<dim_; ++i) {
+                bbox[i].low = std::min(left_bbox[i].low, right_bbox[i].low);
+                bbox[i].high = std::max(left_bbox[i].high, right_bbox[i].high);
+            }
+        }
+
+        return node;
+    }
+
+    void computeMinMax(int* ind, int count, int dim, ElementType& min_elem, ElementType& max_elem)
+    {
+        min_elem = dataset_[ind[0]][dim];
+        max_elem = dataset_[ind[0]][dim];
+        for (int i=1; i<count; ++i) {
+            ElementType val = dataset_[ind[i]][dim];
+            if (val<min_elem) min_elem = val;
+            if (val>max_elem) max_elem = val;
+        }
+    }
+
+    void middleSplit(int* ind, int count, int& index, int& cutfeat, DistanceType& cutval, const BoundingBox& bbox)
+    {
+        // find the largest span from the approximate bounding box
+        ElementType max_span = bbox[0].high-bbox[0].low;
+        cutfeat = 0;
+        cutval = (bbox[0].high+bbox[0].low)/2;
+        for (size_t i=1; i<dim_; ++i) {
+            ElementType span = bbox[i].high-bbox[i].low;
+            if (span>max_span) {
+                max_span = span;
+                cutfeat = i;
+                cutval = (bbox[i].high+bbox[i].low)/2;
+            }
+        }
+
+        // compute exact span on the found dimension
+        ElementType min_elem, max_elem;
+        computeMinMax(ind, count, cutfeat, min_elem, max_elem);
+        cutval = (min_elem+max_elem)/2;
+        max_span = max_elem - min_elem;
+
+        // check if a dimension of a largest span exists
+        size_t k = cutfeat;
+        for (size_t i=0; i<dim_; ++i) {
+            if (i==k) continue;
+            ElementType span = bbox[i].high-bbox[i].low;
+            if (span>max_span) {
+                computeMinMax(ind, count, i, min_elem, max_elem);
+                span = max_elem - min_elem;
+                if (span>max_span) {
+                    max_span = span;
+                    cutfeat = i;
+                    cutval = (min_elem+max_elem)/2;
+                }
+            }
+        }
+        int lim1, lim2;
+        planeSplit(ind, count, cutfeat, cutval, lim1, lim2);
+
+        if (lim1>count/2) index = lim1;
+        else if (lim2<count/2) index = lim2;
+        else index = count/2;
+    }
+
+
+    void middleSplit_(int* ind, int count, int& index, int& cutfeat, DistanceType& cutval, const BoundingBox& bbox)
+    {
+        const float EPS=0.0000
