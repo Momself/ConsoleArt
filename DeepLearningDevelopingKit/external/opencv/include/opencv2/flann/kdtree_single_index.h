@@ -548,4 +548,88 @@ private:
             DistanceType worst_dist = result_set.worstDist();
             for (int i=node->left; i<node->right; ++i) {
                 int index = reorder_ ? i : vind_[i];
-                DistanceT
+                DistanceType dist = distance_(vec, data_[index], dim_, worst_dist);
+                if (dist<worst_dist) {
+                    result_set.addPoint(dist,vind_[i]);
+                }
+            }
+            return;
+        }
+
+        /* Which child branch should be taken first? */
+        int idx = node->divfeat;
+        ElementType val = vec[idx];
+        DistanceType diff1 = val - node->divlow;
+        DistanceType diff2 = val - node->divhigh;
+
+        NodePtr bestChild;
+        NodePtr otherChild;
+        DistanceType cut_dist;
+        if ((diff1+diff2)<0) {
+            bestChild = node->child1;
+            otherChild = node->child2;
+            cut_dist = distance_.accum_dist(val, node->divhigh, idx);
+        }
+        else {
+            bestChild = node->child2;
+            otherChild = node->child1;
+            cut_dist = distance_.accum_dist( val, node->divlow, idx);
+        }
+
+        /* Call recursively to search next level down. */
+        searchLevel(result_set, vec, bestChild, mindistsq, dists, epsError);
+
+        DistanceType dst = dists[idx];
+        mindistsq = mindistsq + cut_dist - dst;
+        dists[idx] = cut_dist;
+        if (mindistsq*epsError<=result_set.worstDist()) {
+            searchLevel(result_set, vec, otherChild, mindistsq, dists, epsError);
+        }
+        dists[idx] = dst;
+    }
+
+private:
+
+    /**
+     * The dataset used by this index
+     */
+    const Matrix<ElementType> dataset_;
+
+    IndexParams index_params_;
+
+    int leaf_max_size_;
+    bool reorder_;
+
+
+    /**
+     *  Array of indices to vectors in the dataset.
+     */
+    std::vector<int> vind_;
+
+    Matrix<ElementType> data_;
+
+    size_t size_;
+    size_t dim_;
+
+    /**
+     * Array of k-d trees used to find neighbours.
+     */
+    NodePtr root_node_;
+
+    BoundingBox root_bbox_;
+
+    /**
+     * Pooled memory allocator.
+     *
+     * Using a pooled memory allocator is more efficient
+     * than allocating memory directly when there is a large
+     * number small of memory allocations.
+     */
+    PooledAllocator pool_;
+
+    Distance distance_;
+};   // class KDTree
+
+}
+
+#endif //OPENCV_FLANN_KDTREE_SINGLE_INDEX_H_
