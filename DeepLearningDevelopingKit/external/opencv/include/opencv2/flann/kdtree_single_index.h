@@ -445,4 +445,107 @@ private:
 
     void middleSplit_(int* ind, int count, int& index, int& cutfeat, DistanceType& cutval, const BoundingBox& bbox)
     {
-        const float EPS=0.0000
+        const float EPS=0.00001f;
+        DistanceType max_span = bbox[0].high-bbox[0].low;
+        for (size_t i=1; i<dim_; ++i) {
+            DistanceType span = bbox[i].high-bbox[i].low;
+            if (span>max_span) {
+                max_span = span;
+            }
+        }
+        DistanceType max_spread = -1;
+        cutfeat = 0;
+        for (size_t i=0; i<dim_; ++i) {
+            DistanceType span = bbox[i].high-bbox[i].low;
+            if (span>(DistanceType)((1-EPS)*max_span)) {
+                ElementType min_elem, max_elem;
+                computeMinMax(ind, count, cutfeat, min_elem, max_elem);
+                DistanceType spread = (DistanceType)(max_elem-min_elem);
+                if (spread>max_spread) {
+                    cutfeat = (int)i;
+                    max_spread = spread;
+                }
+            }
+        }
+        // split in the middle
+        DistanceType split_val = (bbox[cutfeat].low+bbox[cutfeat].high)/2;
+        ElementType min_elem, max_elem;
+        computeMinMax(ind, count, cutfeat, min_elem, max_elem);
+
+        if (split_val<min_elem) cutval = (DistanceType)min_elem;
+        else if (split_val>max_elem) cutval = (DistanceType)max_elem;
+        else cutval = split_val;
+
+        int lim1, lim2;
+        planeSplit(ind, count, cutfeat, cutval, lim1, lim2);
+
+        if (lim1>count/2) index = lim1;
+        else if (lim2<count/2) index = lim2;
+        else index = count/2;
+    }
+
+
+    /**
+     *  Subdivide the list of points by a plane perpendicular on axe corresponding
+     *  to the 'cutfeat' dimension at 'cutval' position.
+     *
+     *  On return:
+     *  dataset[ind[0..lim1-1]][cutfeat]<cutval
+     *  dataset[ind[lim1..lim2-1]][cutfeat]==cutval
+     *  dataset[ind[lim2..count]][cutfeat]>cutval
+     */
+    void planeSplit(int* ind, int count, int cutfeat, DistanceType cutval, int& lim1, int& lim2)
+    {
+        /* Move vector indices for left subtree to front of list. */
+        int left = 0;
+        int right = count-1;
+        for (;; ) {
+            while (left<=right && dataset_[ind[left]][cutfeat]<cutval) ++left;
+            while (left<=right && dataset_[ind[right]][cutfeat]>=cutval) --right;
+            if (left>right) break;
+            std::swap(ind[left], ind[right]); ++left; --right;
+        }
+        /* If either list is empty, it means that all remaining features
+         * are identical. Split in the middle to maintain a balanced tree.
+         */
+        lim1 = left;
+        right = count-1;
+        for (;; ) {
+            while (left<=right && dataset_[ind[left]][cutfeat]<=cutval) ++left;
+            while (left<=right && dataset_[ind[right]][cutfeat]>cutval) --right;
+            if (left>right) break;
+            std::swap(ind[left], ind[right]); ++left; --right;
+        }
+        lim2 = left;
+    }
+
+    DistanceType computeInitialDistances(const ElementType* vec, std::vector<DistanceType>& dists)
+    {
+        DistanceType distsq = 0.0;
+
+        for (size_t i = 0; i < dim_; ++i) {
+            if (vec[i] < root_bbox_[i].low) {
+                dists[i] = distance_.accum_dist(vec[i], root_bbox_[i].low, (int)i);
+                distsq += dists[i];
+            }
+            if (vec[i] > root_bbox_[i].high) {
+                dists[i] = distance_.accum_dist(vec[i], root_bbox_[i].high, (int)i);
+                distsq += dists[i];
+            }
+        }
+
+        return distsq;
+    }
+
+    /**
+     * Performs an exact search in the tree starting from a node.
+     */
+    void searchLevel(ResultSet<DistanceType>& result_set, const ElementType* vec, const NodePtr node, DistanceType mindistsq,
+                     std::vector<DistanceType>& dists, const float epsError)
+    {
+        /* If this is a leaf node, then do check and return. */
+        if ((node->child1 == NULL)&&(node->child2 == NULL)) {
+            DistanceType worst_dist = result_set.worstDist();
+            for (int i=node->left; i<node->right; ++i) {
+                int index = reorder_ ? i : vind_[i];
+                DistanceT
