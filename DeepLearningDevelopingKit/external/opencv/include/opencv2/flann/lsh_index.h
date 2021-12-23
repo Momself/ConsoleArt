@@ -110,4 +110,128 @@ public:
     void buildIndex()
     {
         tables_.resize(table_number_);
-        for (unsigned int i = 0; i < table_number_; ++i
+        for (unsigned int i = 0; i < table_number_; ++i) {
+            lsh::LshTable<ElementType>& table = tables_[i];
+            table = lsh::LshTable<ElementType>(feature_size_, key_size_);
+
+            // Add the features to the table
+            table.add(dataset_);
+        }
+    }
+
+    flann_algorithm_t getType() const
+    {
+        return FLANN_INDEX_LSH;
+    }
+
+
+    void saveIndex(FILE* stream)
+    {
+        save_value(stream,table_number_);
+        save_value(stream,key_size_);
+        save_value(stream,multi_probe_level_);
+        save_value(stream, dataset_);
+    }
+
+    void loadIndex(FILE* stream)
+    {
+        load_value(stream, table_number_);
+        load_value(stream, key_size_);
+        load_value(stream, multi_probe_level_);
+        load_value(stream, dataset_);
+        // Building the index is so fast we can afford not storing it
+        buildIndex();
+
+        index_params_["algorithm"] = getType();
+        index_params_["table_number"] = table_number_;
+        index_params_["key_size"] = key_size_;
+        index_params_["multi_probe_level"] = multi_probe_level_;
+    }
+
+    /**
+     *  Returns size of index.
+     */
+    size_t size() const
+    {
+        return dataset_.rows;
+    }
+
+    /**
+     * Returns the length of an index feature.
+     */
+    size_t veclen() const
+    {
+        return feature_size_;
+    }
+
+    /**
+     * Computes the index memory usage
+     * Returns: memory used by the index
+     */
+    int usedMemory() const
+    {
+        return (int)(dataset_.rows * sizeof(int));
+    }
+
+
+    IndexParams getParameters() const
+    {
+        return index_params_;
+    }
+
+    /**
+     * \brief Perform k-nearest neighbor search
+     * \param[in] queries The query points for which to find the nearest neighbors
+     * \param[out] indices The indices of the nearest neighbors found
+     * \param[out] dists Distances to the nearest neighbors found
+     * \param[in] knn Number of nearest neighbors to return
+     * \param[in] params Search parameters
+     */
+    virtual void knnSearch(const Matrix<ElementType>& queries, Matrix<int>& indices, Matrix<DistanceType>& dists, int knn, const SearchParams& params)
+    {
+        assert(queries.cols == veclen());
+        assert(indices.rows >= queries.rows);
+        assert(dists.rows >= queries.rows);
+        assert(int(indices.cols) >= knn);
+        assert(int(dists.cols) >= knn);
+
+
+        KNNUniqueResultSet<DistanceType> resultSet(knn);
+        for (size_t i = 0; i < queries.rows; i++) {
+            resultSet.clear();
+            std::fill_n(indices[i], knn, -1);
+            std::fill_n(dists[i], knn, std::numeric_limits<DistanceType>::max());
+            findNeighbors(resultSet, queries[i], params);
+            if (get_param(params,"sorted",true)) resultSet.sortAndCopy(indices[i], dists[i], knn);
+            else resultSet.copy(indices[i], dists[i], knn);
+        }
+    }
+
+
+    /**
+     * Find set of nearest neighbors to vec. Their indices are stored inside
+     * the result object.
+     *
+     * Params:
+     *     result = the result object in which the indices of the nearest-neighbors are stored
+     *     vec = the vector for which to search the nearest neighbors
+     *     maxCheck = the maximum number of restarts (in a best-bin-first manner)
+     */
+    void findNeighbors(ResultSet<DistanceType>& result, const ElementType* vec, const SearchParams& /*searchParams*/)
+    {
+        getNeighbors(vec, result);
+    }
+
+private:
+    /** Defines the comparator on score and index
+     */
+    typedef std::pair<float, unsigned int> ScoreIndexPair;
+    struct SortScoreIndexPairOnSecond
+    {
+        bool operator()(const ScoreIndexPair& left, const ScoreIndexPair& right) const
+        {
+            return left.second < right.second;
+        }
+    };
+
+    /** Fills the different xor masks to us
