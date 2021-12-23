@@ -234,4 +234,77 @@ private:
         }
     };
 
-    /** Fills the different xor masks to us
+    /** Fills the different xor masks to use when getting the neighbors in multi-probe LSH
+     * @param key the key we build neighbors from
+     * @param lowest_index the lowest index of the bit set
+     * @param level the multi-probe level we are at
+     * @param xor_masks all the xor mask
+     */
+    void fill_xor_mask(lsh::BucketKey key, int lowest_index, unsigned int level,
+                       std::vector<lsh::BucketKey>& xor_masks)
+    {
+        xor_masks.push_back(key);
+        if (level == 0) return;
+        for (int index = lowest_index - 1; index >= 0; --index) {
+            // Create a new key
+            lsh::BucketKey new_key = key | (1 << index);
+            fill_xor_mask(new_key, index, level - 1, xor_masks);
+        }
+    }
+
+    /** Performs the approximate nearest-neighbor search.
+     * @param vec the feature to analyze
+     * @param do_radius flag indicating if we check the radius too
+     * @param radius the radius if it is a radius search
+     * @param do_k flag indicating if we limit the number of nn
+     * @param k_nn the number of nearest neighbors
+     * @param checked_average used for debugging
+     */
+    void getNeighbors(const ElementType* vec, bool /*do_radius*/, float radius, bool do_k, unsigned int k_nn,
+                      float& /*checked_average*/)
+    {
+        static std::vector<ScoreIndexPair> score_index_heap;
+
+        if (do_k) {
+            unsigned int worst_score = std::numeric_limits<unsigned int>::max();
+            typename std::vector<lsh::LshTable<ElementType> >::const_iterator table = tables_.begin();
+            typename std::vector<lsh::LshTable<ElementType> >::const_iterator table_end = tables_.end();
+            for (; table != table_end; ++table) {
+                size_t key = table->getKey(vec);
+                std::vector<lsh::BucketKey>::const_iterator xor_mask = xor_masks_.begin();
+                std::vector<lsh::BucketKey>::const_iterator xor_mask_end = xor_masks_.end();
+                for (; xor_mask != xor_mask_end; ++xor_mask) {
+                    size_t sub_key = key ^ (*xor_mask);
+                    const lsh::Bucket* bucket = table->getBucketFromKey(sub_key);
+                    if (bucket == 0) continue;
+
+                    // Go over each descriptor index
+                    std::vector<lsh::FeatureIndex>::const_iterator training_index = bucket->begin();
+                    std::vector<lsh::FeatureIndex>::const_iterator last_training_index = bucket->end();
+                    DistanceType hamming_distance;
+
+                    // Process the rest of the candidates
+                    for (; training_index < last_training_index; ++training_index) {
+                        hamming_distance = distance_(vec, dataset_[*training_index], dataset_.cols);
+
+                        if (hamming_distance < worst_score) {
+                            // Insert the new element
+                            score_index_heap.push_back(ScoreIndexPair(hamming_distance, training_index));
+                            std::push_heap(score_index_heap.begin(), score_index_heap.end());
+
+                            if (score_index_heap.size() > (unsigned int)k_nn) {
+                                // Remove the highest distance value as we have too many elements
+                                std::pop_heap(score_index_heap.begin(), score_index_heap.end());
+                                score_index_heap.pop_back();
+                                // Keep track of the worst score
+                                worst_score = score_index_heap.front().first;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            typename std::vector<lsh::LshTable<ElementType> >::const_iterator table = tables_.begin();
+            typename std::vector<lsh::LshTable<ElementType> >::const_iterator table_end = tables_.end();
+            for (; table != table_end; ++t
