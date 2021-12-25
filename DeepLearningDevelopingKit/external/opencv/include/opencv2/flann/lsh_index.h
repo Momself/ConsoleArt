@@ -307,4 +307,86 @@ private:
         else {
             typename std::vector<lsh::LshTable<ElementType> >::const_iterator table = tables_.begin();
             typename std::vector<lsh::LshTable<ElementType> >::const_iterator table_end = tables_.end();
-            for (; table != table_end; ++t
+            for (; table != table_end; ++table) {
+                size_t key = table->getKey(vec);
+                std::vector<lsh::BucketKey>::const_iterator xor_mask = xor_masks_.begin();
+                std::vector<lsh::BucketKey>::const_iterator xor_mask_end = xor_masks_.end();
+                for (; xor_mask != xor_mask_end; ++xor_mask) {
+                    size_t sub_key = key ^ (*xor_mask);
+                    const lsh::Bucket* bucket = table->getBucketFromKey(sub_key);
+                    if (bucket == 0) continue;
+
+                    // Go over each descriptor index
+                    std::vector<lsh::FeatureIndex>::const_iterator training_index = bucket->begin();
+                    std::vector<lsh::FeatureIndex>::const_iterator last_training_index = bucket->end();
+                    DistanceType hamming_distance;
+
+                    // Process the rest of the candidates
+                    for (; training_index < last_training_index; ++training_index) {
+                        // Compute the Hamming distance
+                        hamming_distance = distance_(vec, dataset_[*training_index], dataset_.cols);
+                        if (hamming_distance < radius) score_index_heap.push_back(ScoreIndexPair(hamming_distance, training_index));
+                    }
+                }
+            }
+        }
+    }
+
+    /** Performs the approximate nearest-neighbor search.
+     * This is a slower version than the above as it uses the ResultSet
+     * @param vec the feature to analyze
+     */
+    void getNeighbors(const ElementType* vec, ResultSet<DistanceType>& result)
+    {
+        typename std::vector<lsh::LshTable<ElementType> >::const_iterator table = tables_.begin();
+        typename std::vector<lsh::LshTable<ElementType> >::const_iterator table_end = tables_.end();
+        for (; table != table_end; ++table) {
+            size_t key = table->getKey(vec);
+            std::vector<lsh::BucketKey>::const_iterator xor_mask = xor_masks_.begin();
+            std::vector<lsh::BucketKey>::const_iterator xor_mask_end = xor_masks_.end();
+            for (; xor_mask != xor_mask_end; ++xor_mask) {
+                size_t sub_key = key ^ (*xor_mask);
+                const lsh::Bucket* bucket = table->getBucketFromKey((lsh::BucketKey)sub_key);
+                if (bucket == 0) continue;
+
+                // Go over each descriptor index
+                std::vector<lsh::FeatureIndex>::const_iterator training_index = bucket->begin();
+                std::vector<lsh::FeatureIndex>::const_iterator last_training_index = bucket->end();
+                DistanceType hamming_distance;
+
+                // Process the rest of the candidates
+                for (; training_index < last_training_index; ++training_index) {
+                    // Compute the Hamming distance
+                    hamming_distance = distance_(vec, dataset_[*training_index], (int)dataset_.cols);
+                    result.addPoint(hamming_distance, *training_index);
+                }
+            }
+        }
+    }
+
+    /** The different hash tables */
+    std::vector<lsh::LshTable<ElementType> > tables_;
+
+    /** The data the LSH tables where built from */
+    Matrix<ElementType> dataset_;
+
+    /** The size of the features (as ElementType[]) */
+    unsigned int feature_size_;
+
+    IndexParams index_params_;
+
+    /** table number */
+    unsigned int table_number_;
+    /** key size */
+    unsigned int key_size_;
+    /** How far should we look for neighbors in multi-probe LSH */
+    unsigned int multi_probe_level_;
+
+    /** The XOR masks to apply to a key to get the neighboring buckets */
+    std::vector<lsh::BucketKey> xor_masks_;
+
+    Distance distance_;
+};
+}
+
+#endif //OPENCV_FLANN_LSH_INDEX_H_
