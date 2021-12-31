@@ -106,4 +106,118 @@ inline std::ostream& operator <<(std::ostream& out, const LshStats& stats)
     << std::setiosflags(std::ios::left) << stats.bucket_size_mean_ << "\n" << std::setw(w)
     << std::setiosflags(std::ios::right) << "median size : " << stats.bucket_size_median_ << "\n" << std::setw(w)
     << std::setiosflags(std::ios::right) << "min size : " << std::setiosflags(std::ios::left)
-    << stats.bucket_size_min_ << "\n" << std::setw(w) << std::setiosfla
+    << stats.bucket_size_min_ << "\n" << std::setw(w) << std::setiosflags(std::ios::right) << "max size : "
+    << std::setiosflags(std::ios::left) << stats.bucket_size_max_;
+
+    // Display the histogram
+    out << std::endl << std::setw(w) << std::setiosflags(std::ios::right) << "histogram : "
+    << std::setiosflags(std::ios::left);
+    for (std::vector<std::vector<unsigned int> >::const_iterator iterator = stats.size_histogram_.begin(), end =
+             stats.size_histogram_.end(); iterator != end; ++iterator) out << (*iterator)[0] << "-" << (*iterator)[1] << ": " << (*iterator)[2] << ",  ";
+
+    return out;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/** Lsh hash table. As its key is a sub-feature, and as usually
+ * the size of it is pretty small, we keep it as a continuous memory array.
+ * The value is an index in the corpus of features (we keep it as an unsigned
+ * int for pure memory reasons, it could be a size_t)
+ */
+template<typename ElementType>
+class LshTable
+{
+public:
+    /** A container of all the feature indices. Optimized for space
+     */
+#if USE_UNORDERED_MAP
+    typedef std::unordered_map<BucketKey, Bucket> BucketsSpace;
+#else
+    typedef std::map<BucketKey, Bucket> BucketsSpace;
+#endif
+
+    /** A container of all the feature indices. Optimized for speed
+     */
+    typedef std::vector<Bucket> BucketsSpeed;
+
+    /** Default constructor
+     */
+    LshTable()
+    {
+        key_size_ = 0;
+        feature_size_ = 0;
+        speed_level_ = kArray;
+    }
+
+    /** Default constructor
+     * Create the mask and allocate the memory
+     * @param feature_size is the size of the feature (considered as a ElementType[])
+     * @param key_size is the number of bits that are turned on in the feature
+     */
+    LshTable(unsigned int feature_size, unsigned int key_size)
+    {
+        feature_size_ = feature_size;
+        (void)key_size;
+        std::cerr << "LSH is not implemented for that type" << std::endl;
+        assert(0);
+    }
+
+    /** Add a feature to the table
+     * @param value the value to store for that feature
+     * @param feature the feature itself
+     */
+    void add(unsigned int value, const ElementType* feature)
+    {
+        // Add the value to the corresponding bucket
+        BucketKey key = (lsh::BucketKey)getKey(feature);
+
+        switch (speed_level_) {
+        case kArray:
+            // That means we get the buckets from an array
+            buckets_speed_[key].push_back(value);
+            break;
+        case kBitsetHash:
+            // That means we can check the bitset for the presence of a key
+            key_bitset_.set(key);
+            buckets_space_[key].push_back(value);
+            break;
+        case kHash:
+        {
+            // That means we have to check for the hash table for the presence of a key
+            buckets_space_[key].push_back(value);
+            break;
+        }
+        }
+    }
+
+    /** Add a set of features to the table
+     * @param dataset the values to store
+     */
+    void add(Matrix<ElementType> dataset)
+    {
+#if USE_UNORDERED_MAP
+        buckets_space_.rehash((buckets_space_.size() + dataset.rows) * 1.2);
+#endif
+        // Add the features to the table
+        for (unsigned int i = 0; i < dataset.rows; ++i) add(i, dataset[i]);
+        // Now that the table is full, optimize it for speed/space
+        optimize();
+    }
+
+    /** Get a bucket given the key
+     * @param key
+     * @return
+     */
+    inline const Bucket* getBucketFromKey(BucketKey key) const
+    {
+        // Generate other buckets
+        switch (speed_level_) {
+        case kArray:
+            // That means we get the buckets from an array
+            return &buckets_speed_[key];
+            break;
+        case kBitsetHash:
+            // That means we can check the bitset for the presence of a key
+            if (key_bitset_.test(key)) return &buckets_space_.find(key)-
