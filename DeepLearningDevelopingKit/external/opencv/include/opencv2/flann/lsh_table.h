@@ -328,3 +328,112 @@ private:
      * That is just a speedup so that we don't look in the hash table (which can be mush slower that checking a bitset)
      */
     DynamicBitset key_bitset_;
+
+    /** The size of the sub-signature in bits
+     */
+    unsigned int key_size_;
+
+    unsigned int feature_size_;
+
+    // Members only used for the unsigned char specialization
+    /** The mask to apply to a feature to get the hash key
+     * Only used in the unsigned char case
+     */
+    std::vector<size_t> mask_;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Specialization for unsigned char
+
+template<>
+inline LshTable<unsigned char>::LshTable(unsigned int feature_size, unsigned int subsignature_size)
+{
+    feature_size_ = feature_size;
+    initialize(subsignature_size);
+    // Allocate the mask
+    mask_ = std::vector<size_t>((feature_size * sizeof(char) + sizeof(size_t) - 1) / sizeof(size_t), 0);
+
+    // A bit brutal but fast to code
+    std::vector<int> indices(feature_size * CHAR_BIT);
+    for (size_t i = 0; i < feature_size * CHAR_BIT; ++i) indices[i] = (int)i;
+#ifndef OPENCV_FLANN_USE_STD_RAND
+    cv::randShuffle(indices);
+#else
+    std::random_shuffle(indices.begin(), indices.end());
+#endif
+
+    // Generate a random set of order of subsignature_size_ bits
+    for (unsigned int i = 0; i < key_size_; ++i) {
+        size_t index = indices[i];
+
+        // Set that bit in the mask
+        size_t divisor = CHAR_BIT * sizeof(size_t);
+        size_t idx = index / divisor; //pick the right size_t index
+        mask_[idx] |= size_t(1) << (index % divisor); //use modulo to find the bit offset
+    }
+
+    // Set to 1 if you want to display the mask for debug
+#if 0
+    {
+        size_t bcount = 0;
+        BOOST_FOREACH(size_t mask_block, mask_){
+            out << std::setw(sizeof(size_t) * CHAR_BIT / 4) << std::setfill('0') << std::hex << mask_block
+                << std::endl;
+            bcount += __builtin_popcountll(mask_block);
+        }
+        out << "bit count : " << std::dec << bcount << std::endl;
+        out << "mask size : " << mask_.size() << std::endl;
+        return out;
+    }
+#endif
+}
+
+/** Return the Subsignature of a feature
+ * @param feature the feature to analyze
+ */
+template<>
+inline size_t LshTable<unsigned char>::getKey(const unsigned char* feature) const
+{
+    // no need to check if T is dividable by sizeof(size_t) like in the Hamming
+    // distance computation as we have a mask
+    // FIXIT: This is bad assumption, because we reading tail bytes after of the allocated features buffer
+    const size_t* feature_block_ptr = reinterpret_cast<const size_t*> ((const void*)feature);
+
+    // Figure out the subsignature of the feature
+    // Given the feature ABCDEF, and the mask 001011, the output will be
+    // 000CEF
+    size_t subsignature = 0;
+    size_t bit_index = 1;
+
+    for (unsigned i = 0; i < feature_size_; i += sizeof(size_t)) {
+        // get the mask and signature blocks
+        size_t feature_block;
+        if (i <= feature_size_ - sizeof(size_t))
+        {
+            feature_block = *feature_block_ptr;
+        }
+        else
+        {
+            size_t tmp = 0;
+            memcpy(&tmp, feature_block_ptr, feature_size_ - i); // preserve bytes order
+            feature_block = tmp;
+        }
+        size_t mask_block = mask_[i / sizeof(size_t)];
+        while (mask_block) {
+            // Get the lowest set bit in the mask block
+            size_t lowest_bit = mask_block & (-(ptrdiff_t)mask_block);
+            // Add it to the current subsignature if necessary
+            subsignature += (feature_block & lowest_bit) ? bit_index : 0;
+            // Reset the bit in the mask block
+            mask_block ^= lowest_bit;
+            // increment the bit index for the subsignature
+            bit_index <<= 1;
+        }
+        // Check the next feature block
+        ++feature_block_ptr;
+    }
+    return subsignature;
+}
+
+template<>
+inline Lsh
