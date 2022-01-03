@@ -436,4 +436,78 @@ inline size_t LshTable<unsigned char>::getKey(const unsigned char* feature) cons
 }
 
 template<>
-inline Lsh
+inline LshStats LshTable<unsigned char>::getStats() const
+{
+    LshStats stats;
+    stats.bucket_size_mean_ = 0;
+    if ((buckets_speed_.empty()) && (buckets_space_.empty())) {
+        stats.n_buckets_ = 0;
+        stats.bucket_size_median_ = 0;
+        stats.bucket_size_min_ = 0;
+        stats.bucket_size_max_ = 0;
+        return stats;
+    }
+
+    if (!buckets_speed_.empty()) {
+        for (BucketsSpeed::const_iterator pbucket = buckets_speed_.begin(); pbucket != buckets_speed_.end(); ++pbucket) {
+            stats.bucket_sizes_.push_back((lsh::FeatureIndex)pbucket->size());
+            stats.bucket_size_mean_ += pbucket->size();
+        }
+        stats.bucket_size_mean_ /= buckets_speed_.size();
+        stats.n_buckets_ = buckets_speed_.size();
+    }
+    else {
+        for (BucketsSpace::const_iterator x = buckets_space_.begin(); x != buckets_space_.end(); ++x) {
+            stats.bucket_sizes_.push_back((lsh::FeatureIndex)x->second.size());
+            stats.bucket_size_mean_ += x->second.size();
+        }
+        stats.bucket_size_mean_ /= buckets_space_.size();
+        stats.n_buckets_ = buckets_space_.size();
+    }
+
+    std::sort(stats.bucket_sizes_.begin(), stats.bucket_sizes_.end());
+
+    //  BOOST_FOREACH(int size, stats.bucket_sizes_)
+    //          std::cout << size << " ";
+    //  std::cout << std::endl;
+    stats.bucket_size_median_ = stats.bucket_sizes_[stats.bucket_sizes_.size() / 2];
+    stats.bucket_size_min_ = stats.bucket_sizes_.front();
+    stats.bucket_size_max_ = stats.bucket_sizes_.back();
+
+    // TODO compute mean and std
+    /*float mean, stddev;
+       stats.bucket_size_mean_ = mean;
+       stats.bucket_size_std_dev = stddev;*/
+
+    // Include a histogram of the buckets
+    unsigned int bin_start = 0;
+    unsigned int bin_end = 20;
+    bool is_new_bin = true;
+    for (std::vector<unsigned int>::iterator iterator = stats.bucket_sizes_.begin(), end = stats.bucket_sizes_.end(); iterator
+         != end; )
+        if (*iterator < bin_end) {
+            if (is_new_bin) {
+                stats.size_histogram_.push_back(std::vector<unsigned int>(3, 0));
+                stats.size_histogram_.back()[0] = bin_start;
+                stats.size_histogram_.back()[1] = bin_end - 1;
+                is_new_bin = false;
+            }
+            ++stats.size_histogram_.back()[2];
+            ++iterator;
+        }
+        else {
+            bin_start += 20;
+            bin_end += 20;
+            is_new_bin = true;
+        }
+
+    return stats;
+}
+
+// End the two namespaces
+}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#endif /* OPENCV_FLANN_LSH_TABLE_H_ */
