@@ -220,4 +220,111 @@ public:
             break;
         case kBitsetHash:
             // That means we can check the bitset for the presence of a key
-            if (key_bitset_.test(key)) return &buckets_space_.find(key)-
+            if (key_bitset_.test(key)) return &buckets_space_.find(key)->second;
+            else return 0;
+            break;
+        case kHash:
+        {
+            // That means we have to check for the hash table for the presence of a key
+            BucketsSpace::const_iterator bucket_it, bucket_end = buckets_space_.end();
+            bucket_it = buckets_space_.find(key);
+            // Stop here if that bucket does not exist
+            if (bucket_it == bucket_end) return 0;
+            else return &bucket_it->second;
+            break;
+        }
+        }
+        return 0;
+    }
+
+    /** Compute the sub-signature of a feature
+     */
+    size_t getKey(const ElementType* /*feature*/) const
+    {
+        std::cerr << "LSH is not implemented for that type" << std::endl;
+        assert(0);
+        return 1;
+    }
+
+    /** Get statistics about the table
+     * @return
+     */
+    LshStats getStats() const;
+
+private:
+    /** defines the speed fo the implementation
+     * kArray uses a vector for storing data
+     * kBitsetHash uses a hash map but checks for the validity of a key with a bitset
+     * kHash uses a hash map only
+     */
+    enum SpeedLevel
+    {
+        kArray, kBitsetHash, kHash
+    };
+
+    /** Initialize some variables
+     */
+    void initialize(size_t key_size)
+    {
+        const size_t key_size_lower_bound = 1;
+        //a value (size_t(1) << key_size) must fit the size_t type so key_size has to be strictly less than size of size_t
+        const size_t key_size_upper_bound = (std::min)(sizeof(BucketKey) * CHAR_BIT + 1, sizeof(size_t) * CHAR_BIT);
+        if (key_size < key_size_lower_bound || key_size >= key_size_upper_bound)
+        {
+            CV_Error(cv::Error::StsBadArg, cv::format("Invalid key_size (=%d). Valid values for your system are %d <= key_size < %d.", (int)key_size, (int)key_size_lower_bound, (int)key_size_upper_bound));
+        }
+
+        speed_level_ = kHash;
+        key_size_ = (unsigned)key_size;
+    }
+
+    /** Optimize the table for speed/space
+     */
+    void optimize()
+    {
+        // If we are already using the fast storage, no need to do anything
+        if (speed_level_ == kArray) return;
+
+        // Use an array if it will be more than half full
+        if (buckets_space_.size() > ((size_t(1) << key_size_) / 2)) {
+            speed_level_ = kArray;
+            // Fill the array version of it
+            buckets_speed_.resize(size_t(1) << key_size_);
+            for (BucketsSpace::const_iterator key_bucket = buckets_space_.begin(); key_bucket != buckets_space_.end(); ++key_bucket) buckets_speed_[key_bucket->first] = key_bucket->second;
+
+            // Empty the hash table
+            buckets_space_.clear();
+            return;
+        }
+
+        // If the bitset is going to use less than 10% of the RAM of the hash map (at least 1 size_t for the key and two
+        // for the vector) or less than 512MB (key_size_ <= 30)
+        if (((std::max(buckets_space_.size(), buckets_speed_.size()) * CHAR_BIT * 3 * sizeof(BucketKey)) / 10
+             >= (size_t(1) << key_size_)) || (key_size_ <= 32)) {
+            speed_level_ = kBitsetHash;
+            key_bitset_.resize(size_t(1) << key_size_);
+            key_bitset_.reset();
+            // Try with the BucketsSpace
+            for (BucketsSpace::const_iterator key_bucket = buckets_space_.begin(); key_bucket != buckets_space_.end(); ++key_bucket) key_bitset_.set(key_bucket->first);
+        }
+        else {
+            speed_level_ = kHash;
+            key_bitset_.clear();
+        }
+    }
+
+    /** The vector of all the buckets if they are held for speed
+     */
+    BucketsSpeed buckets_speed_;
+
+    /** The hash table of all the buckets in case we cannot use the speed version
+     */
+    BucketsSpace buckets_space_;
+
+    /** What is used to store the data */
+    SpeedLevel speed_level_;
+
+    /** If the subkey is small enough, it will keep track of which subkeys are set through that bitset
+     * That is just a speedup so that we don't look in the hash table (which can be mush slower that checking a bitset)
+     */
+    DynamicBitset key_bitset_;
