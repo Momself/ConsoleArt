@@ -157,4 +157,31 @@ void load_value(FILE* stream, cvflann::Matrix<T>& value)
 {
     size_t read_cnt = fread(&value, sizeof(value), 1, stream);
     if (read_cnt != 1) {
-        throw F
+        throw FLANNException("Cannot read from file");
+    }
+    value.data = new T[value.rows*value.cols];
+    read_cnt = fread(value.data, sizeof(T), value.rows*value.cols, stream);
+    if (read_cnt != (size_t)(value.rows*value.cols)) {
+        throw FLANNException("Cannot read from file");
+    }
+}
+
+
+template<typename T>
+void load_value(FILE* stream, std::vector<T>& value)
+{
+    size_t size;
+    size_t read_cnt = fread(&size, sizeof(size_t), 1, stream);
+    if (read_cnt!=1) {
+        throw FLANNException("Cannot read from file");
+    }
+    value.resize(size);
+    read_cnt = fread(&value[0], sizeof(T), size, stream);
+    if (read_cnt != size) {
+        throw FLANNException("Cannot read from file");
+    }
+}
+
+}
+
+#endif /* OPENCV_FLANN_SAVING_H_ */
