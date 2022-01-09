@@ -12,7 +12,6 @@
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
 // Copyright (C) 2009, Willow Garage Inc., all rights reserved.
-// Copyright (C) 2013, OpenCV Foundation, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -41,8 +40,37 @@
 //
 //M*/
 
-#ifdef __OPENCV_BUILD
-#error this is a compatibility header which should not be used inside the OpenCV library
+#ifndef OPENCV_HIGHGUI_HPP
+#define OPENCV_HIGHGUI_HPP
+
+#include "opencv2/core.hpp"
+#ifdef HAVE_OPENCV_IMGCODECS
+#include "opencv2/imgcodecs.hpp"
+#endif
+#ifdef HAVE_OPENCV_VIDEOIO
+#include "opencv2/videoio.hpp"
 #endif
 
-#include "opencv2/highgui.hpp"
+/**
+@defgroup highgui High-level GUI
+
+While OpenCV was designed for use in full-scale applications and can be used within functionally
+rich UI frameworks (such as Qt\*, WinForms\*, or Cocoa\*) or without any UI at all, sometimes there
+it is required to try functionality quickly and visualize the results. This is what the HighGUI
+module has been designed for.
+
+It provides easy interface to:
+
+-   Create and manipulate windows that can display images and "remember" their content (no need to
+    handle repaint events from OS).
+-   Add trackbars to the windows, handle simple mouse events as well as keyboard commands.
+
+@{
+    @defgroup highgui_opengl OpenGL support
+    @defgroup highgui_qt Qt New Functions
+
+    ![image](pics/qtgui.png)
+
+    This figure explains new functionality implemented with Qt\* GUI. The new GUI provides a statusbar,
+    a toolbar, and a control panel. The control panel can have trackbars and buttonbars attached to it.
+    If you cannot see the control panel, press Ctrl+P or right-click any Qt window and select **D
