@@ -23,4 +23,72 @@
  * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
  * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, 
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *************************************************************************/
+
+#ifndef OPENCV_FLANN_TIMER_H
+#define OPENCV_FLANN_TIMER_H
+
+#include <time.h>
+#include "opencv2/core.hpp"
+#include "opencv2/core/utility.hpp"
+
+namespace cvflann
+{
+
+/**
+ * A start-stop timer class.
+ *
+ * Can be used to time portions of code.
+ */
+class StartStopTimer
+{
+    int64 startTime;
+
+public:
+    /**
+     * Value of the timer.
+     */
+    double value;
+
+
+    /**
+     * Constructor.
+     */
+    StartStopTimer()
+    {
+        reset();
+    }
+
+    /**
+     * Starts the timer.
+     */
+    void start()
+    {
+        startTime = cv::getTickCount();
+    }
+
+    /**
+     * Stops the timer and updates timer value.
+     */
+    void stop()
+    {
+        int64 stopTime = cv::getTickCount();
+        value += ( (double)stopTime - startTime) / cv::getTickFrequency();
+    }
+
+    /**
+     * Resets the timer value to 0.
+     */
+    void reset()
+    {
+        value = 0;
+    }
+
+};
+
+}
+
+#endif // FLANN_TIMER_H
