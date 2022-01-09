@@ -73,4 +73,116 @@ It provides easy interface to:
 
     This figure explains new functionality implemented with Qt\* GUI. The new GUI provides a statusbar,
     a toolbar, and a control panel. The control panel can have trackbars and buttonbars attached to it.
-    If you cannot see the control panel, press Ctrl+P or right-click any Qt window and select **D
+    If you cannot see the control panel, press Ctrl+P or right-click any Qt window and select **Display
+    properties window**.
+
+    -   To attach a trackbar, the window name parameter must be NULL.
+
+    -   To attach a buttonbar, a button must be created. If the last bar attached to the control panel
+        is a buttonbar, the new button is added to the right of the last button. If the last bar
+        attached to the control panel is a trackbar, or the control panel is empty, a new buttonbar is
+        created. Then, a new button is attached to it.
+
+    See below the example used to generate the figure:
+    @code
+        int main(int argc, char *argv[])
+        {
+
+            int value = 50;
+            int value2 = 0;
+
+
+            namedWindow("main1",WINDOW_NORMAL);
+            namedWindow("main2",WINDOW_AUTOSIZE | CV_GUI_NORMAL);
+            createTrackbar( "track1", "main1", &value, 255,  NULL);
+
+            String nameb1 = "button1";
+            String nameb2 = "button2";
+
+            createButton(nameb1,callbackButton,&nameb1,QT_CHECKBOX,1);
+            createButton(nameb2,callbackButton,NULL,QT_CHECKBOX,0);
+            createTrackbar( "track2", NULL, &value2, 255, NULL);
+            createButton("button5",callbackButton1,NULL,QT_RADIOBOX,0);
+            createButton("button6",callbackButton2,NULL,QT_RADIOBOX,1);
+
+            setMouseCallback( "main2",on_mouse,NULL );
+
+            Mat img1 = imread("files/flower.jpg");
+            VideoCapture video;
+            video.open("files/hockey.avi");
+
+            Mat img2,img3;
+
+            while( waitKey(33) != 27 )
+            {
+                img1.convertTo(img2,-1,1,value);
+                video >> img3;
+
+                imshow("main1",img2);
+                imshow("main2",img3);
+            }
+
+            destroyAllWindows();
+
+            return 0;
+        }
+    @endcode
+
+
+    @defgroup highgui_winrt WinRT support
+
+    This figure explains new functionality implemented with WinRT GUI. The new GUI provides an Image control,
+    and a slider panel. Slider panel holds trackbars attached to it.
+
+    Sliders are attached below the image control. Every new slider is added below the previous one.
+
+    See below the example used to generate the figure:
+    @code
+        void sample_app::MainPage::ShowWindow()
+        {
+            static cv::String windowName("sample");
+            cv::winrt_initContainer(this->cvContainer);
+            cv::namedWindow(windowName); // not required
+
+            cv::Mat image = cv::imread("Assets/sample.jpg");
+            cv::Mat converted = cv::Mat(image.rows, image.cols, CV_8UC4);
+            cv::cvtColor(image, converted, COLOR_BGR2BGRA);
+            cv::imshow(windowName, converted); // this will create window if it hasn't been created before
+
+            int state = 42;
+            cv::TrackbarCallback callback = [](int pos, void* userdata)
+            {
+                if (pos == 0) {
+                    cv::destroyWindow(windowName);
+                }
+            };
+            cv::TrackbarCallback callbackTwin = [](int pos, void* userdata)
+            {
+                if (pos >= 70) {
+                    cv::destroyAllWindows();
+                }
+            };
+            cv::createTrackbar("Sample trackbar", windowName, &state, 100, callback);
+            cv::createTrackbar("Twin brother", windowName, &state, 100, callbackTwin);
+        }
+    @endcode
+
+    @defgroup highgui_c C API
+@}
+*/
+
+///////////////////////// graphical user interface //////////////////////////
+namespace cv
+{
+
+//! @addtogroup highgui
+//! @{
+
+//! Flags for cv::namedWindow
+enum WindowFlags {
+       WINDOW_NORMAL     = 0x00000000, //!< the user can resize the window (no constraint) / also use to switch a fullscreen window to a normal size.
+       WINDOW_AUTOSIZE   = 0x00000001, //!< the user cannot resize the window, the size is constrainted by the image displayed.
+       WINDOW_OPENGL     = 0x00001000, //!< window with opengl support.
+
+       WINDOW_FULLSCREEN = 1,          //!< change the window to fullscreen.
+       WINDOW_FREERATIO  = 
