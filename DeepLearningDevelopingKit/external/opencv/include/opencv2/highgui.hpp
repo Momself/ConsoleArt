@@ -259,4 +259,100 @@ enum QtButtonTypes {
  */
 typedef void (*MouseCallback)(int event, int x, int y, int flags, void* userdata);
 
-/** @brief Callback function fo
+/** @brief Callback function for Trackbar see cv::createTrackbar
+@param pos current position of the specified trackbar.
+@param userdata The optional parameter.
+ */
+typedef void (*TrackbarCallback)(int pos, void* userdata);
+
+/** @brief Callback function defined to be called every frame. See cv::setOpenGlDrawCallback
+@param userdata The optional parameter.
+ */
+typedef void (*OpenGlDrawCallback)(void* userdata);
+
+/** @brief Callback function for a button created by cv::createButton
+@param state current state of the button. It could be -1 for a push button, 0 or 1 for a check/radio box button.
+@param userdata The optional parameter.
+ */
+typedef void (*ButtonCallback)(int state, void* userdata);
+
+/** @brief Creates a window.
+
+The function namedWindow creates a window that can be used as a placeholder for images and
+trackbars. Created windows are referred to by their names.
+
+If a window with the same name already exists, the function does nothing.
+
+You can call cv::destroyWindow or cv::destroyAllWindows to close the window and de-allocate any associated
+memory usage. For a simple program, you do not really have to call these functions because all the
+resources and windows of the application are closed automatically by the operating system upon exit.
+
+@note
+
+Qt backend supports additional flags:
+ -   **WINDOW_NORMAL or WINDOW_AUTOSIZE:** WINDOW_NORMAL enables you to resize the
+     window, whereas WINDOW_AUTOSIZE adjusts automatically the window size to fit the
+     displayed image (see imshow ), and you cannot change the window size manually.
+ -   **WINDOW_FREERATIO or WINDOW_KEEPRATIO:** WINDOW_FREERATIO adjusts the image
+     with no respect to its ratio, whereas WINDOW_KEEPRATIO keeps the image ratio.
+ -   **WINDOW_GUI_NORMAL or WINDOW_GUI_EXPANDED:** WINDOW_GUI_NORMAL is the old way to draw the window
+     without statusbar and toolbar, whereas WINDOW_GUI_EXPANDED is a new enhanced GUI.
+By default, flags == WINDOW_AUTOSIZE | WINDOW_KEEPRATIO | WINDOW_GUI_EXPANDED
+
+@param winname Name of the window in the window caption that may be used as a window identifier.
+@param flags Flags of the window. The supported flags are: (cv::WindowFlags)
+ */
+CV_EXPORTS_W void namedWindow(const String& winname, int flags = WINDOW_AUTOSIZE);
+
+/** @brief Destroys the specified window.
+
+The function destroyWindow destroys the window with the given name.
+
+@param winname Name of the window to be destroyed.
+ */
+CV_EXPORTS_W void destroyWindow(const String& winname);
+
+/** @brief Destroys all of the HighGUI windows.
+
+The function destroyAllWindows destroys all of the opened HighGUI windows.
+ */
+CV_EXPORTS_W void destroyAllWindows();
+
+CV_EXPORTS_W int startWindowThread();
+
+/** @brief Similar to #waitKey, but returns full key code.
+
+@note
+
+Key code is implementation specific and depends on used backend: QT/GTK/Win32/etc
+
+*/
+CV_EXPORTS_W int waitKeyEx(int delay = 0);
+
+/** @brief Waits for a pressed key.
+
+The function waitKey waits for a key event infinitely (when \f$\texttt{delay}\leq 0\f$ ) or for delay
+milliseconds, when it is positive. Since the OS has a minimum time between switching threads, the
+function will not wait exactly delay ms, it will wait at least delay ms, depending on what else is
+running on your computer at that time. It returns the code of the pressed key or -1 if no key was
+pressed before the specified time had elapsed.
+
+@note
+
+This function is the only method in HighGUI that can fetch and handle events, so it needs to be
+called periodically for normal event processing unless HighGUI is used within an environment that
+takes care of event processing.
+
+@note
+
+The function only works if there is at least one HighGUI window created and the window is active.
+If there are several HighGUI windows, any of them can be active.
+
+@param delay Delay in milliseconds. 0 is the special value that means "forever".
+ */
+CV_EXPORTS_W int waitKey(int delay = 0);
+
+/** @brief Displays an image in the specified window.
+
+The function imshow displays an image in the specified window. If the window was created with the
+cv::WINDOW_AUTOSIZE flag, the image is shown wit
