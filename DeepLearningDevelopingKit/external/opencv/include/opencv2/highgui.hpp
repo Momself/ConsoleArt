@@ -456,4 +456,85 @@ CV_EXPORTS_W Rect getWindowImageRect(const String& winname);
 
 @param winname Name of the window.
 @param onMouse Mouse callback. See OpenCV samples, such as
-<https://github.com/opencv/opencv/tree/master/samples/cpp/ffilldemo
+<https://github.com/opencv/opencv/tree/master/samples/cpp/ffilldemo.cpp>, on how to specify and
+use the callback.
+@param userdata The optional parameter passed to the callback.
+ */
+CV_EXPORTS void setMouseCallback(const String& winname, MouseCallback onMouse, void* userdata = 0);
+
+/** @brief Gets the mouse-wheel motion delta, when handling mouse-wheel events cv::EVENT_MOUSEWHEEL and
+cv::EVENT_MOUSEHWHEEL.
+
+For regular mice with a scroll-wheel, delta will be a multiple of 120. The value 120 corresponds to
+a one notch rotation of the wheel or the threshold for action to be taken and one such action should
+occur for each delta. Some high-precision mice with higher-resolution freely-rotating wheels may
+generate smaller values.
+
+For cv::EVENT_MOUSEWHEEL positive and negative values mean forward and backward scrolling,
+respectively. For cv::EVENT_MOUSEHWHEEL, where available, positive and negative values mean right and
+left scrolling, respectively.
+
+With the C API, the macro CV_GET_WHEEL_DELTA(flags) can be used alternatively.
+
+@note
+
+Mouse-wheel events are currently supported only on Windows.
+
+@param flags The mouse callback flags parameter.
+ */
+CV_EXPORTS int getMouseWheelDelta(int flags);
+
+/** @brief Selects ROI on the given image.
+Function creates a window and allows user to select a ROI using mouse.
+Controls: use `space` or `enter` to finish selection, use key `c` to cancel selection (function will return the zero cv::Rect).
+
+@param windowName name of the window where selection process will be shown.
+@param img image to select a ROI.
+@param showCrosshair if true crosshair of selection rectangle will be shown.
+@param fromCenter if true center of selection will match initial mouse position. In opposite case a corner of
+selection rectangle will correspont to the initial mouse position.
+@return selected ROI or empty rect if selection canceled.
+
+@note The function sets it's own mouse callback for specified window using cv::setMouseCallback(windowName, ...).
+After finish of work an empty callback will be set for the used window.
+ */
+CV_EXPORTS_W Rect selectROI(const String& windowName, InputArray img, bool showCrosshair = true, bool fromCenter = false);
+
+/** @overload
+ */
+CV_EXPORTS_W Rect selectROI(InputArray img, bool showCrosshair = true, bool fromCenter = false);
+
+/** @brief Selects ROIs on the given image.
+Function creates a window and allows user to select a ROIs using mouse.
+Controls: use `space` or `enter` to finish current selection and start a new one,
+use `esc` to terminate multiple ROI selection process.
+
+@param windowName name of the window where selection process will be shown.
+@param img image to select a ROI.
+@param boundingBoxes selected ROIs.
+@param showCrosshair if true crosshair of selection rectangle will be shown.
+@param fromCenter if true center of selection will match initial mouse position. In opposite case a corner of
+selection rectangle will correspont to the initial mouse position.
+
+@note The function sets it's own mouse callback for specified window using cv::setMouseCallback(windowName, ...).
+After finish of work an empty callback will be set for the used window.
+ */
+CV_EXPORTS_W void selectROIs(const String& windowName, InputArray img,
+                             CV_OUT std::vector<Rect>& boundingBoxes, bool showCrosshair = true, bool fromCenter = false);
+
+/** @brief Creates a trackbar and attaches it to the specified window.
+
+The function createTrackbar creates a trackbar (a slider or range control) with the specified name
+and range, assigns a variable value to be a position synchronized with the trackbar and specifies
+the callback function onChange to be called on the trackbar position change. The created trackbar is
+displayed in the specified window winname.
+
+@note
+
+[__Qt Backend Only__] winname can be empty (or NULL) if the trackbar should be attached to the
+control panel.
+
+Clicking the label of each trackbar enables editing the trackbar values manually.
+
+@param trackbarname Name of the created trackbar.
+@param winname Name of the window that will be used as a par
