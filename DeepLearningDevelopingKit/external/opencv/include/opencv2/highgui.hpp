@@ -537,4 +537,108 @@ control panel.
 Clicking the label of each trackbar enables editing the trackbar values manually.
 
 @param trackbarname Name of the created trackbar.
-@param winname Name of the window that will be used as a par
+@param winname Name of the window that will be used as a parent of the created trackbar.
+@param value Optional pointer to an integer variable whose value reflects the position of the
+slider. Upon creation, the slider position is defined by this variable.
+@param count Maximal position of the slider. The minimal position is always 0.
+@param onChange Pointer to the function to be called every time the slider changes position. This
+function should be prototyped as void Foo(int,void\*); , where the first parameter is the trackbar
+position and the second parameter is the user data (see the next parameter). If the callback is
+the NULL pointer, no callbacks are called, but only value is updated.
+@param userdata User data that is passed as is to the callback. It can be used to handle trackbar
+events without using global variables.
+ */
+CV_EXPORTS int createTrackbar(const String& trackbarname, const String& winname,
+                              int* value, int count,
+                              TrackbarCallback onChange = 0,
+                              void* userdata = 0);
+
+/** @brief Returns the trackbar position.
+
+The function returns the current position of the specified trackbar.
+
+@note
+
+[__Qt Backend Only__] winname can be empty (or NULL) if the trackbar is attached to the control
+panel.
+
+@param trackbarname Name of the trackbar.
+@param winname Name of the window that is the parent of the trackbar.
+ */
+CV_EXPORTS_W int getTrackbarPos(const String& trackbarname, const String& winname);
+
+/** @brief Sets the trackbar position.
+
+The function sets the position of the specified trackbar in the specified window.
+
+@note
+
+[__Qt Backend Only__] winname can be empty (or NULL) if the trackbar is attached to the control
+panel.
+
+@param trackbarname Name of the trackbar.
+@param winname Name of the window that is the parent of trackbar.
+@param pos New position.
+ */
+CV_EXPORTS_W void setTrackbarPos(const String& trackbarname, const String& winname, int pos);
+
+/** @brief Sets the trackbar maximum position.
+
+The function sets the maximum position of the specified trackbar in the specified window.
+
+@note
+
+[__Qt Backend Only__] winname can be empty (or NULL) if the trackbar is attached to the control
+panel.
+
+@param trackbarname Name of the trackbar.
+@param winname Name of the window that is the parent of trackbar.
+@param maxval New maximum position.
+ */
+CV_EXPORTS_W void setTrackbarMax(const String& trackbarname, const String& winname, int maxval);
+
+/** @brief Sets the trackbar minimum position.
+
+The function sets the minimum position of the specified trackbar in the specified window.
+
+@note
+
+[__Qt Backend Only__] winname can be empty (or NULL) if the trackbar is attached to the control
+panel.
+
+@param trackbarname Name of the trackbar.
+@param winname Name of the window that is the parent of trackbar.
+@param minval New minimum position.
+ */
+CV_EXPORTS_W void setTrackbarMin(const String& trackbarname, const String& winname, int minval);
+
+//! @addtogroup highgui_opengl OpenGL support
+//! @{
+
+/** @brief Displays OpenGL 2D texture in the specified window.
+
+@param winname Name of the window.
+@param tex OpenGL 2D texture data.
+ */
+CV_EXPORTS void imshow(const String& winname, const ogl::Texture2D& tex);
+
+/** @brief Sets a callback function to be called to draw on top of displayed image.
+
+The function setOpenGlDrawCallback can be used to draw 3D data on the window. See the example of
+callback function below:
+@code
+    void on_opengl(void* param)
+    {
+        glLoadIdentity();
+
+        glTranslated(0.0, 0.0, -1.0);
+
+        glRotatef( 55, 1, 0, 0 );
+        glRotatef( 45, 0, 1, 0 );
+        glRotatef( 0, 0, 0, 1 );
+
+        static const int coords[6][4][3] = {
+            { { +1, -1, -1 }, { -1, -1, -1 }, { -1, +1, -1 }, { +1, +1, -1 } },
+            { { +1, +1, -1 }, { -1, +1, -1 }, { -1, +1, +1 }, { +1, +1, +1 } },
+            { { +1, -1, +1 }, { +1, -1, -1 }, { +1, +1, -1 }, { +1, +1, +1 } },
+            { { -1, -1, -1 }, { -1, -1, +1 }, { -1, +1, +1 },
