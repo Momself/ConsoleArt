@@ -641,4 +641,101 @@ callback function below:
             { { +1, -1, -1 }, { -1, -1, -1 }, { -1, +1, -1 }, { +1, +1, -1 } },
             { { +1, +1, -1 }, { -1, +1, -1 }, { -1, +1, +1 }, { +1, +1, +1 } },
             { { +1, -1, +1 }, { +1, -1, -1 }, { +1, +1, -1 }, { +1, +1, +1 } },
-            { { -1, -1, -1 }, { -1, -1, +1 }, { -1, +1, +1 },
+            { { -1, -1, -1 }, { -1, -1, +1 }, { -1, +1, +1 }, { -1, +1, -1 } },
+            { { +1, -1, +1 }, { -1, -1, +1 }, { -1, -1, -1 }, { +1, -1, -1 } },
+            { { -1, -1, +1 }, { +1, -1, +1 }, { +1, +1, +1 }, { -1, +1, +1 } }
+        };
+
+        for (int i = 0; i < 6; ++i) {
+                    glColor3ub( i*20, 100+i*10, i*42 );
+                    glBegin(GL_QUADS);
+                    for (int j = 0; j < 4; ++j) {
+                            glVertex3d(0.2 * coords[i][j][0], 0.2 * coords[i][j][1], 0.2 * coords[i][j][2]);
+                    }
+                    glEnd();
+        }
+    }
+@endcode
+
+@param winname Name of the window.
+@param onOpenGlDraw Pointer to the function to be called every frame. This function should be
+prototyped as void Foo(void\*) .
+@param userdata Pointer passed to the callback function.(__Optional__)
+ */
+CV_EXPORTS void setOpenGlDrawCallback(const String& winname, OpenGlDrawCallback onOpenGlDraw, void* userdata = 0);
+
+/** @brief Sets the specified window as current OpenGL context.
+
+@param winname Name of the window.
+ */
+CV_EXPORTS void setOpenGlContext(const String& winname);
+
+/** @brief Force window to redraw its context and call draw callback ( See cv::setOpenGlDrawCallback ).
+
+@param winname Name of the window.
+ */
+CV_EXPORTS void updateWindow(const String& winname);
+
+//! @} highgui_opengl
+
+//! @addtogroup highgui_qt
+//! @{
+
+/** @brief QtFont available only for Qt. See cv::fontQt
+ */
+struct QtFont
+{
+    const char* nameFont;  //!< Name of the font
+    Scalar      color;     //!< Color of the font. Scalar(blue_component, green_component, red_component[, alpha_component])
+    int         font_face; //!< See cv::QtFontStyles
+    const int*  ascii;     //!< font data and metrics
+    const int*  greek;
+    const int*  cyrillic;
+    float       hscale, vscale;
+    float       shear;     //!< slope coefficient: 0 - normal, >0 - italic
+    int         thickness; //!< See cv::QtFontWeights
+    float       dx;        //!< horizontal interval between letters
+    int         line_type; //!< PointSize
+};
+
+/** @brief Creates the font to draw a text on an image.
+
+The function fontQt creates a cv::QtFont object. This cv::QtFont is not compatible with putText .
+
+A basic usage of this function is the following: :
+@code
+    QtFont font = fontQt("Times");
+    addText( img1, "Hello World !", Point(50,50), font);
+@endcode
+
+@param nameFont Name of the font. The name should match the name of a system font (such as
+*Times*). If the font is not found, a default one is used.
+@param pointSize Size of the font. If not specified, equal zero or negative, the point size of the
+font is set to a system-dependent default value. Generally, this is 12 points.
+@param color Color of the font in BGRA where A = 255 is fully transparent. Use the macro CV_RGB
+for simplicity.
+@param weight Font weight. Available operation flags are : cv::QtFontWeights You can also specify a positive integer for better control.
+@param style Font style. Available operation flags are : cv::QtFontStyles
+@param spacing Spacing between characters. It can be negative or positive.
+ */
+CV_EXPORTS QtFont fontQt(const String& nameFont, int pointSize = -1,
+                         Scalar color = Scalar::all(0), int weight = QT_FONT_NORMAL,
+                         int style = QT_STYLE_NORMAL, int spacing = 0);
+
+/** @brief Draws a text on the image.
+
+The function addText draws *text* on the image *img* using a specific font *font* (see example cv::fontQt
+)
+
+@param img 8-bit 3-channel image where the text should be drawn.
+@param text Text to write on an image.
+@param org Point(x,y) where the text should start on an image.
+@param font Font to use to draw a text.
+ */
+CV_EXPORTS void addText( const Mat& img, const String& text, Point org, const QtFont& font);
+
+/** @brief Draws a text on the image.
+
+@param img 8-bit 3-channel image where the text should be drawn.
+@param text Text to write on an image.
+@param o
