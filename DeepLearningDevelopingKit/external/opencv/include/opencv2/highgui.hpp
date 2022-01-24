@@ -738,4 +738,81 @@ CV_EXPORTS void addText( const Mat& img, const String& text, Point org, const Qt
 
 @param img 8-bit 3-channel image where the text should be drawn.
 @param text Text to write on an image.
-@param o
+@param org Point(x,y) where the text should start on an image.
+@param nameFont Name of the font. The name should match the name of a system font (such as
+*Times*). If the font is not found, a default one is used.
+@param pointSize Size of the font. If not specified, equal zero or negative, the point size of the
+font is set to a system-dependent default value. Generally, this is 12 points.
+@param color Color of the font in BGRA where A = 255 is fully transparent.
+@param weight Font weight. Available operation flags are : cv::QtFontWeights You can also specify a positive integer for better control.
+@param style Font style. Available operation flags are : cv::QtFontStyles
+@param spacing Spacing between characters. It can be negative or positive.
+ */
+CV_EXPORTS_W void addText(const Mat& img, const String& text, Point org, const String& nameFont, int pointSize = -1, Scalar color = Scalar::all(0),
+        int weight = QT_FONT_NORMAL, int style = QT_STYLE_NORMAL, int spacing = 0);
+
+/** @brief Displays a text on a window image as an overlay for a specified duration.
+
+The function displayOverlay displays useful information/tips on top of the window for a certain
+amount of time *delayms*. The function does not modify the image, displayed in the window, that is,
+after the specified delay the original content of the window is restored.
+
+@param winname Name of the window.
+@param text Overlay text to write on a window image.
+@param delayms The period (in milliseconds), during which the overlay text is displayed. If this
+function is called before the previous overlay text timed out, the timer is restarted and the text
+is updated. If this value is zero, the text never disappears.
+ */
+CV_EXPORTS_W void displayOverlay(const String& winname, const String& text, int delayms = 0);
+
+/** @brief Displays a text on the window statusbar during the specified period of time.
+
+The function displayStatusBar displays useful information/tips on top of the window for a certain
+amount of time *delayms* . This information is displayed on the window statusbar (the window must be
+created with the CV_GUI_EXPANDED flags).
+
+@param winname Name of the window.
+@param text Text to write on the window statusbar.
+@param delayms Duration (in milliseconds) to display the text. If this function is called before
+the previous text timed out, the timer is restarted and the text is updated. If this value is
+zero, the text never disappears.
+ */
+CV_EXPORTS_W void displayStatusBar(const String& winname, const String& text, int delayms = 0);
+
+/** @brief Saves parameters of the specified window.
+
+The function saveWindowParameters saves size, location, flags, trackbars value, zoom and panning
+location of the window windowName.
+
+@param windowName Name of the window.
+ */
+CV_EXPORTS void saveWindowParameters(const String& windowName);
+
+/** @brief Loads parameters of the specified window.
+
+The function loadWindowParameters loads size, location, flags, trackbars value, zoom and panning
+location of the window windowName.
+
+@param windowName Name of the window.
+ */
+CV_EXPORTS void loadWindowParameters(const String& windowName);
+
+CV_EXPORTS  int startLoop(int (*pt2Func)(int argc, char *argv[]), int argc, char* argv[]);
+
+CV_EXPORTS  void stopLoop();
+
+/** @brief Attaches a button to the control panel.
+
+The function createButton attaches a button to the control panel. Each button is added to a
+buttonbar to the right of the last button. A new buttonbar is created if nothing was attached to the
+control panel before, or if the last element attached to the control panel was a trackbar or if the
+QT_NEW_BUTTONBAR flag is added to the type.
+
+See below various examples of the cv::createButton function call: :
+@code
+    createButton(NULL,callbackButton);//create a push button "button 0", that will call callbackButton.
+    createButton("button2",callbackButton,NULL,QT_CHECKBOX,0);
+    createButton("button3",callbackButton,&value);
+    createButton("button5",callbackButton1,NULL,QT_RADIOBOX);
+    createButton("button6",callbackButton2,NULL,QT_PUSH_BUTTON,1);
+    createButto
