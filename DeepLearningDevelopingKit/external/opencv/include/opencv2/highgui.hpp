@@ -815,4 +815,30 @@ See below various examples of the cv::createButton function call: :
     createButton("button3",callbackButton,&value);
     createButton("button5",callbackButton1,NULL,QT_RADIOBOX);
     createButton("button6",callbackButton2,NULL,QT_PUSH_BUTTON,1);
-    createButto
+    createButton("button6",callbackButton2,NULL,QT_PUSH_BUTTON|QT_NEW_BUTTONBAR);// create a push button in a new row
+@endcode
+
+@param  bar_name Name of the button.
+@param on_change Pointer to the function to be called every time the button changes its state.
+This function should be prototyped as void Foo(int state,\*void); . *state* is the current state
+of the button. It could be -1 for a push button, 0 or 1 for a check/radio box button.
+@param userdata Pointer passed to the callback function.
+@param type Optional type of the button. Available types are: (cv::QtButtonTypes)
+@param initial_button_state Default state of the button. Use for checkbox and radiobox. Its
+value could be 0 or 1. (__Optional__)
+*/
+CV_EXPORTS int createButton( const String& bar_name, ButtonCallback on_change,
+                             void* userdata = 0, int type = QT_PUSH_BUTTON,
+                             bool initial_button_state = false);
+
+//! @} highgui_qt
+
+//! @} highgui
+
+} // cv
+
+#ifndef DISABLE_OPENCV_24_COMPATIBILITY
+#include "opencv2/highgui/highgui_c.h"
+#endif
+
+#endif
