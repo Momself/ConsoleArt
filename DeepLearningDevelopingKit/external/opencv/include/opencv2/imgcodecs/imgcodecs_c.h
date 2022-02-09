@@ -115,4 +115,35 @@ CVAPI(int) cvSaveImage( const char* filename, const CvArr* image,
 CVAPI(IplImage*) cvDecodeImage( const CvMat* buf, int iscolor CV_DEFAULT(CV_LOAD_IMAGE_COLOR));
 CVAPI(CvMat*) cvDecodeImageM( const CvMat* buf, int iscolor CV_DEFAULT(CV_LOAD_IMAGE_COLOR));
 
-/* encode image and store
+/* encode image and store the result as a byte vector (single-row 8uC1 matrix) */
+CVAPI(CvMat*) cvEncodeImage( const char* ext, const CvArr* image,
+                             const int* params CV_DEFAULT(0) );
+
+enum
+{
+    CV_CVTIMG_FLIP      =1,
+    CV_CVTIMG_SWAP_RB   =2
+};
+
+/* utility function: convert one image to another with optional vertical flip */
+CVAPI(void) cvConvertImage( const CvArr* src, CvArr* dst, int flags CV_DEFAULT(0));
+
+CVAPI(int) cvHaveImageReader(const char* filename);
+CVAPI(int) cvHaveImageWriter(const char* filename);
+
+
+/****************************************************************************************\
+*                              Obsolete functions/synonyms                               *
+\****************************************************************************************/
+
+#define cvvLoadImage(name) cvLoadImage((name),1)
+#define cvvSaveImage cvSaveImage
+#define cvvConvertImage cvConvertImage
+
+/** @} imgcodecs_c */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // OPENCV_IMGCODECS_H
