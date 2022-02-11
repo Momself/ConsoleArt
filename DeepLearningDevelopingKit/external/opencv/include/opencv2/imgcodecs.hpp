@@ -119,4 +119,73 @@ enum ImwritePNGFlags {
 //! Imwrite PAM specific tupletype flags used to define the 'TUPETYPE' field of a PAM file.
 enum ImwritePAMFlags {
        IMWRITE_PAM_FORMAT_NULL = 0,
-       IM
+       IMWRITE_PAM_FORMAT_BLACKANDWHITE = 1,
+       IMWRITE_PAM_FORMAT_GRAYSCALE = 2,
+       IMWRITE_PAM_FORMAT_GRAYSCALE_ALPHA = 3,
+       IMWRITE_PAM_FORMAT_RGB = 4,
+       IMWRITE_PAM_FORMAT_RGB_ALPHA = 5,
+     };
+
+/** @brief Loads an image from a file.
+
+@anchor imread
+
+The function imread loads an image from the specified file and returns it. If the image cannot be
+read (because of missing file, improper permissions, unsupported or invalid format), the function
+returns an empty matrix ( Mat::data==NULL ).
+
+Currently, the following file formats are supported:
+
+-   Windows bitmaps - \*.bmp, \*.dib (always supported)
+-   JPEG files - \*.jpeg, \*.jpg, \*.jpe (see the *Notes* section)
+-   JPEG 2000 files - \*.jp2 (see the *Notes* section)
+-   Portable Network Graphics - \*.png (see the *Notes* section)
+-   WebP - \*.webp (see the *Notes* section)
+-   Portable image format - \*.pbm, \*.pgm, \*.ppm \*.pxm, \*.pnm (always supported)
+-   Sun rasters - \*.sr, \*.ras (always supported)
+-   TIFF files - \*.tiff, \*.tif (see the *Notes* section)
+-   OpenEXR Image files - \*.exr (see the *Notes* section)
+-   Radiance HDR - \*.hdr, \*.pic (always supported)
+-   Raster and Vector geospatial data supported by Gdal (see the *Notes* section)
+
+@note
+
+-   The function determines the type of an image by the content, not by the file extension.
+-   In the case of color images, the decoded images will have the channels stored in **B G R** order.
+-   On Microsoft Windows\* OS and MacOSX\*, the codecs shipped with an OpenCV image (libjpeg,
+    libpng, libtiff, and libjasper) are used by default. So, OpenCV can always read JPEGs, PNGs,
+    and TIFFs. On MacOSX, there is also an option to use native MacOSX image readers. But beware
+    that currently these native image loaders give images with different pixel values because of
+    the color management embedded into MacOSX.
+-   On Linux\*, BSD flavors and other Unix-like open-source operating systems, OpenCV looks for
+    codecs supplied with an OS image. Install the relevant packages (do not forget the development
+    files, for example, "libjpeg-dev", in Debian\* and Ubuntu\*) to get the codec support or turn
+    on the OPENCV_BUILD_3RDPARTY_LIBS flag in CMake.
+-   In the case you set *WITH_GDAL* flag to true in CMake and @ref IMREAD_LOAD_GDAL to load the image,
+    then [GDAL](http://www.gdal.org) driver will be used in order to decode the image by supporting
+    the following formats: [Raster](http://www.gdal.org/formats_list.html),
+    [Vector](http://www.gdal.org/ogr_formats.html).
+-   If EXIF information are embedded in the image file, the EXIF orientation will be taken into account
+    and thus the image will be rotated accordingly except if the flag @ref IMREAD_IGNORE_ORIENTATION is passed.
+@param filename Name of file to be loaded.
+@param flags Flag that can take values of cv::ImreadModes
+*/
+CV_EXPORTS_W Mat imread( const String& filename, int flags = IMREAD_COLOR );
+
+/** @brief Loads a multi-page image from a file.
+
+The function imreadmulti loads a multi-page image from the specified file into a vector of Mat objects.
+@param filename Name of file to be loaded.
+@param flags Flag that can take values of cv::ImreadModes, default with cv::IMREAD_ANYCOLOR.
+@param mats A vector of Mat objects holding each page, if more than one.
+@sa cv::imread
+*/
+CV_EXPORTS_W bool imreadmulti(const String& filename, CV_OUT std::vector<Mat>& mats, int flags = IMREAD_ANYCOLOR);
+
+/** @brief Saves an image to a specified file.
+
+The function imwrite saves the image to the specified file. The image format is chosen based on the
+filename extension (see cv::imread for the list of extensions). Only 8-bit (or 16-bit unsigned (CV_16U)
+in case of PNG, JPEG 2000, and TIFF) single-channel or 3-channel (with 'BGR' channel order) images
+can be saved using this function. If the format, depth or channel order is different, use
+Mat::convertTo , and cv::cvtColor to convert it before saving. Or, use the universal FileStorage I/
