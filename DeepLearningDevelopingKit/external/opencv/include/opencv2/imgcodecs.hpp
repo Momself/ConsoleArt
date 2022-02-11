@@ -188,4 +188,60 @@ The function imwrite saves the image to the specified file. The image format is 
 filename extension (see cv::imread for the list of extensions). Only 8-bit (or 16-bit unsigned (CV_16U)
 in case of PNG, JPEG 2000, and TIFF) single-channel or 3-channel (with 'BGR' channel order) images
 can be saved using this function. If the format, depth or channel order is different, use
-Mat::convertTo , and cv::cvtColor to convert it before saving. Or, use the universal FileStorage I/
+Mat::convertTo , and cv::cvtColor to convert it before saving. Or, use the universal FileStorage I/O
+functions to save the image to XML or YAML format.
+
+It is possible to store PNG images with an alpha channel using this function. To do this, create
+8-bit (or 16-bit) 4-channel image BGRA, where the alpha channel goes last. Fully transparent pixels
+should have alpha set to 0, fully opaque pixels should have alpha set to 255/65535.
+
+The sample below shows how to create such a BGRA image and store to PNG file. It also demonstrates how to set custom
+compression parameters :
+@include snippets/imgcodecs_imwrite.cpp
+@param filename Name of the file.
+@param img Image to be saved.
+@param params Format-specific parameters encoded as pairs (paramId_1, paramValue_1, paramId_2, paramValue_2, ... .) see cv::ImwriteFlags
+*/
+CV_EXPORTS_W bool imwrite( const String& filename, InputArray img,
+              const std::vector<int>& params = std::vector<int>());
+
+/** @brief Reads an image from a buffer in memory.
+
+The function imdecode reads an image from the specified buffer in the memory. If the buffer is too short or
+contains invalid data, the function returns an empty matrix ( Mat::data==NULL ).
+
+See cv::imread for the list of supported formats and flags description.
+
+@note In the case of color images, the decoded images will have the channels stored in **B G R** order.
+@param buf Input array or vector of bytes.
+@param flags The same flags as in cv::imread, see cv::ImreadModes.
+*/
+CV_EXPORTS_W Mat imdecode( InputArray buf, int flags );
+
+/** @overload
+@param buf
+@param flags
+@param dst The optional output placeholder for the decoded matrix. It can save the image
+reallocations when the function is called repeatedly for images of the same size.
+*/
+CV_EXPORTS Mat imdecode( InputArray buf, int flags, Mat* dst);
+
+/** @brief Encodes an image into a memory buffer.
+
+The function imencode compresses the image and stores it in the memory buffer that is resized to fit the
+result. See cv::imwrite for the list of supported formats and flags description.
+
+@param ext File extension that defines the output format.
+@param img Image to be written.
+@param buf Output buffer resized to fit the compressed image.
+@param params Format-specific parameters. See cv::imwrite and cv::ImwriteFlags.
+*/
+CV_EXPORTS_W bool imencode( const String& ext, InputArray img,
+                            CV_OUT std::vector<uchar>& buf,
+                            const std::vector<int>& params = std::vector<int>());
+
+//! @} imgcodecs
+
+} // cv
+
+#endif //OPENCV_IMGCODECS_HPP
