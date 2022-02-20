@@ -261,4 +261,153 @@ enum
     CV_YUV2RGBA_IYUV = 104,
     CV_YUV2BGRA_IYUV = 105,
     CV_YUV2RGBA_I420 = CV_YUV2RGBA_IYUV,
-    CV_YUV2BGRA_I420 =
+    CV_YUV2BGRA_I420 = CV_YUV2BGRA_IYUV,
+    CV_YUV420p2RGBA = CV_YUV2RGBA_YV12,
+    CV_YUV420p2BGRA = CV_YUV2BGRA_YV12,
+
+    CV_YUV2GRAY_420 = 106,
+    CV_YUV2GRAY_NV21 = CV_YUV2GRAY_420,
+    CV_YUV2GRAY_NV12 = CV_YUV2GRAY_420,
+    CV_YUV2GRAY_YV12 = CV_YUV2GRAY_420,
+    CV_YUV2GRAY_IYUV = CV_YUV2GRAY_420,
+    CV_YUV2GRAY_I420 = CV_YUV2GRAY_420,
+    CV_YUV420sp2GRAY = CV_YUV2GRAY_420,
+    CV_YUV420p2GRAY = CV_YUV2GRAY_420,
+
+    //YUV 4:2:2 formats family
+    CV_YUV2RGB_UYVY = 107,
+    CV_YUV2BGR_UYVY = 108,
+    //CV_YUV2RGB_VYUY = 109,
+    //CV_YUV2BGR_VYUY = 110,
+    CV_YUV2RGB_Y422 = CV_YUV2RGB_UYVY,
+    CV_YUV2BGR_Y422 = CV_YUV2BGR_UYVY,
+    CV_YUV2RGB_UYNV = CV_YUV2RGB_UYVY,
+    CV_YUV2BGR_UYNV = CV_YUV2BGR_UYVY,
+
+    CV_YUV2RGBA_UYVY = 111,
+    CV_YUV2BGRA_UYVY = 112,
+    //CV_YUV2RGBA_VYUY = 113,
+    //CV_YUV2BGRA_VYUY = 114,
+    CV_YUV2RGBA_Y422 = CV_YUV2RGBA_UYVY,
+    CV_YUV2BGRA_Y422 = CV_YUV2BGRA_UYVY,
+    CV_YUV2RGBA_UYNV = CV_YUV2RGBA_UYVY,
+    CV_YUV2BGRA_UYNV = CV_YUV2BGRA_UYVY,
+
+    CV_YUV2RGB_YUY2 = 115,
+    CV_YUV2BGR_YUY2 = 116,
+    CV_YUV2RGB_YVYU = 117,
+    CV_YUV2BGR_YVYU = 118,
+    CV_YUV2RGB_YUYV = CV_YUV2RGB_YUY2,
+    CV_YUV2BGR_YUYV = CV_YUV2BGR_YUY2,
+    CV_YUV2RGB_YUNV = CV_YUV2RGB_YUY2,
+    CV_YUV2BGR_YUNV = CV_YUV2BGR_YUY2,
+
+    CV_YUV2RGBA_YUY2 = 119,
+    CV_YUV2BGRA_YUY2 = 120,
+    CV_YUV2RGBA_YVYU = 121,
+    CV_YUV2BGRA_YVYU = 122,
+    CV_YUV2RGBA_YUYV = CV_YUV2RGBA_YUY2,
+    CV_YUV2BGRA_YUYV = CV_YUV2BGRA_YUY2,
+    CV_YUV2RGBA_YUNV = CV_YUV2RGBA_YUY2,
+    CV_YUV2BGRA_YUNV = CV_YUV2BGRA_YUY2,
+
+    CV_YUV2GRAY_UYVY = 123,
+    CV_YUV2GRAY_YUY2 = 124,
+    //CV_YUV2GRAY_VYUY = CV_YUV2GRAY_UYVY,
+    CV_YUV2GRAY_Y422 = CV_YUV2GRAY_UYVY,
+    CV_YUV2GRAY_UYNV = CV_YUV2GRAY_UYVY,
+    CV_YUV2GRAY_YVYU = CV_YUV2GRAY_YUY2,
+    CV_YUV2GRAY_YUYV = CV_YUV2GRAY_YUY2,
+    CV_YUV2GRAY_YUNV = CV_YUV2GRAY_YUY2,
+
+    // alpha premultiplication
+    CV_RGBA2mRGBA = 125,
+    CV_mRGBA2RGBA = 126,
+
+    CV_RGB2YUV_I420 = 127,
+    CV_BGR2YUV_I420 = 128,
+    CV_RGB2YUV_IYUV = CV_RGB2YUV_I420,
+    CV_BGR2YUV_IYUV = CV_BGR2YUV_I420,
+
+    CV_RGBA2YUV_I420 = 129,
+    CV_BGRA2YUV_I420 = 130,
+    CV_RGBA2YUV_IYUV = CV_RGBA2YUV_I420,
+    CV_BGRA2YUV_IYUV = CV_BGRA2YUV_I420,
+    CV_RGB2YUV_YV12  = 131,
+    CV_BGR2YUV_YV12  = 132,
+    CV_RGBA2YUV_YV12 = 133,
+    CV_BGRA2YUV_YV12 = 134,
+
+    // Edge-Aware Demosaicing
+    CV_BayerBG2BGR_EA = 135,
+    CV_BayerGB2BGR_EA = 136,
+    CV_BayerRG2BGR_EA = 137,
+    CV_BayerGR2BGR_EA = 138,
+
+    CV_BayerBG2RGB_EA = CV_BayerRG2BGR_EA,
+    CV_BayerGB2RGB_EA = CV_BayerGR2BGR_EA,
+    CV_BayerRG2RGB_EA = CV_BayerBG2BGR_EA,
+    CV_BayerGR2RGB_EA = CV_BayerGB2BGR_EA,
+
+    CV_BayerBG2BGRA =139,
+    CV_BayerGB2BGRA =140,
+    CV_BayerRG2BGRA =141,
+    CV_BayerGR2BGRA =142,
+
+    CV_BayerBG2RGBA =CV_BayerRG2BGRA,
+    CV_BayerGB2RGBA =CV_BayerGR2BGRA,
+    CV_BayerRG2RGBA =CV_BayerBG2BGRA,
+    CV_BayerGR2RGBA =CV_BayerGB2BGRA,
+
+    CV_COLORCVT_MAX  = 143
+};
+
+
+/** Sub-pixel interpolation methods */
+enum
+{
+    CV_INTER_NN        =0,
+    CV_INTER_LINEAR    =1,
+    CV_INTER_CUBIC     =2,
+    CV_INTER_AREA      =3,
+    CV_INTER_LANCZOS4  =4
+};
+
+/** ... and other image warping flags */
+enum
+{
+    CV_WARP_FILL_OUTLIERS =8,
+    CV_WARP_INVERSE_MAP  =16
+};
+
+/** Shapes of a structuring element for morphological operations
+@see cv::MorphShapes, cv::getStructuringElement
+*/
+enum MorphShapes_c
+{
+    CV_SHAPE_RECT      =0,
+    CV_SHAPE_CROSS     =1,
+    CV_SHAPE_ELLIPSE   =2,
+    CV_SHAPE_CUSTOM    =100 //!< custom structuring element
+};
+
+/** Morphological operations */
+enum
+{
+    CV_MOP_ERODE        =0,
+    CV_MOP_DILATE       =1,
+    CV_MOP_OPEN         =2,
+    CV_MOP_CLOSE        =3,
+    CV_MOP_GRADIENT     =4,
+    CV_MOP_TOPHAT       =5,
+    CV_MOP_BLACKHAT     =6
+};
+
+/** Spatial and central moments */
+typedef struct CvMoments
+{
+    double  m00, m10, m01, m20, m11, m02, m30, m21, m12, m03; /**< spatial moments */
+    double  mu20, mu11, mu02, mu30, mu21, mu12, mu03; /**< central moments */
+    double  inv_sqrt_m00; /**< m00 != 0 ? 1/sqrt(m00) : 0 */
+
+#ifdef __cp
