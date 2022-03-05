@@ -558,4 +558,72 @@ enum
 enum
 {
     CV_DIST_USER    =-1,  /**< User defined distance */
-    CV_DIST_L1      =1,   /**< distance =
+    CV_DIST_L1      =1,   /**< distance = |x1-x2| + |y1-y2| */
+    CV_DIST_L2      =2,   /**< the simple euclidean distance */
+    CV_DIST_C       =3,   /**< distance = max(|x1-x2|,|y1-y2|) */
+    CV_DIST_L12     =4,   /**< L1-L2 metric: distance = 2(sqrt(1+x*x/2) - 1)) */
+    CV_DIST_FAIR    =5,   /**< distance = c^2(|x|/c-log(1+|x|/c)), c = 1.3998 */
+    CV_DIST_WELSCH  =6,   /**< distance = c^2/2(1-exp(-(x/c)^2)), c = 2.9846 */
+    CV_DIST_HUBER   =7    /**< distance = |x|<c ? x^2/2 : c(|x|-c/2), c=1.345 */
+};
+
+
+/** Threshold types */
+enum
+{
+    CV_THRESH_BINARY      =0,  /**< value = value > threshold ? max_value : 0       */
+    CV_THRESH_BINARY_INV  =1,  /**< value = value > threshold ? 0 : max_value       */
+    CV_THRESH_TRUNC       =2,  /**< value = value > threshold ? threshold : value   */
+    CV_THRESH_TOZERO      =3,  /**< value = value > threshold ? value : 0           */
+    CV_THRESH_TOZERO_INV  =4,  /**< value = value > threshold ? 0 : value           */
+    CV_THRESH_MASK        =7,
+    CV_THRESH_OTSU        =8, /**< use Otsu algorithm to choose the optimal threshold value;
+                                 combine the flag with one of the above CV_THRESH_* values */
+    CV_THRESH_TRIANGLE    =16  /**< use Triangle algorithm to choose the optimal threshold value;
+                                 combine the flag with one of the above CV_THRESH_* values, but not
+                                 with CV_THRESH_OTSU */
+};
+
+/** Adaptive threshold methods */
+enum
+{
+    CV_ADAPTIVE_THRESH_MEAN_C  =0,
+    CV_ADAPTIVE_THRESH_GAUSSIAN_C  =1
+};
+
+/** FloodFill flags */
+enum
+{
+    CV_FLOODFILL_FIXED_RANGE =(1 << 16),
+    CV_FLOODFILL_MASK_ONLY   =(1 << 17)
+};
+
+
+/** Canny edge detector flags */
+enum
+{
+    CV_CANNY_L2_GRADIENT  =(1 << 31)
+};
+
+/** Variants of a Hough transform */
+enum
+{
+    CV_HOUGH_STANDARD =0,
+    CV_HOUGH_PROBABILISTIC =1,
+    CV_HOUGH_MULTI_SCALE =2,
+    CV_HOUGH_GRADIENT =3
+};
+
+
+/* Fast search data structures  */
+struct CvFeatureTree;
+struct CvLSH;
+struct CvLSHOperations;
+
+/** @} */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
