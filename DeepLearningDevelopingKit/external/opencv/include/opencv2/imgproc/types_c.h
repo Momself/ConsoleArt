@@ -410,4 +410,152 @@ typedef struct CvMoments
     double  mu20, mu11, mu02, mu30, mu21, mu12, mu03; /**< central moments */
     double  inv_sqrt_m00; /**< m00 != 0 ? 1/sqrt(m00) : 0 */
 
-#ifdef __cp
+#ifdef __cplusplus
+    CvMoments(){}
+    CvMoments(const cv::Moments& m)
+    {
+        m00 = m.m00; m10 = m.m10; m01 = m.m01;
+        m20 = m.m20; m11 = m.m11; m02 = m.m02;
+        m30 = m.m30; m21 = m.m21; m12 = m.m12; m03 = m.m03;
+        mu20 = m.mu20; mu11 = m.mu11; mu02 = m.mu02;
+        mu30 = m.mu30; mu21 = m.mu21; mu12 = m.mu12; mu03 = m.mu03;
+        double am00 = std::abs(m.m00);
+        inv_sqrt_m00 = am00 > DBL_EPSILON ? 1./std::sqrt(am00) : 0;
+    }
+    operator cv::Moments() const
+    {
+        return cv::Moments(m00, m10, m01, m20, m11, m02, m30, m21, m12, m03);
+    }
+#endif
+}
+CvMoments;
+
+/** Hu invariants */
+typedef struct CvHuMoments
+{
+    double hu1, hu2, hu3, hu4, hu5, hu6, hu7; /**< Hu invariants */
+}
+CvHuMoments;
+
+/** Template matching methods */
+enum
+{
+    CV_TM_SQDIFF        =0,
+    CV_TM_SQDIFF_NORMED =1,
+    CV_TM_CCORR         =2,
+    CV_TM_CCORR_NORMED  =3,
+    CV_TM_CCOEFF        =4,
+    CV_TM_CCOEFF_NORMED =5
+};
+
+typedef float (CV_CDECL * CvDistanceFunction)( const float* a, const float* b, void* user_param );
+
+/** Contour retrieval modes */
+enum
+{
+    CV_RETR_EXTERNAL=0,
+    CV_RETR_LIST=1,
+    CV_RETR_CCOMP=2,
+    CV_RETR_TREE=3,
+    CV_RETR_FLOODFILL=4
+};
+
+/** Contour approximation methods */
+enum
+{
+    CV_CHAIN_CODE=0,
+    CV_CHAIN_APPROX_NONE=1,
+    CV_CHAIN_APPROX_SIMPLE=2,
+    CV_CHAIN_APPROX_TC89_L1=3,
+    CV_CHAIN_APPROX_TC89_KCOS=4,
+    CV_LINK_RUNS=5
+};
+
+/*
+Internal structure that is used for sequential retrieving contours from the image.
+It supports both hierarchical and plane variants of Suzuki algorithm.
+*/
+typedef struct _CvContourScanner* CvContourScanner;
+
+/** Freeman chain reader state */
+typedef struct CvChainPtReader
+{
+    CV_SEQ_READER_FIELDS()
+    char      code;
+    CvPoint   pt;
+    schar     deltas[8][2];
+}
+CvChainPtReader;
+
+/** initializes 8-element array for fast access to 3x3 neighborhood of a pixel */
+#define  CV_INIT_3X3_DELTAS( deltas, step, nch )            \
+    ((deltas)[0] =  (nch),  (deltas)[1] = -(step) + (nch),  \
+     (deltas)[2] = -(step), (deltas)[3] = -(step) - (nch),  \
+     (deltas)[4] = -(nch),  (deltas)[5] =  (step) - (nch),  \
+     (deltas)[6] =  (step), (deltas)[7] =  (step) + (nch))
+
+
+/** Contour approximation algorithms */
+enum
+{
+    CV_POLY_APPROX_DP = 0
+};
+
+/** Shape matching methods */
+enum
+{
+    CV_CONTOURS_MATCH_I1  =1, //!< \f[I_1(A,B) =  \sum _{i=1...7}  \left |  \frac{1}{m^A_i} -  \frac{1}{m^B_i} \right |\f]
+    CV_CONTOURS_MATCH_I2  =2, //!< \f[I_2(A,B) =  \sum _{i=1...7}  \left | m^A_i - m^B_i  \right |\f]
+    CV_CONTOURS_MATCH_I3  =3  //!< \f[I_3(A,B) =  \max _{i=1...7}  \frac{ \left| m^A_i - m^B_i \right| }{ \left| m^A_i \right| }\f]
+};
+
+/** Shape orientation */
+enum
+{
+    CV_CLOCKWISE         =1,
+    CV_COUNTER_CLOCKWISE =2
+};
+
+
+/** Convexity defect */
+typedef struct CvConvexityDefect
+{
+    CvPoint* start; /**< point of the contour where the defect begins */
+    CvPoint* end; /**< point of the contour where the defect ends */
+    CvPoint* depth_point; /**< the farthest from the convex hull point within the defect */
+    float depth; /**< distance between the farthest point and the convex hull */
+} CvConvexityDefect;
+
+
+/** Histogram comparison methods */
+enum
+{
+    CV_COMP_CORREL        =0,
+    CV_COMP_CHISQR        =1,
+    CV_COMP_INTERSECT     =2,
+    CV_COMP_BHATTACHARYYA =3,
+    CV_COMP_HELLINGER     =CV_COMP_BHATTACHARYYA,
+    CV_COMP_CHISQR_ALT    =4,
+    CV_COMP_KL_DIV        =5
+};
+
+/** Mask size for distance transform */
+enum
+{
+    CV_DIST_MASK_3   =3,
+    CV_DIST_MASK_5   =5,
+    CV_DIST_MASK_PRECISE =0
+};
+
+/** Content of output label array: connected components or pixels */
+enum
+{
+  CV_DIST_LABEL_CCOMP = 0,
+  CV_DIST_LABEL_PIXEL = 1
+};
+
+/** Distance types for Distance Transform and M-estimators */
+enum
+{
+    CV_DIST_USER    =-1,  /**< User defined distance */
+    CV_DIST_L1      =1,   /**< distance =
