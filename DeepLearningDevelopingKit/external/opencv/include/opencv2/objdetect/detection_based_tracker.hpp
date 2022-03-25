@@ -186,4 +186,42 @@ class CV_EXPORTS DetectionBasedTracker
         {
             typedef std::vector<cv::Rect> PositionsVector;
 
-            PositionsVector lastPosi
+            PositionsVector lastPositions;
+
+            int numDetectedFrames;
+            int numFramesNotDetected;
+            int id;
+
+            TrackedObject(const cv::Rect& rect):numDetectedFrames(1), numFramesNotDetected(0)
+            {
+                lastPositions.push_back(rect);
+                id=getNextId();
+            };
+
+            static int getNextId()
+            {
+                static int _id=0;
+                return _id++;
+            }
+        };
+
+        int numTrackedSteps;
+        std::vector<TrackedObject> trackedObjects;
+
+        std::vector<float> weightsPositionsSmoothing;
+        std::vector<float> weightsSizesSmoothing;
+
+        cv::Ptr<IDetector> cascadeForTracking;
+
+        void updateTrackedObjects(const std::vector<cv::Rect>& detectedObjects);
+        cv::Rect calcTrackedObjectPositionToShow(int i) const;
+        cv::Rect calcTrackedObjectPositionToShow(int i, ObjectStatus& status) const;
+        void detectInRegion(const cv::Mat& img, const cv::Rect& r, std::vector<cv::Rect>& detectedObjectsInRegions);
+};
+
+//! @} objdetect
+
+} //end of cv namespace
+#endif
+
+#endif
