@@ -7,11 +7,11 @@
 //  copy or use the software.
 //
 //
-//                           License Agreement
+//                          License Agreement
 //                For Open Source Computer Vision Library
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009-2012, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -36,22 +36,4 @@
 // loss of use, data, or profits; or business interruption) however caused
 // and on any theory of liability, whether in contract, strict liability,
 // or tort (including negligence or otherwise) arising in any way out of
-// the use of this software, even if advised of the possibility of such damage.
-//
-//M*/
-
-#ifndef OPENCV_SHAPE_HPP
-#define OPENCV_SHAPE_HPP
-
-#include "opencv2/shape/emdL1.hpp"
-#include "opencv2/shape/shape_transformer.hpp"
-#include "opencv2/shape/hist_cost.hpp"
-#include "opencv2/shape/shape_distance.hpp"
-
-/**
-  @defgroup shape Shape Distance and Matching
- */
-
-#endif
-
-/* End of file. */
+// the use of this software, even if advised of t
