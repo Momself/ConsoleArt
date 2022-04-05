@@ -1,3 +1,4 @@
+
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
@@ -7,11 +8,12 @@
 //  copy or use the software.
 //
 //
-//                           License Agreement
+//                          License Agreement
 //                For Open Source Computer Vision Library
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009-2012, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2013, OpenCV Foundation, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -40,33 +42,8 @@
 //
 //M*/
 
-#ifndef OPENCV_EMD_L1_HPP
-#define OPENCV_EMD_L1_HPP
-
-#include "opencv2/core.hpp"
-
-namespace cv
-{
-/****************************************************************************************\
-*                                   EMDL1 Function                                      *
-\****************************************************************************************/
-
-//! @addtogroup shape
-//! @{
-
-/** @brief Computes the "minimal work" distance between two weighted point configurations base on the papers
-"EMD-L1: An efficient and Robust Algorithm for comparing histogram-based descriptors", by Haibin
-Ling and Kazunori Okuda; and "The Earth Mover's Distance is the Mallows Distance: Some Insights from
-Statistics", by Elizaveta Levina and Peter Bickel.
-
-@param signature1 First signature, a single column floating-point matrix. Each row is the value of
-the histogram in each bin.
-@param signature2 Second signature of the same format and size as signature1.
- */
-CV_EXPORTS float EMDL1(InputArray signature1, InputArray signature2);
-
-//! @}
-
-}//namespace cv
-
+#ifdef __OPENCV_BUILD
+#error this is a compatibility header which should not be used inside the OpenCV library
 #endif
+
+#include "opencv2/shape.hpp"

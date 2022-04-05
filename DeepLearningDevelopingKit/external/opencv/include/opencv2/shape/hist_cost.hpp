@@ -1,3 +1,4 @@
+
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
@@ -7,11 +8,12 @@
 //  copy or use the software.
 //
 //
-//                           License Agreement
+//                          License Agreement
 //                For Open Source Computer Vision Library
 //
 // Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009-2012, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
+// Copyright (C) 2013, OpenCV Foundation, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -40,33 +42,71 @@
 //
 //M*/
 
-#ifndef OPENCV_EMD_L1_HPP
-#define OPENCV_EMD_L1_HPP
+#ifndef OPENCV_HIST_COST_HPP
+#define OPENCV_HIST_COST_HPP
 
-#include "opencv2/core.hpp"
+#include "opencv2/imgproc.hpp"
 
 namespace cv
 {
-/****************************************************************************************\
-*                                   EMDL1 Function                                      *
-\****************************************************************************************/
 
 //! @addtogroup shape
 //! @{
 
-/** @brief Computes the "minimal work" distance between two weighted point configurations base on the papers
-"EMD-L1: An efficient and Robust Algorithm for comparing histogram-based descriptors", by Haibin
-Ling and Kazunori Okuda; and "The Earth Mover's Distance is the Mallows Distance: Some Insights from
-Statistics", by Elizaveta Levina and Peter Bickel.
-
-@param signature1 First signature, a single column floating-point matrix. Each row is the value of
-the histogram in each bin.
-@param signature2 Second signature of the same format and size as signature1.
+/** @brief Abstract base class for histogram cost algorithms.
  */
-CV_EXPORTS float EMDL1(InputArray signature1, InputArray signature2);
+class CV_EXPORTS_W HistogramCostExtractor : public Algorithm
+{
+public:
+    CV_WRAP virtual void buildCostMatrix(InputArray descriptors1, InputArray descriptors2, OutputArray costMatrix) = 0;
+
+    CV_WRAP virtual void setNDummies(int nDummies) = 0;
+    CV_WRAP virtual int getNDummies() const = 0;
+
+    CV_WRAP virtual void setDefaultCost(float defaultCost) = 0;
+    CV_WRAP virtual float getDefaultCost() const = 0;
+};
+
+/** @brief A norm based cost extraction. :
+ */
+class CV_EXPORTS_W NormHistogramCostExtractor : public HistogramCostExtractor
+{
+public:
+    CV_WRAP virtual void setNormFlag(int flag) = 0;
+    CV_WRAP virtual int getNormFlag() const = 0;
+};
+
+CV_EXPORTS_W Ptr<HistogramCostExtractor>
+    createNormHistogramCostExtractor(int flag=DIST_L2, int nDummies=25, float defaultCost=0.2f);
+
+/** @brief An EMD based cost extraction. :
+ */
+class CV_EXPORTS_W EMDHistogramCostExtractor : public HistogramCostExtractor
+{
+public:
+    CV_WRAP virtual void setNormFlag(int flag) = 0;
+    CV_WRAP virtual int getNormFlag() const = 0;
+};
+
+CV_EXPORTS_W Ptr<HistogramCostExtractor>
+    createEMDHistogramCostExtractor(int flag=DIST_L2, int nDummies=25, float defaultCost=0.2f);
+
+/** @brief An Chi based cost extraction. :
+ */
+class CV_EXPORTS_W ChiHistogramCostExtractor : public HistogramCostExtractor
+{};
+
+CV_EXPORTS_W Ptr<HistogramCostExtractor> createChiHistogramCostExtractor(int nDummies=25, float defaultCost=0.2f);
+
+/** @brief An EMD-L1 based cost extraction. :
+ */
+class CV_EXPORTS_W EMDL1HistogramCostExtractor : public HistogramCostExtractor
+{};
+
+CV_EXPORTS_W Ptr<HistogramCostExtractor>
+    createEMDL1HistogramCostExtractor(int nDummies=25, float defaultCost=0.2f);
 
 //! @}
 
-}//namespace cv
-
+} // cv
 #endif
