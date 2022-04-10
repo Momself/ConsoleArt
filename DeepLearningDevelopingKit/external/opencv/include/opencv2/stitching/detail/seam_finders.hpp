@@ -265,4 +265,21 @@ public:
     void findInPair(size_t first, size_t second, Rect roi);
 
 private:
-    void setGraphWeightsColor
+    void setGraphWeightsColor(const cv::Mat &img1, const cv::Mat &img2, const cv::Mat &mask1, const cv::Mat &mask2,
+                              cv::Mat &terminals, cv::Mat &leftT, cv::Mat &rightT, cv::Mat &top, cv::Mat &bottom);
+    void setGraphWeightsColorGrad(const cv::Mat &img1, const cv::Mat &img2, const cv::Mat &dx1, const cv::Mat &dx2,
+                                  const cv::Mat &dy1, const cv::Mat &dy2, const cv::Mat &mask1, const cv::Mat &mask2,
+                                  cv::Mat &terminals, cv::Mat &leftT, cv::Mat &rightT, cv::Mat &top, cv::Mat &bottom);
+    std::vector<Mat> dx_, dy_;
+    int cost_type_;
+    float terminal_cost_;
+    float bad_region_penalty_;
+};
+#endif
+
+//! @}
+
+} // namespace detail
+} // namespace cv
+
+#endif // OPENCV_STITCHING_SEAM_FINDERS_HPP
