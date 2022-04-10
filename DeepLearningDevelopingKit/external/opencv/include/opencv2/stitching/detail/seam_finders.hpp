@@ -145,4 +145,124 @@ private:
         bool operator() (const std::pair<size_t, size_t> &l, const std::pair<size_t, size_t> &r) const
         {
             Point c1 = corners_[l.first] + Point(src_[l.first].cols / 2, src_[l.first].rows / 2);
- 
+            Point c2 = corners_[l.second] + Point(src_[l.second].cols / 2, src_[l.second].rows / 2);
+            int d1 = (c1 - c2).dot(c1 - c2);
+
+            c1 = corners_[r.first] + Point(src_[r.first].cols / 2, src_[r.first].rows / 2);
+            c2 = corners_[r.second] + Point(src_[r.second].cols / 2, src_[r.second].rows / 2);
+            int d2 = (c1 - c2).dot(c1 - c2);
+
+            return d1 < d2;
+        }
+
+    private:
+        const Mat *src_;
+        const Point *corners_;
+    };
+
+    class ClosePoints
+    {
+    public:
+        ClosePoints(int minDist) : minDist_(minDist) {}
+
+        bool operator() (const Point &p1, const Point &p2) const
+        {
+            int dist2 = (p1.x-p2.x) * (p1.x-p2.x) + (p1.y-p2.y) * (p1.y-p2.y);
+            return dist2 < minDist_ * minDist_;
+        }
+
+    private:
+        int minDist_;
+    };
+
+    void process(
+            const Mat &image1, const Mat &image2, Point tl1, Point tl2,  Mat &mask1, Mat &mask2);
+
+    void findComponents();
+
+    void findEdges();
+
+    void resolveConflicts(
+            const Mat &image1, const Mat &image2, Point tl1, Point tl2, Mat &mask1, Mat &mask2);
+
+    void computeGradients(const Mat &image1, const Mat &image2);
+
+    bool hasOnlyOneNeighbor(int comp);
+
+    bool closeToContour(int y, int x, const Mat_<uchar> &contourMask);
+
+    bool getSeamTips(int comp1, int comp2, Point &p1, Point &p2);
+
+    void computeCosts(
+            const Mat &image1, const Mat &image2, Point tl1, Point tl2,
+            int comp, Mat_<float> &costV, Mat_<float> &costH);
+
+    bool estimateSeam(
+            const Mat &image1, const Mat &image2, Point tl1, Point tl2, int comp,
+            Point p1, Point p2, std::vector<Point> &seam, bool &isHorizontal);
+
+    void updateLabelsUsingSeam(
+            int comp1, int comp2, const std::vector<Point> &seam, bool isHorizontalSeam);
+
+    CostFunction costFunc_;
+
+    // processing images pair data
+    Point unionTl_, unionBr_;
+    Size unionSize_;
+    Mat_<uchar> mask1_, mask2_;
+    Mat_<uchar> contour1mask_, contour2mask_;
+    Mat_<float> gradx1_, grady1_;
+    Mat_<float> gradx2_, grady2_;
+
+    // components data
+    int ncomps_;
+    Mat_<int> labels_;
+    std::vector<ComponentState> states_;
+    std::vector<Point> tls_, brs_;
+    std::vector<std::vector<Point> > contours_;
+    std::set<std::pair<int, int> > edges_;
+};
+
+/** @brief Base class for all minimum graph-cut-based seam estimators.
+ */
+class CV_EXPORTS GraphCutSeamFinderBase
+{
+public:
+    enum CostType { COST_COLOR, COST_COLOR_GRAD };
+};
+
+/** @brief Minimum graph cut-based seam estimator. See details in @cite V03 .
+ */
+class CV_EXPORTS GraphCutSeamFinder : public GraphCutSeamFinderBase, public SeamFinder
+{
+public:
+    GraphCutSeamFinder(int cost_type = COST_COLOR_GRAD, float terminal_cost = 10000.f,
+                       float bad_region_penalty = 1000.f);
+
+    ~GraphCutSeamFinder();
+
+    void find(const std::vector<UMat> &src, const std::vector<Point> &corners,
+              std::vector<UMat> &masks);
+
+private:
+    // To avoid GCGraph dependency
+    class Impl;
+    Ptr<PairwiseSeamFinder> impl_;
+};
+
+
+#ifdef HAVE_OPENCV_CUDALEGACY
+class CV_EXPORTS GraphCutSeamFinderGpu : public GraphCutSeamFinderBase, public PairwiseSeamFinder
+{
+public:
+    GraphCutSeamFinderGpu(int cost_type = COST_COLOR_GRAD, float terminal_cost = 10000.f,
+                          float bad_region_penalty = 1000.f)
+                          : cost_type_(cost_type), terminal_cost_(terminal_cost),
+                            bad_region_penalty_(bad_region_penalty) {}
+
+    void find(const std::vector<cv::UMat> &src, const std::vector<cv::Point> &corners,
+              std::vector<cv::UMat> &masks);
+    void findInPair(size_t first, size_t second, Rect roi);
+
+private:
+    void setGraphWeightsColor
