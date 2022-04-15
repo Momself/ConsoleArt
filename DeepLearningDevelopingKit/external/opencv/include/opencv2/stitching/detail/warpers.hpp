@@ -1,4 +1,4 @@
-/*M///////////////////////////////////////////////////////////////////////////////////////
+ /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
 //
@@ -40,52 +40,54 @@
 //
 //M*/
 
-
-#ifndef OPENCV_STITCHING_TIMELAPSERS_HPP
-#define OPENCV_STITCHING_TIMELAPSERS_HPP
+#ifndef OPENCV_STITCHING_WARPERS_HPP
+#define OPENCV_STITCHING_WARPERS_HPP
 
 #include "opencv2/core.hpp"
+#include "opencv2/core/cuda.hpp"
+#include "opencv2/imgproc.hpp"
+#include "opencv2/opencv_modules.hpp"
 
 namespace cv {
 namespace detail {
 
-//! @addtogroup stitching
+//! @addtogroup stitching_warp
 //! @{
 
-//  Base Timelapser class, takes a sequence of images, applies appropriate shift, stores result in dst_.
-
-class CV_EXPORTS Timelapser
+/** @brief Rotation-only model image warper interface.
+ */
+class CV_EXPORTS RotationWarper
 {
 public:
+    virtual ~RotationWarper() {}
 
-    enum {AS_IS, CROP};
+    /** @brief Projects the image point.
 
-    virtual ~Timelapser() {}
+    @param pt Source point
+    @param K Camera intrinsic parameters
+    @param R Camera rotation matrix
+    @return Projected point
+     */
+    virtual Point2f warpPoint(const Point2f &pt, InputArray K, InputArray R) = 0;
 
-    static Ptr<Timelapser> createDefault(int type);
+    /** @brief Builds the projection maps according to the given camera data.
 
-    virtual void initialize(const std::vector<Point> &corners, const std::vector<Size> &sizes);
-    virtual void process(InputArray img, InputArray mask, Point tl);
-    virtual const UMat& getDst() {return dst_;}
+    @param src_size Source image size
+    @param K Camera intrinsic parameters
+    @param R Camera rotation matrix
+    @param xmap Projection map for the x axis
+    @param ymap Projection map for the y axis
+    @return Projected image minimum bounding box
+     */
+    virtual Rect buildMaps(Size src_size, InputArray K, InputArray R, OutputArray xmap, OutputArray ymap) = 0;
 
-protected:
+    /** @brief Projects the image.
 
-    virtual bool test_point(Point pt);
-
-    UMat dst_;
-    Rect dst_roi_;
-};
-
-
-class CV_EXPORTS TimelapserCrop : public Timelapser
-{
-public:
-    virtual void initialize(const std::vector<Point> &corners, const std::vector<Size> &sizes);
-};
-
-//! @}
-
-} // namespace detail
-} // namespace cv
-
-#endif // OPENCV_STITCHING_TIMELAPSERS_HPP
+    @param src Source image
+    @param K Camera intrinsic parameters
+    @param R Camera rotation matrix
+    @param interp_mode Interpolation mode
+    @param border_mode Border extrapolation mode
+    @param dst Projected image
+    @return Project image top-left corner
+     *

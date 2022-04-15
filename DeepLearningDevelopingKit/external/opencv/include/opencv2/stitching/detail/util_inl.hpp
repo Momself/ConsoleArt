@@ -1,3 +1,4 @@
+
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
@@ -40,52 +41,92 @@
 //
 //M*/
 
+#ifndef OPENCV_STITCHING_UTIL_INL_HPP
+#define OPENCV_STITCHING_UTIL_INL_HPP
 
-#ifndef OPENCV_STITCHING_TIMELAPSERS_HPP
-#define OPENCV_STITCHING_TIMELAPSERS_HPP
-
+#include <queue>
 #include "opencv2/core.hpp"
+#include "util.hpp" // Make your IDE see declarations
+
+//! @cond IGNORED
 
 namespace cv {
 namespace detail {
 
-//! @addtogroup stitching
-//! @{
-
-//  Base Timelapser class, takes a sequence of images, applies appropriate shift, stores result in dst_.
-
-class CV_EXPORTS Timelapser
+template <typename B>
+B Graph::forEach(B body) const
 {
-public:
-
-    enum {AS_IS, CROP};
-
-    virtual ~Timelapser() {}
-
-    static Ptr<Timelapser> createDefault(int type);
-
-    virtual void initialize(const std::vector<Point> &corners, const std::vector<Size> &sizes);
-    virtual void process(InputArray img, InputArray mask, Point tl);
-    virtual const UMat& getDst() {return dst_;}
-
-protected:
-
-    virtual bool test_point(Point pt);
-
-    UMat dst_;
-    Rect dst_roi_;
-};
+    for (int i = 0; i < numVertices(); ++i)
+    {
+        std::list<GraphEdge>::const_iterator edge = edges_[i].begin();
+        for (; edge != edges_[i].end(); ++edge)
+            body(*edge);
+    }
+    return body;
+}
 
 
-class CV_EXPORTS TimelapserCrop : public Timelapser
+template <typename B>
+B Graph::walkBreadthFirst(int from, B body) const
 {
-public:
-    virtual void initialize(const std::vector<Point> &corners, const std::vector<Size> &sizes);
-};
+    std::vector<bool> was(numVertices(), false);
+    std::queue<int> vertices;
 
-//! @}
+    was[from] = true;
+    vertices.push(from);
+
+    while (!vertices.empty())
+    {
+        int vertex = vertices.front();
+        vertices.pop();
+
+        std::list<GraphEdge>::const_iterator edge = edges_[vertex].begin();
+        for (; edge != edges_[vertex].end(); ++edge)
+        {
+            if (!was[edge->to])
+            {
+                body(*edge);
+                was[edge->to] = true;
+                vertices.push(edge->to);
+            }
+        }
+    }
+
+    return body;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Some auxiliary math functions
+
+static inline
+float normL2(const Point3f& a)
+{
+    return a.x * a.x + a.y * a.y + a.z * a.z;
+}
+
+
+static inline
+float normL2(const Point3f& a, const Point3f& b)
+{
+    return normL2(a - b);
+}
+
+
+static inline
+double normL2sq(const Mat &r)
+{
+    return r.dot(r);
+}
+
+
+static inline int sqr(int x) { return x * x; }
+static inline float sqr(float x) { return x * x; }
+static inline double sqr(double x) { return x * x; }
 
 } // namespace detail
 } // namespace cv
 
-#endif // OPENCV_STITCHING_TIMELAPSERS_HPP
+//! @endcond
+
+#endif // OPENCV_STITCHING_UTIL_INL_HPP
