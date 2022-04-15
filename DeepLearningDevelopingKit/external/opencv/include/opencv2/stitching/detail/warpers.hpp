@@ -90,4 +90,111 @@ public:
     @param border_mode Border extrapolation mode
     @param dst Projected image
     @return Project image top-left corner
-     *
+     */
+    virtual Point warp(InputArray src, InputArray K, InputArray R, int interp_mode, int border_mode,
+                       OutputArray dst) = 0;
+
+    /** @brief Projects the image backward.
+
+    @param src Projected image
+    @param K Camera intrinsic parameters
+    @param R Camera rotation matrix
+    @param interp_mode Interpolation mode
+    @param border_mode Border extrapolation mode
+    @param dst_size Backward-projected image size
+    @param dst Backward-projected image
+     */
+    virtual void warpBackward(InputArray src, InputArray K, InputArray R, int interp_mode, int border_mode,
+                              Size dst_size, OutputArray dst) = 0;
+
+    /**
+    @param src_size Source image bounding box
+    @param K Camera intrinsic parameters
+    @param R Camera rotation matrix
+    @return Projected image minimum bounding box
+     */
+    virtual Rect warpRoi(Size src_size, InputArray K, InputArray R) = 0;
+
+    virtual float getScale() const { return 1.f; }
+    virtual void setScale(float) {}
+};
+
+/** @brief Base class for warping logic implementation.
+ */
+struct CV_EXPORTS ProjectorBase
+{
+    void setCameraParams(InputArray K = Mat::eye(3, 3, CV_32F),
+                         InputArray R = Mat::eye(3, 3, CV_32F),
+                         InputArray T = Mat::zeros(3, 1, CV_32F));
+
+    float scale;
+    float k[9];
+    float rinv[9];
+    float r_kinv[9];
+    float k_rinv[9];
+    float t[3];
+};
+
+/** @brief Base class for rotation-based warper using a detail::ProjectorBase_ derived class.
+ */
+template <class P>
+class CV_EXPORTS_TEMPLATE RotationWarperBase : public RotationWarper
+{
+public:
+    Point2f warpPoint(const Point2f &pt, InputArray K, InputArray R);
+
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, OutputArray xmap, OutputArray ymap);
+
+    Point warp(InputArray src, InputArray K, InputArray R, int interp_mode, int border_mode,
+               OutputArray dst);
+
+    void warpBackward(InputArray src, InputArray K, InputArray R, int interp_mode, int border_mode,
+                      Size dst_size, OutputArray dst);
+
+    Rect warpRoi(Size src_size, InputArray K, InputArray R);
+
+    float getScale() const { return projector_.scale; }
+    void setScale(float val) { projector_.scale = val; }
+
+protected:
+
+    // Detects ROI of the destination image. It's correct for any projection.
+    virtual void detectResultRoi(Size src_size, Point &dst_tl, Point &dst_br);
+
+    // Detects ROI of the destination image by walking over image border.
+    // Correctness for any projection isn't guaranteed.
+    void detectResultRoiByBorder(Size src_size, Point &dst_tl, Point &dst_br);
+
+    P projector_;
+};
+
+
+struct CV_EXPORTS PlaneProjector : ProjectorBase
+{
+    void mapForward(float x, float y, float &u, float &v);
+    void mapBackward(float u, float v, float &x, float &y);
+};
+
+/** @brief Warper that maps an image onto the z = 1 plane.
+ */
+class CV_EXPORTS PlaneWarper : public RotationWarperBase<PlaneProjector>
+{
+public:
+    /** @brief Construct an instance of the plane warper class.
+
+    @param scale Projected image scale multiplier
+     */
+    PlaneWarper(float scale = 1.f) { projector_.scale = scale; }
+
+    Point2f warpPoint(const Point2f &pt, InputArray K, InputArray R);
+    Point2f warpPoint(const Point2f &pt, InputArray K, InputArray R, InputArray T);
+
+    virtual Rect buildMaps(Size src_size, InputArray K, InputArray R, InputArray T, OutputArray xmap, OutputArray ymap);
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, OutputArray xmap, OutputArray ymap);
+
+    Point warp(InputArray src, InputArray K, InputArray R,
+               int interp_mode, int border_mode, OutputArray dst);
+    virtual Point warp(InputArray src, InputArray K, InputArray R, InputArray T, int interp_mode, int border_mode,
+               OutputArray dst);
+
+    Rect warpRoi(Size src_siz
