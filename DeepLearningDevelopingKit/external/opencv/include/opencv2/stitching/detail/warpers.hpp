@@ -463,3 +463,124 @@ public:
     }
 
     Point warp(InputArray src, InputArray K, InputArray R, InputArray T, int interp_mode, int border_mode,
+               OutputArray dst)
+    {
+        d_src_.upload(src);
+        Point result = warp(d_src_, K, R, T, interp_mode, border_mode, d_dst_);
+        d_dst_.download(dst);
+        return result;
+    }
+
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, cuda::GpuMat & xmap, cuda::GpuMat & ymap);
+
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, InputArray T, cuda::GpuMat & xmap, cuda::GpuMat & ymap);
+
+    Point warp(const cuda::GpuMat & src, InputArray K, InputArray R, int interp_mode, int border_mode,
+               cuda::GpuMat & dst);
+
+    Point warp(const cuda::GpuMat & src, InputArray K, InputArray R, InputArray T, int interp_mode, int border_mode,
+               cuda::GpuMat & dst);
+
+private:
+    cuda::GpuMat d_xmap_, d_ymap_, d_src_, d_dst_;
+};
+
+
+class CV_EXPORTS SphericalWarperGpu : public SphericalWarper
+{
+public:
+    SphericalWarperGpu(float scale) : SphericalWarper(scale) {}
+
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, OutputArray xmap, OutputArray ymap)
+    {
+        Rect result = buildMaps(src_size, K, R, d_xmap_, d_ymap_);
+        d_xmap_.download(xmap);
+        d_ymap_.download(ymap);
+        return result;
+    }
+
+    Point warp(InputArray src, InputArray K, InputArray R, int interp_mode, int border_mode,
+               OutputArray dst)
+    {
+        d_src_.upload(src);
+        Point result = warp(d_src_, K, R, interp_mode, border_mode, d_dst_);
+        d_dst_.download(dst);
+        return result;
+    }
+
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, cuda::GpuMat & xmap, cuda::GpuMat & ymap);
+
+    Point warp(const cuda::GpuMat & src, InputArray K, InputArray R, int interp_mode, int border_mode,
+               cuda::GpuMat & dst);
+
+private:
+    cuda::GpuMat d_xmap_, d_ymap_, d_src_, d_dst_;
+};
+
+
+class CV_EXPORTS CylindricalWarperGpu : public CylindricalWarper
+{
+public:
+    CylindricalWarperGpu(float scale) : CylindricalWarper(scale) {}
+
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, OutputArray xmap, OutputArray ymap)
+    {
+        Rect result = buildMaps(src_size, K, R, d_xmap_, d_ymap_);
+        d_xmap_.download(xmap);
+        d_ymap_.download(ymap);
+        return result;
+    }
+
+    Point warp(InputArray src, InputArray K, InputArray R, int interp_mode, int border_mode,
+               OutputArray dst)
+    {
+        d_src_.upload(src);
+        Point result = warp(d_src_, K, R, interp_mode, border_mode, d_dst_);
+        d_dst_.download(dst);
+        return result;
+    }
+
+    Rect buildMaps(Size src_size, InputArray K, InputArray R, cuda::GpuMat & xmap, cuda::GpuMat & ymap);
+
+    Point warp(const cuda::GpuMat & src, InputArray K, InputArray R, int interp_mode, int border_mode,
+               cuda::GpuMat & dst);
+
+private:
+    cuda::GpuMat d_xmap_, d_ymap_, d_src_, d_dst_;
+};
+
+
+struct CV_EXPORTS SphericalPortraitProjector : ProjectorBase
+{
+    void mapForward(float x, float y, float &u, float &v);
+    void mapBackward(float u, float v, float &x, float &y);
+};
+
+
+// Projects image onto unit sphere with origin at (0, 0, 0).
+// Poles are located NOT at (0, -1, 0) and (0, 1, 0) points, BUT at (1, 0, 0) and (-1, 0, 0) points.
+class CV_EXPORTS SphericalPortraitWarper : public RotationWarperBase<SphericalPortraitProjector>
+{
+public:
+    SphericalPortraitWarper(float scale) { projector_.scale = scale; }
+
+protected:
+    void detectResultRoi(Size src_size, Point &dst_tl, Point &dst_br);
+};
+
+struct CV_EXPORTS CylindricalPortraitProjector : ProjectorBase
+{
+    void mapForward(float x, float y, float &u, float &v);
+    void mapBackward(float u, float v, float &x, float &y);
+};
+
+
+class CV_EXPORTS CylindricalPortraitWarper : public RotationWarperBase<CylindricalPortraitProjector>
+{
+public:
+    CylindricalPortraitWarper(float scale) { projector_.scale = scale; }
+
+protected:
+    void detectResultRoi(Size src_size, Point &dst_tl, Point &dst_br)
+    {
+        RotationWarperBase<CylindricalPortraitPr
