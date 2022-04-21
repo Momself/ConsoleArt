@@ -143,4 +143,85 @@ public:
         /** Mode for composing scans. Expects images under affine transformation does
         not compensate exposure by default.
 
-        @sa detail::AffineBestOf2NearestMatcher AffineW
+        @sa detail::AffineBestOf2NearestMatcher AffineWarper
+        */
+        SCANS = 1,
+
+    };
+
+   // Stitcher() {}
+    /** @brief Creates a stitcher with the default parameters.
+
+    @param try_use_gpu Flag indicating whether GPU should be used whenever it's possible.
+    @return Stitcher class instance.
+     */
+    static Stitcher createDefault(bool try_use_gpu = false);
+    /** @brief Creates a Stitcher configured in one of the stitching modes.
+
+    @param mode Scenario for stitcher operation. This is usually determined by source of images
+    to stitch and their transformation. Default parameters will be chosen for operation in given
+    scenario.
+    @param try_use_gpu Flag indicating whether GPU should be used whenever it's possible.
+    @return Stitcher class instance.
+     */
+    static Ptr<Stitcher> create(Mode mode = PANORAMA, bool try_use_gpu = false);
+
+    CV_WRAP double registrationResol() const { return registr_resol_; }
+    CV_WRAP void setRegistrationResol(double resol_mpx) { registr_resol_ = resol_mpx; }
+
+    CV_WRAP double seamEstimationResol() const { return seam_est_resol_; }
+    CV_WRAP void setSeamEstimationResol(double resol_mpx) { seam_est_resol_ = resol_mpx; }
+
+    CV_WRAP double compositingResol() const { return compose_resol_; }
+    CV_WRAP void setCompositingResol(double resol_mpx) { compose_resol_ = resol_mpx; }
+
+    CV_WRAP double panoConfidenceThresh() const { return conf_thresh_; }
+    CV_WRAP void setPanoConfidenceThresh(double conf_thresh) { conf_thresh_ = conf_thresh; }
+
+    CV_WRAP bool waveCorrection() const { return do_wave_correct_; }
+    CV_WRAP void setWaveCorrection(bool flag) { do_wave_correct_ = flag; }
+
+    detail::WaveCorrectKind waveCorrectKind() const { return wave_correct_kind_; }
+    void setWaveCorrectKind(detail::WaveCorrectKind kind) { wave_correct_kind_ = kind; }
+
+    Ptr<detail::FeaturesFinder> featuresFinder() { return features_finder_; }
+    const Ptr<detail::FeaturesFinder> featuresFinder() const { return features_finder_; }
+    void setFeaturesFinder(Ptr<detail::FeaturesFinder> features_finder)
+        { features_finder_ = features_finder; }
+
+    Ptr<detail::FeaturesMatcher> featuresMatcher() { return features_matcher_; }
+    const Ptr<detail::FeaturesMatcher> featuresMatcher() const { return features_matcher_; }
+    void setFeaturesMatcher(Ptr<detail::FeaturesMatcher> features_matcher)
+        { features_matcher_ = features_matcher; }
+
+    const cv::UMat& matchingMask() const { return matching_mask_; }
+    void setMatchingMask(const cv::UMat &mask)
+    {
+        CV_Assert(mask.type() == CV_8U && mask.cols == mask.rows);
+        matching_mask_ = mask.clone();
+    }
+
+    Ptr<detail::BundleAdjusterBase> bundleAdjuster() { return bundle_adjuster_; }
+    const Ptr<detail::BundleAdjusterBase> bundleAdjuster() const { return bundle_adjuster_; }
+    void setBundleAdjuster(Ptr<detail::BundleAdjusterBase> bundle_adjuster)
+        { bundle_adjuster_ = bundle_adjuster; }
+
+    /* TODO OpenCV ABI 4.x
+    Ptr<detail::Estimator> estimator() { return estimator_; }
+    const Ptr<detail::Estimator> estimator() const { return estimator_; }
+    void setEstimator(Ptr<detail::Estimator> estimator)
+        { estimator_ = estimator; }
+    */
+
+    Ptr<WarperCreator> warper() { return warper_; }
+    const Ptr<WarperCreator> warper() const { return warper_; }
+    void setWarper(Ptr<WarperCreator> creator) { warper_ = creator; }
+
+    Ptr<detail::ExposureCompensator> exposureCompensator() { return exposure_comp_; }
+    const Ptr<detail::ExposureCompensator> exposureCompensator() const { return exposure_comp_; }
+    void setExposureCompensator(Ptr<detail::ExposureCompensator> exposure_comp)
+        { exposure_comp_ = exposure_comp; }
+
+    Ptr<detail::SeamFinder> seamFinder() { return seam_finder_; }
+    const Ptr<detail::SeamFinder> seamFinder() const { return seam_finder_; }
+    void setSeamFinder(Ptr<detail::SeamFinder> seam_finder) { seam
