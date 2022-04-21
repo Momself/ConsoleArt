@@ -583,4 +583,34 @@ public:
 protected:
     void detectResultRoi(Size src_size, Point &dst_tl, Point &dst_br)
     {
-        RotationWarperBase<CylindricalPortraitPr
+        RotationWarperBase<CylindricalPortraitProjector>::detectResultRoiByBorder(src_size, dst_tl, dst_br);
+    }
+};
+
+struct CV_EXPORTS PlanePortraitProjector : ProjectorBase
+{
+    void mapForward(float x, float y, float &u, float &v);
+    void mapBackward(float u, float v, float &x, float &y);
+};
+
+
+class CV_EXPORTS PlanePortraitWarper : public RotationWarperBase<PlanePortraitProjector>
+{
+public:
+    PlanePortraitWarper(float scale) { projector_.scale = scale; }
+
+protected:
+    void detectResultRoi(Size src_size, Point &dst_tl, Point &dst_br)
+    {
+        RotationWarperBase<PlanePortraitProjector>::detectResultRoiByBorder(src_size, dst_tl, dst_br);
+    }
+};
+
+//! @} stitching_warp
+
+} // namespace detail
+} // namespace cv
+
+#include "warpers_inl.hpp"
+
+#endif // OPENCV_STITCHING_WARPERS_HPP
