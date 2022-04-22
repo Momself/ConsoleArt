@@ -224,4 +224,98 @@ public:
 
     Ptr<detail::SeamFinder> seamFinder() { return seam_finder_; }
     const Ptr<detail::SeamFinder> seamFinder() const { return seam_finder_; }
-    void setSeamFinder(Ptr<detail::SeamFinder> seam_finder) { seam
+    void setSeamFinder(Ptr<detail::SeamFinder> seam_finder) { seam_finder_ = seam_finder; }
+
+    Ptr<detail::Blender> blender() { return blender_; }
+    const Ptr<detail::Blender> blender() const { return blender_; }
+    void setBlender(Ptr<detail::Blender> b) { blender_ = b; }
+
+    /** @overload */
+    CV_WRAP Status estimateTransform(InputArrayOfArrays images);
+    /** @brief These functions try to match the given images and to estimate rotations of each camera.
+
+    @note Use the functions only if you're aware of the stitching pipeline, otherwise use
+    Stitcher::stitch.
+
+    @param images Input images.
+    @param rois Region of interest rectangles.
+    @return Status code.
+     */
+    Status estimateTransform(InputArrayOfArrays images, const std::vector<std::vector<Rect> > &rois);
+
+    /** @overload */
+    CV_WRAP Status composePanorama(OutputArray pano);
+    /** @brief These functions try to compose the given images (or images stored internally from the other function
+    calls) into the final pano under the assumption that the image transformations were estimated
+    before.
+
+    @note Use the functions only if you're aware of the stitching pipeline, otherwise use
+    Stitcher::stitch.
+
+    @param images Input images.
+    @param pano Final pano.
+    @return Status code.
+     */
+    Status composePanorama(InputArrayOfArrays images, OutputArray pano);
+
+    /** @overload */
+    CV_WRAP Status stitch(InputArrayOfArrays images, OutputArray pano);
+    /** @brief These functions try to stitch the given images.
+
+    @param images Input images.
+    @param rois Region of interest rectangles.
+    @param pano Final pano.
+    @return Status code.
+     */
+    Status stitch(InputArrayOfArrays images, const std::vector<std::vector<Rect> > &rois, OutputArray pano);
+
+    std::vector<int> component() const { return indices_; }
+    std::vector<detail::CameraParams> cameras() const { return cameras_; }
+    CV_WRAP double workScale() const { return work_scale_; }
+
+private:
+    //Stitcher() {}
+
+    Status matchImages();
+    Status estimateCameraParams();
+
+    double registr_resol_;
+    double seam_est_resol_;
+    double compose_resol_;
+    double conf_thresh_;
+    Ptr<detail::FeaturesFinder> features_finder_;
+    Ptr<detail::FeaturesMatcher> features_matcher_;
+    cv::UMat matching_mask_;
+    Ptr<detail::BundleAdjusterBase> bundle_adjuster_;
+    /* TODO OpenCV ABI 4.x
+    Ptr<detail::Estimator> estimator_;
+    */
+    bool do_wave_correct_;
+    detail::WaveCorrectKind wave_correct_kind_;
+    Ptr<WarperCreator> warper_;
+    Ptr<detail::ExposureCompensator> exposure_comp_;
+    Ptr<detail::SeamFinder> seam_finder_;
+    Ptr<detail::Blender> blender_;
+
+    std::vector<cv::UMat> imgs_;
+    std::vector<std::vector<cv::Rect> > rois_;
+    std::vector<cv::Size> full_img_sizes_;
+    std::vector<detail::ImageFeatures> features_;
+    std::vector<detail::MatchesInfo> pairwise_matches_;
+    std::vector<cv::UMat> seam_est_imgs_;
+    std::vector<int> indices_;
+    std::vector<detail::CameraParams> cameras_;
+    double work_scale_;
+    double seam_scale_;
+    double seam_work_aspect_;
+    double warped_image_scale_;
+};
+
+CV_EXPORTS_W Ptr<Stitcher> createStitcher(bool try_use_gpu = false);
+CV_EXPORTS_W Ptr<Stitcher> createStitcherScans(bool try_use_gpu = false);
+
+//! @} stitching
+
+} // namespace cv
+
+#endif // OPENCV_STITCHING_STITCHER_HPP
