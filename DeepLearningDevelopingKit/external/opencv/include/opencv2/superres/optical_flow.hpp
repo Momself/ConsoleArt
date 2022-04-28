@@ -188,3 +188,16 @@ namespace cv
             virtual int getMaxLevel() const = 0;
             /** @copybrief getMaxLevel @see getMaxLevel */
             virtual void setMaxLevel(int val) = 0;
+            /** @see setIterations */
+            virtual int getIterations() const = 0;
+            /** @copybrief getIterations @see getIterations */
+            virtual void setIterations(int val) = 0;
+        };
+        CV_EXPORTS Ptr<PyrLKOpticalFlow> createOptFlow_PyrLK_CUDA();
+
+//! @}
+
+    }
+}
+
+#endif // OPENCV_SUPERRES_OPTICAL_FLOW_HPP
