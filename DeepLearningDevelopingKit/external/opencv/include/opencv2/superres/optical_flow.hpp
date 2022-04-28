@@ -106,4 +106,85 @@ namespace cv
             /** @see setTau */
             virtual double getTau() const = 0;
             /** @copybrief getTau @see getTau */
-            virtual void setTau(double val)
+            virtual void setTau(double val) = 0;
+            /** @see setLambda */
+            virtual double getLambda() const = 0;
+            /** @copybrief getLambda @see getLambda */
+            virtual void setLambda(double val) = 0;
+            /** @see setTheta */
+            virtual double getTheta() const = 0;
+            /** @copybrief getTheta @see getTheta */
+            virtual void setTheta(double val) = 0;
+            /** @see setScalesNumber */
+            virtual int getScalesNumber() const = 0;
+            /** @copybrief getScalesNumber @see getScalesNumber */
+            virtual void setScalesNumber(int val) = 0;
+            /** @see setWarpingsNumber */
+            virtual int getWarpingsNumber() const = 0;
+            /** @copybrief getWarpingsNumber @see getWarpingsNumber */
+            virtual void setWarpingsNumber(int val) = 0;
+            /** @see setEpsilon */
+            virtual double getEpsilon() const = 0;
+            /** @copybrief getEpsilon @see getEpsilon */
+            virtual void setEpsilon(double val) = 0;
+            /** @see setIterations */
+            virtual int getIterations() const = 0;
+            /** @copybrief getIterations @see getIterations */
+            virtual void setIterations(int val) = 0;
+            /** @see setUseInitialFlow */
+            virtual bool getUseInitialFlow() const = 0;
+            /** @copybrief getUseInitialFlow @see getUseInitialFlow */
+            virtual void setUseInitialFlow(bool val) = 0;
+        };
+        CV_EXPORTS Ptr<DualTVL1OpticalFlow> createOptFlow_DualTVL1();
+        CV_EXPORTS Ptr<DualTVL1OpticalFlow> createOptFlow_DualTVL1_CUDA();
+
+
+        class CV_EXPORTS BroxOpticalFlow : public virtual DenseOpticalFlowExt
+        {
+        public:
+            //! @brief Flow smoothness
+            /** @see setAlpha */
+            virtual double getAlpha() const = 0;
+            /** @copybrief getAlpha @see getAlpha */
+            virtual void setAlpha(double val) = 0;
+            //! @brief Gradient constancy importance
+            /** @see setGamma */
+            virtual double getGamma() const = 0;
+            /** @copybrief getGamma @see getGamma */
+            virtual void setGamma(double val) = 0;
+            //! @brief Pyramid scale factor
+            /** @see setScaleFactor */
+            virtual double getScaleFactor() const = 0;
+            /** @copybrief getScaleFactor @see getScaleFactor */
+            virtual void setScaleFactor(double val) = 0;
+            //! @brief Number of lagged non-linearity iterations (inner loop)
+            /** @see setInnerIterations */
+            virtual int getInnerIterations() const = 0;
+            /** @copybrief getInnerIterations @see getInnerIterations */
+            virtual void setInnerIterations(int val) = 0;
+            //! @brief Number of warping iterations (number of pyramid levels)
+            /** @see setOuterIterations */
+            virtual int getOuterIterations() const = 0;
+            /** @copybrief getOuterIterations @see getOuterIterations */
+            virtual void setOuterIterations(int val) = 0;
+            //! @brief Number of linear system solver iterations
+            /** @see setSolverIterations */
+            virtual int getSolverIterations() const = 0;
+            /** @copybrief getSolverIterations @see getSolverIterations */
+            virtual void setSolverIterations(int val) = 0;
+        };
+        CV_EXPORTS Ptr<BroxOpticalFlow> createOptFlow_Brox_CUDA();
+
+
+        class PyrLKOpticalFlow : public virtual DenseOpticalFlowExt
+        {
+        public:
+            /** @see setWindowSize */
+            virtual int getWindowSize() const = 0;
+            /** @copybrief getWindowSize @see getWindowSize */
+            virtual void setWindowSize(int val) = 0;
+            /** @see setMaxLevel */
+            virtual int getMaxLevel() const = 0;
+            /** @copybrief getMaxLevel @see getMaxLevel */
+            virtual void setMaxLevel(int val) = 0;
