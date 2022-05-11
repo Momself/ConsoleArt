@@ -245,4 +245,73 @@ public:
     */
     CV_WRAP virtual void setNSamples(int _nN) = 0;//needs reinitialization!
 
-    /** @brief Returns the threshold on the squared distance between the pixel and
+    /** @brief Returns the threshold on the squared distance between the pixel and the sample
+
+    The threshold on the squared distance between the pixel and the sample to decide whether a pixel is
+    close to a data sample.
+     */
+    CV_WRAP virtual double getDist2Threshold() const = 0;
+    /** @brief Sets the threshold on the squared distance
+    */
+    CV_WRAP virtual void setDist2Threshold(double _dist2Threshold) = 0;
+
+    /** @brief Returns the number of neighbours, the k in the kNN.
+
+    K is the number of samples that need to be within dist2Threshold in order to decide that that
+    pixel is matching the kNN background model.
+     */
+    CV_WRAP virtual int getkNNSamples() const = 0;
+    /** @brief Sets the k in the kNN. How many nearest neighbours need to match.
+    */
+    CV_WRAP virtual void setkNNSamples(int _nkNN) = 0;
+
+    /** @brief Returns the shadow detection flag
+
+    If true, the algorithm detects shadows and marks them. See createBackgroundSubtractorKNN for
+    details.
+     */
+    CV_WRAP virtual bool getDetectShadows() const = 0;
+    /** @brief Enables or disables shadow detection
+    */
+    CV_WRAP virtual void setDetectShadows(bool detectShadows) = 0;
+
+    /** @brief Returns the shadow value
+
+    Shadow value is the value used to mark shadows in the foreground mask. Default value is 127. Value 0
+    in the mask always means background, 255 means foreground.
+     */
+    CV_WRAP virtual int getShadowValue() const = 0;
+    /** @brief Sets the shadow value
+    */
+    CV_WRAP virtual void setShadowValue(int value) = 0;
+
+    /** @brief Returns the shadow threshold
+
+    A shadow is detected if pixel is a darker version of the background. The shadow threshold (Tau in
+    the paper) is a threshold defining how much darker the shadow can be. Tau= 0.5 means that if a pixel
+    is more than twice darker then it is not shadow. See Prati, Mikic, Trivedi and Cucchiara,
+    *Detecting Moving Shadows...*, IEEE PAMI,2003.
+     */
+    CV_WRAP virtual double getShadowThreshold() const = 0;
+    /** @brief Sets the shadow threshold
+     */
+    CV_WRAP virtual void setShadowThreshold(double threshold) = 0;
+};
+
+/** @brief Creates KNN Background Subtractor
+
+@param history Length of the history.
+@param dist2Threshold Threshold on the squared distance between the pixel and the sample to decide
+whether a pixel is close to that sample. This parameter does not affect the background update.
+@param detectShadows If true, the algorithm will detect shadows and mark them. It decreases the
+speed a bit, so if you do not need this feature, set the parameter to false.
+ */
+CV_EXPORTS_W Ptr<BackgroundSubtractorKNN>
+    createBackgroundSubtractorKNN(int history=500, double dist2Threshold=400.0,
+                                   bool detectShadows=true);
+
+//! @} video_motion
+
+} // cv
+
+#endif
