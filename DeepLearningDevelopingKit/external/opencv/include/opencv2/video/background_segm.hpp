@@ -160,3 +160,89 @@ public:
     standard Stauffer&Grimson algorithm.
      */
     CV_WRAP virtual double getComplexityReductionThreshold() const = 0;
+    /** @brief Sets the complexity reduction threshold
+    */
+    CV_WRAP virtual void setComplexityReductionThreshold(double ct) = 0;
+
+    /** @brief Returns the shadow detection flag
+
+    If true, the algorithm detects shadows and marks them. See createBackgroundSubtractorMOG2 for
+    details.
+     */
+    CV_WRAP virtual bool getDetectShadows() const = 0;
+    /** @brief Enables or disables shadow detection
+    */
+    CV_WRAP virtual void setDetectShadows(bool detectShadows) = 0;
+
+    /** @brief Returns the shadow value
+
+    Shadow value is the value used to mark shadows in the foreground mask. Default value is 127. Value 0
+    in the mask always means background, 255 means foreground.
+     */
+    CV_WRAP virtual int getShadowValue() const = 0;
+    /** @brief Sets the shadow value
+    */
+    CV_WRAP virtual void setShadowValue(int value) = 0;
+
+    /** @brief Returns the shadow threshold
+
+    A shadow is detected if pixel is a darker version of the background. The shadow threshold (Tau in
+    the paper) is a threshold defining how much darker the shadow can be. Tau= 0.5 means that if a pixel
+    is more than twice darker then it is not shadow. See Prati, Mikic, Trivedi and Cucchiara,
+    *Detecting Moving Shadows...*, IEEE PAMI,2003.
+     */
+    CV_WRAP virtual double getShadowThreshold() const = 0;
+    /** @brief Sets the shadow threshold
+    */
+    CV_WRAP virtual void setShadowThreshold(double threshold) = 0;
+
+    /** @brief Computes a foreground mask.
+
+    @param image Next video frame. Floating point frame will be used without scaling and should be in range \f$[0,255]\f$.
+    @param fgmask The output foreground mask as an 8-bit binary image.
+    @param learningRate The value between 0 and 1 that indicates how fast the background model is
+    learnt. Negative parameter value makes the algorithm to use some automatically chosen learning
+    rate. 0 means that the background model is not updated at all, 1 means that the background model
+    is completely reinitialized from the last frame.
+     */
+    CV_WRAP virtual void apply(InputArray image, OutputArray fgmask, double learningRate=-1) = 0;
+};
+
+/** @brief Creates MOG2 Background Subtractor
+
+@param history Length of the history.
+@param varThreshold Threshold on the squared Mahalanobis distance between the pixel and the model
+to decide whether a pixel is well described by the background model. This parameter does not
+affect the background update.
+@param detectShadows If true, the algorithm will detect shadows and mark them. It decreases the
+speed a bit, so if you do not need this feature, set the parameter to false.
+ */
+CV_EXPORTS_W Ptr<BackgroundSubtractorMOG2>
+    createBackgroundSubtractorMOG2(int history=500, double varThreshold=16,
+                                   bool detectShadows=true);
+
+/** @brief K-nearest neighbours - based Background/Foreground Segmentation Algorithm.
+
+The class implements the K-nearest neighbours background subtraction described in @cite Zivkovic2006 .
+Very efficient if number of foreground pixels is low.
+ */
+class CV_EXPORTS_W BackgroundSubtractorKNN : public BackgroundSubtractor
+{
+public:
+    /** @brief Returns the number of last frames that affect the background model
+    */
+    CV_WRAP virtual int getHistory() const = 0;
+    /** @brief Sets the number of last frames that affect the background model
+    */
+    CV_WRAP virtual void setHistory(int history) = 0;
+
+    /** @brief Returns the number of data samples in the background model
+    */
+    CV_WRAP virtual int getNSamples() const = 0;
+    /** @brief Sets the number of data samples in the background model.
+
+    The model needs to be reinitalized to reserve memory.
+    */
+    CV_WRAP virtual void setNSamples(int _nN) = 0;//needs reinitialization!
+
+    /** @brief Returns the threshold on the squared distance between the pixel and
