@@ -7,12 +7,10 @@
 //  copy or use the software.
 //
 //
-//                          License Agreement
+//                        Intel License Agreement
 //                For Open Source Computer Vision Library
 //
-// Copyright (C) 2000-2008, Intel Corporation, all rights reserved.
-// Copyright (C) 2009, Willow Garage Inc., all rights reserved.
-// Copyright (C) 2013, OpenCV Foundation, all rights reserved.
+// Copyright (C) 2000, Intel Corporation, all rights reserved.
 // Third party copyrights are property of their respective owners.
 //
 // Redistribution and use in source and binary forms, with or without modification,
@@ -25,7 +23,7 @@
 //     this list of conditions and the following disclaimer in the documentation
 //     and/or other materials provided with the distribution.
 //
-//   * The name of the copyright holders may not be used to endorse or promote products
+//   * The name of Intel Corporation may not be used to endorse or promote products
 //     derived from this software without specific prior written permission.
 //
 // This software is provided by the copyright holders and contributors "as is" and
@@ -41,23 +39,40 @@
 //
 //M*/
 
-#ifndef OPENCV_VIDEO_HPP
-#define OPENCV_VIDEO_HPP
+#ifndef OPENCV_VIDEOIO_H
+#define OPENCV_VIDEOIO_H
+
+#include "opencv2/core/core_c.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /**
-  @defgroup video Video Analysis
+  @addtogroup videoio_c
   @{
-    @defgroup video_motion Motion Analysis
-    @defgroup video_track Object Tracking
-    @defgroup video_c C API
-  @}
 */
 
-#include "opencv2/video/tracking.hpp"
-#include "opencv2/video/background_segm.hpp"
+/****************************************************************************************\
+*                         Working with Video Files and Cameras                           *
+\****************************************************************************************/
 
-#ifndef DISABLE_OPENCV_24_COMPATIBILITY
-#include "opencv2/video/tracking_c.h"
-#endif
+/** @brief "black box" capture structure
 
-#endif //OPENCV_VIDEO_HPP
+In C++ use cv::VideoCapture
+*/
+typedef struct CvCapture CvCapture;
+
+/** @brief start capturing frames from video file
+*/
+CVAPI(CvCapture*) cvCreateFileCapture( const char* filename );
+
+/** @brief start capturing frames from video file. allows specifying a preferred API to use
+*/
+CVAPI(CvCapture*) cvCreateFileCaptureWithPreference( const char* filename , int apiPreference);
+
+enum
+{
+    CV_CAP_ANY      =0,     // autodetect
+
+    CV_CAP_MIL      =100,   // MIL proprietar
