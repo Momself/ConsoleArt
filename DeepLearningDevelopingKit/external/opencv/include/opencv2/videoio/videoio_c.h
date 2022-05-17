@@ -186,4 +186,72 @@ enum
     CV_CAP_PROP_SHARPNESS     =20,
     CV_CAP_PROP_AUTO_EXPOSURE =21, // exposure control done by camera,
                                    // user can adjust reference level
-                                   /
+                                   // using this feature
+    CV_CAP_PROP_GAMMA         =22,
+    CV_CAP_PROP_TEMPERATURE   =23,
+    CV_CAP_PROP_TRIGGER       =24,
+    CV_CAP_PROP_TRIGGER_DELAY =25,
+    CV_CAP_PROP_WHITE_BALANCE_RED_V =26,
+    CV_CAP_PROP_ZOOM          =27,
+    CV_CAP_PROP_FOCUS         =28,
+    CV_CAP_PROP_GUID          =29,
+    CV_CAP_PROP_ISO_SPEED     =30,
+    CV_CAP_PROP_MAX_DC1394    =31,
+    CV_CAP_PROP_BACKLIGHT     =32,
+    CV_CAP_PROP_PAN           =33,
+    CV_CAP_PROP_TILT          =34,
+    CV_CAP_PROP_ROLL          =35,
+    CV_CAP_PROP_IRIS          =36,
+    CV_CAP_PROP_SETTINGS      =37,
+    CV_CAP_PROP_BUFFERSIZE    =38,
+    CV_CAP_PROP_AUTOFOCUS     =39,
+    CV_CAP_PROP_SAR_NUM       =40,
+    CV_CAP_PROP_SAR_DEN       =41,
+
+    CV_CAP_PROP_AUTOGRAB      =1024, // property for videoio class CvCapture_Android only
+    CV_CAP_PROP_SUPPORTED_PREVIEW_SIZES_STRING=1025, // readonly, tricky property, returns cpnst char* indeed
+    CV_CAP_PROP_PREVIEW_FORMAT=1026, // readonly, tricky property, returns cpnst char* indeed
+
+    // OpenNI map generators
+    CV_CAP_OPENNI_DEPTH_GENERATOR = 1 << 31,
+    CV_CAP_OPENNI_IMAGE_GENERATOR = 1 << 30,
+    CV_CAP_OPENNI_IR_GENERATOR    = 1 << 29,
+    CV_CAP_OPENNI_GENERATORS_MASK = CV_CAP_OPENNI_DEPTH_GENERATOR + CV_CAP_OPENNI_IMAGE_GENERATOR + CV_CAP_OPENNI_IR_GENERATOR,
+
+    // Properties of cameras available through OpenNI interfaces
+    CV_CAP_PROP_OPENNI_OUTPUT_MODE     = 100,
+    CV_CAP_PROP_OPENNI_FRAME_MAX_DEPTH = 101, // in mm
+    CV_CAP_PROP_OPENNI_BASELINE        = 102, // in mm
+    CV_CAP_PROP_OPENNI_FOCAL_LENGTH    = 103, // in pixels
+    CV_CAP_PROP_OPENNI_REGISTRATION    = 104, // flag
+    CV_CAP_PROP_OPENNI_REGISTRATION_ON = CV_CAP_PROP_OPENNI_REGISTRATION, // flag that synchronizes the remapping depth map to image map
+                                                                          // by changing depth generator's view point (if the flag is "on") or
+                                                                          // sets this view point to its normal one (if the flag is "off").
+    CV_CAP_PROP_OPENNI_APPROX_FRAME_SYNC = 105,
+    CV_CAP_PROP_OPENNI_MAX_BUFFER_SIZE   = 106,
+    CV_CAP_PROP_OPENNI_CIRCLE_BUFFER     = 107,
+    CV_CAP_PROP_OPENNI_MAX_TIME_DURATION = 108,
+
+    CV_CAP_PROP_OPENNI_GENERATOR_PRESENT = 109,
+    CV_CAP_PROP_OPENNI2_SYNC = 110,
+    CV_CAP_PROP_OPENNI2_MIRROR = 111,
+
+    CV_CAP_OPENNI_IMAGE_GENERATOR_PRESENT         = CV_CAP_OPENNI_IMAGE_GENERATOR + CV_CAP_PROP_OPENNI_GENERATOR_PRESENT,
+    CV_CAP_OPENNI_IMAGE_GENERATOR_OUTPUT_MODE     = CV_CAP_OPENNI_IMAGE_GENERATOR + CV_CAP_PROP_OPENNI_OUTPUT_MODE,
+    CV_CAP_OPENNI_DEPTH_GENERATOR_PRESENT         = CV_CAP_OPENNI_DEPTH_GENERATOR + CV_CAP_PROP_OPENNI_GENERATOR_PRESENT,
+    CV_CAP_OPENNI_DEPTH_GENERATOR_BASELINE        = CV_CAP_OPENNI_DEPTH_GENERATOR + CV_CAP_PROP_OPENNI_BASELINE,
+    CV_CAP_OPENNI_DEPTH_GENERATOR_FOCAL_LENGTH    = CV_CAP_OPENNI_DEPTH_GENERATOR + CV_CAP_PROP_OPENNI_FOCAL_LENGTH,
+    CV_CAP_OPENNI_DEPTH_GENERATOR_REGISTRATION    = CV_CAP_OPENNI_DEPTH_GENERATOR + CV_CAP_PROP_OPENNI_REGISTRATION,
+    CV_CAP_OPENNI_DEPTH_GENERATOR_REGISTRATION_ON = CV_CAP_OPENNI_DEPTH_GENERATOR_REGISTRATION,
+    CV_CAP_OPENNI_IR_GENERATOR_PRESENT            = CV_CAP_OPENNI_IR_GENERATOR + CV_CAP_PROP_OPENNI_GENERATOR_PRESENT,
+
+    // Properties of cameras available through GStreamer interface
+    CV_CAP_GSTREAMER_QUEUE_LENGTH           = 200, // default is 1
+
+    // PVAPI
+    CV_CAP_PROP_PVAPI_MULTICASTIP           = 300, // ip for anable multicast master mode. 0 for disable multicast
+    CV_CAP_PROP_PVAPI_FRAMESTARTTRIGGERMODE = 301, // FrameStartTriggerMode: Determines how a frame is initiated
+    CV_CAP_PROP_PVAPI_DECIMATIONHORIZONTAL  = 302, // Horizontal sub-sampling of the image
+    CV_CAP_PROP_PVAPI_DECIMATIONVERTICAL    = 303, // Vertical sub-sampling of the image
+    CV_CAP_PROP_PVAPI_BINNINGX              = 304, // Horizontal binning factor
+    CV_CAP_PROP_PVAPI_BINNINGY   
