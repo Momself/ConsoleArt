@@ -75,4 +75,115 @@ enum
 {
     CV_CAP_ANY      =0,     // autodetect
 
-    CV_CAP_MIL      =100,   // MIL proprietar
+    CV_CAP_MIL      =100,   // MIL proprietary drivers
+
+    CV_CAP_VFW      =200,   // platform native
+    CV_CAP_V4L      =200,
+    CV_CAP_V4L2     =200,
+
+    CV_CAP_FIREWARE =300,   // IEEE 1394 drivers
+    CV_CAP_FIREWIRE =300,
+    CV_CAP_IEEE1394 =300,
+    CV_CAP_DC1394   =300,
+    CV_CAP_CMU1394  =300,
+
+    CV_CAP_STEREO   =400,   // TYZX proprietary drivers
+    CV_CAP_TYZX     =400,
+    CV_TYZX_LEFT    =400,
+    CV_TYZX_RIGHT   =401,
+    CV_TYZX_COLOR   =402,
+    CV_TYZX_Z       =403,
+
+    CV_CAP_QT       =500,   // QuickTime
+
+    CV_CAP_UNICAP   =600,   // Unicap drivers
+
+    CV_CAP_DSHOW    =700,   // DirectShow (via videoInput)
+    CV_CAP_MSMF     =1400,  // Microsoft Media Foundation (via videoInput)
+
+    CV_CAP_PVAPI    =800,   // PvAPI, Prosilica GigE SDK
+
+    CV_CAP_OPENNI   =900,   // OpenNI (for Kinect)
+    CV_CAP_OPENNI_ASUS =910,   // OpenNI (for Asus Xtion)
+
+    CV_CAP_ANDROID  =1000,  // Android - not used
+    CV_CAP_ANDROID_BACK =CV_CAP_ANDROID+99, // Android back camera - not used
+    CV_CAP_ANDROID_FRONT =CV_CAP_ANDROID+98, // Android front camera - not used
+
+    CV_CAP_XIAPI    =1100,   // XIMEA Camera API
+
+    CV_CAP_AVFOUNDATION = 1200,  // AVFoundation framework for iOS (OS X Lion will have the same API)
+
+    CV_CAP_GIGANETIX = 1300,  // Smartek Giganetix GigEVisionSDK
+
+    CV_CAP_INTELPERC = 1500, // Intel Perceptual Computing
+
+    CV_CAP_OPENNI2 = 1600,   // OpenNI2 (for Kinect)
+    CV_CAP_GPHOTO2 = 1700,
+    CV_CAP_GSTREAMER = 1800, // GStreamer
+    CV_CAP_FFMPEG = 1900,    // FFMPEG
+    CV_CAP_IMAGES = 2000,    // OpenCV Image Sequence (e.g. img_%02d.jpg)
+
+    CV_CAP_ARAVIS = 2100     // Aravis GigE SDK
+};
+
+/** @brief start capturing frames from camera: index = camera_index + domain_offset (CV_CAP_*)
+*/
+CVAPI(CvCapture*) cvCreateCameraCapture( int index );
+
+/** @brief grab a frame, return 1 on success, 0 on fail.
+
+  this function is thought to be fast
+*/
+CVAPI(int) cvGrabFrame( CvCapture* capture );
+
+/** @brief get the frame grabbed with cvGrabFrame(..)
+
+  This function may apply some frame processing like
+  frame decompression, flipping etc.
+  @warning !!!DO NOT RELEASE or MODIFY the retrieved frame!!!
+*/
+CVAPI(IplImage*) cvRetrieveFrame( CvCapture* capture, int streamIdx CV_DEFAULT(0) );
+
+/** @brief Just a combination of cvGrabFrame and cvRetrieveFrame
+
+  @warning !!!DO NOT RELEASE or MODIFY the retrieved frame!!!
+*/
+CVAPI(IplImage*) cvQueryFrame( CvCapture* capture );
+
+/** @brief stop capturing/reading and free resources
+*/
+CVAPI(void) cvReleaseCapture( CvCapture** capture );
+
+enum
+{
+    // modes of the controlling registers (can be: auto, manual, auto single push, absolute Latter allowed with any other mode)
+    // every feature can have only one mode turned on at a time
+    CV_CAP_PROP_DC1394_OFF         = -4,  //turn the feature off (not controlled manually nor automatically)
+    CV_CAP_PROP_DC1394_MODE_MANUAL = -3, //set automatically when a value of the feature is set by the user
+    CV_CAP_PROP_DC1394_MODE_AUTO = -2,
+    CV_CAP_PROP_DC1394_MODE_ONE_PUSH_AUTO = -1,
+    CV_CAP_PROP_POS_MSEC       =0,
+    CV_CAP_PROP_POS_FRAMES     =1,
+    CV_CAP_PROP_POS_AVI_RATIO  =2,
+    CV_CAP_PROP_FRAME_WIDTH    =3,
+    CV_CAP_PROP_FRAME_HEIGHT   =4,
+    CV_CAP_PROP_FPS            =5,
+    CV_CAP_PROP_FOURCC         =6,
+    CV_CAP_PROP_FRAME_COUNT    =7,
+    CV_CAP_PROP_FORMAT         =8,
+    CV_CAP_PROP_MODE           =9,
+    CV_CAP_PROP_BRIGHTNESS    =10,
+    CV_CAP_PROP_CONTRAST      =11,
+    CV_CAP_PROP_SATURATION    =12,
+    CV_CAP_PROP_HUE           =13,
+    CV_CAP_PROP_GAIN          =14,
+    CV_CAP_PROP_EXPOSURE      =15,
+    CV_CAP_PROP_CONVERT_RGB   =16,
+    CV_CAP_PROP_WHITE_BALANCE_BLUE_U =17,
+    CV_CAP_PROP_RECTIFICATION =18,
+    CV_CAP_PROP_MONOCHROME    =19,
+    CV_CAP_PROP_SHARPNESS     =20,
+    CV_CAP_PROP_AUTO_EXPOSURE =21, // exposure control done by camera,
+                                   // user can adjust reference level
+                                   /
