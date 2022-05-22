@@ -254,4 +254,39 @@ enum
     CV_CAP_PROP_PVAPI_DECIMATIONHORIZONTAL  = 302, // Horizontal sub-sampling of the image
     CV_CAP_PROP_PVAPI_DECIMATIONVERTICAL    = 303, // Vertical sub-sampling of the image
     CV_CAP_PROP_PVAPI_BINNINGX              = 304, // Horizontal binning factor
-    CV_CAP_PROP_PVAPI_BINNINGY   
+    CV_CAP_PROP_PVAPI_BINNINGY              = 305, // Vertical binning factor
+    CV_CAP_PROP_PVAPI_PIXELFORMAT           = 306, // Pixel format
+
+    // Properties of cameras available through XIMEA SDK interface
+    CV_CAP_PROP_XI_DOWNSAMPLING                                 = 400, // Change image resolution by binning or skipping.
+    CV_CAP_PROP_XI_DATA_FORMAT                                  = 401, // Output data format.
+    CV_CAP_PROP_XI_OFFSET_X                                     = 402, // Horizontal offset from the origin to the area of interest (in pixels).
+    CV_CAP_PROP_XI_OFFSET_Y                                     = 403, // Vertical offset from the origin to the area of interest (in pixels).
+    CV_CAP_PROP_XI_TRG_SOURCE                                   = 404, // Defines source of trigger.
+    CV_CAP_PROP_XI_TRG_SOFTWARE                                 = 405, // Generates an internal trigger. PRM_TRG_SOURCE must be set to TRG_SOFTWARE.
+    CV_CAP_PROP_XI_GPI_SELECTOR                                 = 406, // Selects general purpose input
+    CV_CAP_PROP_XI_GPI_MODE                                     = 407, // Set general purpose input mode
+    CV_CAP_PROP_XI_GPI_LEVEL                                    = 408, // Get general purpose level
+    CV_CAP_PROP_XI_GPO_SELECTOR                                 = 409, // Selects general purpose output
+    CV_CAP_PROP_XI_GPO_MODE                                     = 410, // Set general purpose output mode
+    CV_CAP_PROP_XI_LED_SELECTOR                                 = 411, // Selects camera signalling LED
+    CV_CAP_PROP_XI_LED_MODE                                     = 412, // Define camera signalling LED functionality
+    CV_CAP_PROP_XI_MANUAL_WB                                    = 413, // Calculates White Balance(must be called during acquisition)
+    CV_CAP_PROP_XI_AUTO_WB                                      = 414, // Automatic white balance
+    CV_CAP_PROP_XI_AEAG                                         = 415, // Automatic exposure/gain
+    CV_CAP_PROP_XI_EXP_PRIORITY                                 = 416, // Exposure priority (0.5 - exposure 50%, gain 50%).
+    CV_CAP_PROP_XI_AE_MAX_LIMIT                                 = 417, // Maximum limit of exposure in AEAG procedure
+    CV_CAP_PROP_XI_AG_MAX_LIMIT                                 = 418,  // Maximum limit of gain in AEAG procedure
+    CV_CAP_PROP_XI_AEAG_LEVEL                                   = 419, // Average intensity of output signal AEAG should achieve(in %)
+    CV_CAP_PROP_XI_TIMEOUT                                      = 420, // Image capture timeout in milliseconds
+    CV_CAP_PROP_XI_EXPOSURE                                     = 421, // Exposure time in microseconds
+    CV_CAP_PROP_XI_EXPOSURE_BURST_COUNT                         = 422, // Sets the number of times of exposure in one frame.
+    CV_CAP_PROP_XI_GAIN_SELECTOR                                = 423, // Gain selector for parameter Gain allows to select different type of gains.
+    CV_CAP_PROP_XI_GAIN                                         = 424, // Gain in dB
+    CV_CAP_PROP_XI_DOWNSAMPLING_TYPE                            = 426, // Change image downsampling type.
+    CV_CAP_PROP_XI_BINNING_SELECTOR                             = 427, // Binning engine selector.
+    CV_CAP_PROP_XI_BINNING_VERTICAL                             = 428, // Vertical Binning - number of vertical photo-sensitive cells to combine together.
+    CV_CAP_PROP_XI_BINNING_HORIZONTAL                           = 429, // Horizontal Binning - number of horizontal photo-sensitive cells to combine together.
+    CV_CAP_PROP_XI_BINNING_PATTERN                              = 430, // Binning pattern type.
+    CV_CAP_PROP_XI_DECIMATION_SELECTOR                          = 431, // Decimation engine selector.
+    CV_CAP_PROP_XI_DECIMATION_VERTICAL                          = 432, // Vertical Decimation - vertical sub-sampling of the image - reduces the vertical resolution of the 
