@@ -354,4 +354,35 @@ enum
     CV_CAP_PROP_XI_DEBOUNCE_POL                                 = 510, // Debounce polarity (pol = 1 t0 - falling edge, t1 - rising edge)
     CV_CAP_PROP_XI_LENS_MODE                                    = 511, // Status of lens control interface. This shall be set to XI_ON before any Lens operations.
     CV_CAP_PROP_XI_LENS_APERTURE_VALUE                          = 512, // Current lens aperture value in stops. Examples: 2.8, 4, 5.6, 8, 11
-    CV_CAP_PROP_XI_LENS_FOCUS_MOVEMENT_VALUE                    = 513, // Lens current focus movement v
+    CV_CAP_PROP_XI_LENS_FOCUS_MOVEMENT_VALUE                    = 513, // Lens current focus movement value to be used by XI_PRM_LENS_FOCUS_MOVE in motor steps.
+    CV_CAP_PROP_XI_LENS_FOCUS_MOVE                              = 514, // Moves lens focus motor by steps set in XI_PRM_LENS_FOCUS_MOVEMENT_VALUE.
+    CV_CAP_PROP_XI_LENS_FOCUS_DISTANCE                          = 515, // Lens focus distance in cm.
+    CV_CAP_PROP_XI_LENS_FOCAL_LENGTH                            = 516, // Lens focal distance in mm.
+    CV_CAP_PROP_XI_LENS_FEATURE_SELECTOR                        = 517, // Selects the current feature which is accessible by XI_PRM_LENS_FEATURE.
+    CV_CAP_PROP_XI_LENS_FEATURE                                 = 518, // Allows access to lens feature value currently selected by XI_PRM_LENS_FEATURE_SELECTOR.
+    CV_CAP_PROP_XI_DEVICE_MODEL_ID                              = 521, // Return device model id
+    CV_CAP_PROP_XI_DEVICE_SN                                    = 522, // Return device serial number
+    CV_CAP_PROP_XI_IMAGE_DATA_FORMAT_RGB32_ALPHA                = 529, // The alpha channel of RGB32 output image format.
+    CV_CAP_PROP_XI_IMAGE_PAYLOAD_SIZE                           = 530, // Buffer size in bytes sufficient for output image returned by xiGetImage
+    CV_CAP_PROP_XI_TRANSPORT_PIXEL_FORMAT                       = 531, // Current format of pixels on transport layer.
+    CV_CAP_PROP_XI_SENSOR_CLOCK_FREQ_HZ                         = 532, // Sensor clock frequency in Hz.
+    CV_CAP_PROP_XI_SENSOR_CLOCK_FREQ_INDEX                      = 533, // Sensor clock frequency index. Sensor with selected frequencies have possibility to set the frequency only by this index.
+    CV_CAP_PROP_XI_SENSOR_OUTPUT_CHANNEL_COUNT                  = 534, // Number of output channels from sensor used for data transfer.
+    CV_CAP_PROP_XI_FRAMERATE                                    = 535, // Define framerate in Hz
+    CV_CAP_PROP_XI_COUNTER_SELECTOR                             = 536, // Select counter
+    CV_CAP_PROP_XI_COUNTER_VALUE                                = 537, // Counter status
+    CV_CAP_PROP_XI_ACQ_TIMING_MODE                              = 538, // Type of sensor frames timing.
+    CV_CAP_PROP_XI_AVAILABLE_BANDWIDTH                          = 539, // Calculate and return available interface bandwidth(int Megabits)
+    CV_CAP_PROP_XI_BUFFER_POLICY                                = 540, // Data move policy
+    CV_CAP_PROP_XI_LUT_EN                                       = 541, // Activates LUT.
+    CV_CAP_PROP_XI_LUT_INDEX                                    = 542, // Control the index (offset) of the coefficient to access in the LUT.
+    CV_CAP_PROP_XI_LUT_VALUE                                    = 543, // Value at entry LUTIndex of the LUT
+    CV_CAP_PROP_XI_TRG_DELAY                                    = 544, // Specifies the delay in microseconds (us) to apply after the trigger reception before activating it.
+    CV_CAP_PROP_XI_TS_RST_MODE                                  = 545, // Defines how time stamp reset engine will be armed
+    CV_CAP_PROP_XI_TS_RST_SOURCE                                = 546, // Defines which source will be used for timestamp reset. Writing this parameter will trigger settings of engine (arming)
+    CV_CAP_PROP_XI_IS_DEVICE_EXIST                              = 547, // Returns 1 if camera connected and works properly.
+    CV_CAP_PROP_XI_ACQ_BUFFER_SIZE                              = 548, // Acquisition buffer size in buffer_size_unit. Default bytes.
+    CV_CAP_PROP_XI_ACQ_BUFFER_SIZE_UNIT                         = 549, // Acquisition buffer size unit in bytes. Default 1. E.g. Value 1024 means that buffer_size is in KiBytes
+    CV_CAP_PROP_XI_ACQ_TRANSPORT_BUFFER_SIZE                    = 550, // Acquisition transport buffer size in bytes
+    CV_CAP_PROP_XI_BUFFERS_QUEUE_SIZE                           = 551, // Queue of field/frame buffers
+    CV_CAP_PROP_XI_ACQ_TRANSPORT_BUFFER_COMMIT             
