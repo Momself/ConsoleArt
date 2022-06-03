@@ -385,4 +385,57 @@ enum
     CV_CAP_PROP_XI_ACQ_BUFFER_SIZE_UNIT                         = 549, // Acquisition buffer size unit in bytes. Default 1. E.g. Value 1024 means that buffer_size is in KiBytes
     CV_CAP_PROP_XI_ACQ_TRANSPORT_BUFFER_SIZE                    = 550, // Acquisition transport buffer size in bytes
     CV_CAP_PROP_XI_BUFFERS_QUEUE_SIZE                           = 551, // Queue of field/frame buffers
-    CV_CAP_PROP_XI_ACQ_TRANSPORT_BUFFER_COMMIT             
+    CV_CAP_PROP_XI_ACQ_TRANSPORT_BUFFER_COMMIT                  = 552, // Number of buffers to commit to low level
+    CV_CAP_PROP_XI_RECENT_FRAME                                 = 553, // GetImage returns most recent frame
+    CV_CAP_PROP_XI_DEVICE_RESET                                 = 554, // Resets the camera to default state.
+    CV_CAP_PROP_XI_COLUMN_FPN_CORRECTION                        = 555, // Correction of column FPN
+    CV_CAP_PROP_XI_ROW_FPN_CORRECTION                           = 591, // Correction of row FPN
+    CV_CAP_PROP_XI_SENSOR_MODE                                  = 558, // Current sensor mode. Allows to select sensor mode by one integer. Setting of this parameter affects: image dimensions and downsampling.
+    CV_CAP_PROP_XI_HDR                                          = 559, // Enable High Dynamic Range feature.
+    CV_CAP_PROP_XI_HDR_KNEEPOINT_COUNT                          = 560, // The number of kneepoints in the PWLR.
+    CV_CAP_PROP_XI_HDR_T1                                       = 561, // position of first kneepoint(in % of XI_PRM_EXPOSURE)
+    CV_CAP_PROP_XI_HDR_T2                                       = 562, // position of second kneepoint (in % of XI_PRM_EXPOSURE)
+    CV_CAP_PROP_XI_KNEEPOINT1                                   = 563, // value of first kneepoint (% of sensor saturation)
+    CV_CAP_PROP_XI_KNEEPOINT2                                   = 564, // value of second kneepoint (% of sensor saturation)
+    CV_CAP_PROP_XI_IMAGE_BLACK_LEVEL                            = 565, // Last image black level counts. Can be used for Offline processing to recall it.
+    CV_CAP_PROP_XI_HW_REVISION                                  = 571, // Returns hardware revision number.
+    CV_CAP_PROP_XI_DEBUG_LEVEL                                  = 572, // Set debug level
+    CV_CAP_PROP_XI_AUTO_BANDWIDTH_CALCULATION                   = 573, // Automatic bandwidth calculation,
+    CV_CAP_PROP_XI_FFS_FILE_ID                                  = 594, // File number.
+    CV_CAP_PROP_XI_FFS_FILE_SIZE                                = 580, // Size of file.
+    CV_CAP_PROP_XI_FREE_FFS_SIZE                                = 581, // Size of free camera FFS.
+    CV_CAP_PROP_XI_USED_FFS_SIZE                                = 582, // Size of used camera FFS.
+    CV_CAP_PROP_XI_FFS_ACCESS_KEY                               = 583, // Setting of key enables file operations on some cameras.
+    CV_CAP_PROP_XI_SENSOR_FEATURE_SELECTOR                      = 585, // Selects the current feature which is accessible by XI_PRM_SENSOR_FEATURE_VALUE.
+    CV_CAP_PROP_XI_SENSOR_FEATURE_VALUE                         = 586, // Allows access to sensor feature value currently selected by XI_PRM_SENSOR_FEATURE_SELECTOR.
+
+
+    // Properties for Android cameras
+    CV_CAP_PROP_ANDROID_FLASH_MODE = 8001,
+    CV_CAP_PROP_ANDROID_FOCUS_MODE = 8002,
+    CV_CAP_PROP_ANDROID_WHITE_BALANCE = 8003,
+    CV_CAP_PROP_ANDROID_ANTIBANDING = 8004,
+    CV_CAP_PROP_ANDROID_FOCAL_LENGTH = 8005,
+    CV_CAP_PROP_ANDROID_FOCUS_DISTANCE_NEAR = 8006,
+    CV_CAP_PROP_ANDROID_FOCUS_DISTANCE_OPTIMAL = 8007,
+    CV_CAP_PROP_ANDROID_FOCUS_DISTANCE_FAR = 8008,
+    CV_CAP_PROP_ANDROID_EXPOSE_LOCK = 8009,
+    CV_CAP_PROP_ANDROID_WHITEBALANCE_LOCK = 8010,
+
+    // Properties of cameras available through AVFOUNDATION interface
+    CV_CAP_PROP_IOS_DEVICE_FOCUS = 9001,
+    CV_CAP_PROP_IOS_DEVICE_EXPOSURE = 9002,
+    CV_CAP_PROP_IOS_DEVICE_FLASH = 9003,
+    CV_CAP_PROP_IOS_DEVICE_WHITEBALANCE = 9004,
+    CV_CAP_PROP_IOS_DEVICE_TORCH = 9005,
+
+    // Properties of cameras available through Smartek Giganetix Ethernet Vision interface
+    /* --- Vladimir Litvinenko (litvinenko.vladimir@gmail.com) --- */
+    CV_CAP_PROP_GIGA_FRAME_OFFSET_X = 10001,
+    CV_CAP_PROP_GIGA_FRAME_OFFSET_Y = 10002,
+    CV_CAP_PROP_GIGA_FRAME_WIDTH_MAX = 10003,
+    CV_CAP_PROP_GIGA_FRAME_HEIGH_MAX = 10004,
+    CV_CAP_PROP_GIGA_FRAME_SENS_WIDTH = 10005,
+    CV_CAP_PROP_GIGA_FRAME_SENS_HEIGH = 10006,
+
+    CV_CAP_PROP_INTELPE
