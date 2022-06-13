@@ -438,4 +438,91 @@ enum
     CV_CAP_PROP_GIGA_FRAME_SENS_WIDTH = 10005,
     CV_CAP_PROP_GIGA_FRAME_SENS_HEIGH = 10006,
 
-    CV_CAP_PROP_INTELPE
+    CV_CAP_PROP_INTELPERC_PROFILE_COUNT               = 11001,
+    CV_CAP_PROP_INTELPERC_PROFILE_IDX                 = 11002,
+    CV_CAP_PROP_INTELPERC_DEPTH_LOW_CONFIDENCE_VALUE  = 11003,
+    CV_CAP_PROP_INTELPERC_DEPTH_SATURATION_VALUE      = 11004,
+    CV_CAP_PROP_INTELPERC_DEPTH_CONFIDENCE_THRESHOLD  = 11005,
+    CV_CAP_PROP_INTELPERC_DEPTH_FOCAL_LENGTH_HORZ     = 11006,
+    CV_CAP_PROP_INTELPERC_DEPTH_FOCAL_LENGTH_VERT     = 11007,
+
+    // Intel PerC streams
+    CV_CAP_INTELPERC_DEPTH_GENERATOR = 1 << 29,
+    CV_CAP_INTELPERC_IMAGE_GENERATOR = 1 << 28,
+    CV_CAP_INTELPERC_GENERATORS_MASK = CV_CAP_INTELPERC_DEPTH_GENERATOR + CV_CAP_INTELPERC_IMAGE_GENERATOR
+};
+
+// Generic camera output modes.
+// Currently, these are supported through the libv4l interface only.
+enum
+{
+    CV_CAP_MODE_BGR  = 0, // BGR24 (default)
+    CV_CAP_MODE_RGB  = 1, // RGB24
+    CV_CAP_MODE_GRAY = 2, // Y8
+    CV_CAP_MODE_YUYV = 3  // YUYV
+};
+
+enum
+{
+    // Data given from depth generator.
+    CV_CAP_OPENNI_DEPTH_MAP                 = 0, // Depth values in mm (CV_16UC1)
+    CV_CAP_OPENNI_POINT_CLOUD_MAP           = 1, // XYZ in meters (CV_32FC3)
+    CV_CAP_OPENNI_DISPARITY_MAP             = 2, // Disparity in pixels (CV_8UC1)
+    CV_CAP_OPENNI_DISPARITY_MAP_32F         = 3, // Disparity in pixels (CV_32FC1)
+    CV_CAP_OPENNI_VALID_DEPTH_MASK          = 4, // CV_8UC1
+
+    // Data given from RGB image generator.
+    CV_CAP_OPENNI_BGR_IMAGE                 = 5,
+    CV_CAP_OPENNI_GRAY_IMAGE                = 6,
+
+    // Data given from IR image generator.
+    CV_CAP_OPENNI_IR_IMAGE                  = 7
+};
+
+// Supported output modes of OpenNI image generator
+enum
+{
+    CV_CAP_OPENNI_VGA_30HZ     = 0,
+    CV_CAP_OPENNI_SXGA_15HZ    = 1,
+    CV_CAP_OPENNI_SXGA_30HZ    = 2,
+    CV_CAP_OPENNI_QVGA_30HZ    = 3,
+    CV_CAP_OPENNI_QVGA_60HZ    = 4
+};
+
+enum
+{
+    CV_CAP_INTELPERC_DEPTH_MAP              = 0, // Each pixel is a 16-bit integer. The value indicates the distance from an object to the camera's XY plane or the Cartesian depth.
+    CV_CAP_INTELPERC_UVDEPTH_MAP            = 1, // Each pixel contains two 32-bit floating point values in the range of 0-1, representing the mapping of depth coordinates to the color coordinates.
+    CV_CAP_INTELPERC_IR_MAP                 = 2, // Each pixel is a 16-bit integer. The value indicates the intensity of the reflected laser beam.
+    CV_CAP_INTELPERC_IMAGE                  = 3
+};
+
+// gPhoto2 properties, if propertyId is less than 0 then work on widget with that __additive inversed__ camera setting ID
+// Get IDs by using CAP_PROP_GPHOTO2_WIDGET_ENUMERATE.
+// @see CvCaptureCAM_GPHOTO2 for more info
+enum
+{
+    CV_CAP_PROP_GPHOTO2_PREVIEW           = 17001, // Capture only preview from liveview mode.
+    CV_CAP_PROP_GPHOTO2_WIDGET_ENUMERATE  = 17002, // Readonly, returns (const char *).
+    CV_CAP_PROP_GPHOTO2_RELOAD_CONFIG     = 17003, // Trigger, only by set. Reload camera settings.
+    CV_CAP_PROP_GPHOTO2_RELOAD_ON_CHANGE  = 17004, // Reload all settings on set.
+    CV_CAP_PROP_GPHOTO2_COLLECT_MSGS      = 17005, // Collect messages with details.
+    CV_CAP_PROP_GPHOTO2_FLUSH_MSGS        = 17006, // Readonly, returns (const char *).
+    CV_CAP_PROP_SPEED                     = 17007, // Exposure speed. Can be readonly, depends on camera program.
+    CV_CAP_PROP_APERTURE                  = 17008, // Aperture. Can be readonly, depends on camera program.
+    CV_CAP_PROP_EXPOSUREPROGRAM           = 17009, // Camera exposure program.
+    CV_CAP_PROP_VIEWFINDER                = 17010  // Enter liveview mode.
+};
+
+/** @brief retrieve capture properties
+*/
+CVAPI(double) cvGetCaptureProperty( CvCapture* capture, int property_id );
+/** @brief set capture properties
+*/
+CVAPI(int)    cvSetCaptureProperty( CvCapture* capture, int property_id, double value );
+
+/** @brief Return the type of the capturer (eg, ::CV_CAP_VFW, ::CV_CAP_UNICAP)
+
+It is unknown if created with ::CV_CAP_ANY
+*/
+C
