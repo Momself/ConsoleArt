@@ -525,4 +525,63 @@ CVAPI(int)    cvSetCaptureProperty( CvCapture* capture, int property_id, double 
 
 It is unknown if created with ::CV_CAP_ANY
 */
-C
+CVAPI(int)    cvGetCaptureDomain( CvCapture* capture);
+
+/** @brief "black box" video file writer structure
+
+In C++ use cv::VideoWriter
+*/
+typedef struct CvVideoWriter CvVideoWriter;
+
+//! Macro to construct the fourcc code of the codec. Same as CV_FOURCC()
+#define CV_FOURCC_MACRO(c1, c2, c3, c4) (((c1) & 255) + (((c2) & 255) << 8) + (((c3) & 255) << 16) + (((c4) & 255) << 24))
+
+/** @brief Constructs the fourcc code of the codec function
+
+Simply call it with 4 chars fourcc code like `CV_FOURCC('I', 'Y', 'U', 'V')`
+
+List of codes can be obtained at [Video Codecs by FOURCC](http://www.fourcc.org/codecs.php) page.
+FFMPEG backend with MP4 container natively uses other values as fourcc code:
+see [ObjectType](http://www.mp4ra.org/codecs.html).
+*/
+CV_INLINE int CV_FOURCC(char c1, char c2, char c3, char c4)
+{
+    return CV_FOURCC_MACRO(c1, c2, c3, c4);
+}
+
+//! (Windows only) Open Codec Selection Dialog
+#define CV_FOURCC_PROMPT -1
+//! (Linux only) Use default codec for specified filename
+#define CV_FOURCC_DEFAULT CV_FOURCC('I', 'Y', 'U', 'V')
+
+/** @brief initialize video file writer
+*/
+CVAPI(CvVideoWriter*) cvCreateVideoWriter( const char* filename, int fourcc,
+                                           double fps, CvSize frame_size,
+                                           int is_color CV_DEFAULT(1));
+
+/** @brief write frame to video file
+*/
+CVAPI(int) cvWriteFrame( CvVideoWriter* writer, const IplImage* image );
+
+/** @brief close video file writer
+*/
+CVAPI(void) cvReleaseVideoWriter( CvVideoWriter** writer );
+
+// ***************************************************************************************
+//! @name Obsolete functions/synonyms
+//! @{
+#define cvCaptureFromCAM cvCreateCameraCapture //!< @deprecated use cvCreateCameraCapture() instead
+#define cvCaptureFromFile cvCreateFileCapture  //!< @deprecated use cvCreateFileCapture() instead
+#define cvCaptureFromAVI cvCaptureFromFile     //!< @deprecated use cvCreateFileCapture() instead
+#define cvCreateAVIWriter cvCreateVideoWriter  //!< @deprecated use cvCreateVideoWriter() instead
+#define cvWriteToAVI cvWriteFrame              //!< @deprecated use cvWriteFrame() instead
+//!  @} Obsolete...
+
+//! @} videoio_c
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //OPENCV_VIDEOIO_H
