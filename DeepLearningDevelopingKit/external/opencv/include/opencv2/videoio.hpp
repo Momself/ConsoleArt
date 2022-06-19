@@ -189,4 +189,92 @@ enum VideoCaptureModes {
 enum VideoWriterProperties {
   VIDEOWRITER_PROP_QUALITY = 1,    //!< Current quality (0..100%) of the encoded videostream. Can be adjusted dynamically in some codecs.
   VIDEOWRITER_PROP_FRAMEBYTES = 2, //!< (Read-only): Size of just encoded video frame. Note that the encoding order may be different from representation order.
-  VIDEOWRITER_PROP_NSTRIPES = 3    /
+  VIDEOWRITER_PROP_NSTRIPES = 3    //!< Number of stripes for parallel encoding. -1 for auto detection.
+};
+
+//! @} videoio_flags_base
+
+//! @addtogroup videoio_flags_others
+//! @{
+
+/** @name IEEE 1394 drivers
+    @{
+*/
+
+/** @brief Modes of the IEEE 1394 controlling registers
+(can be: auto, manual, auto single push, absolute Latter allowed with any other mode)
+every feature can have only one mode turned on at a time
+*/
+enum { CAP_PROP_DC1394_OFF                = -4, //!< turn the feature off (not controlled manually nor automatically).
+       CAP_PROP_DC1394_MODE_MANUAL        = -3, //!< set automatically when a value of the feature is set by the user.
+       CAP_PROP_DC1394_MODE_AUTO          = -2,
+       CAP_PROP_DC1394_MODE_ONE_PUSH_AUTO = -1,
+       CAP_PROP_DC1394_MAX                = 31
+     };
+
+//! @} IEEE 1394 drivers
+
+/** @name OpenNI (for Kinect)
+    @{
+*/
+
+//! OpenNI map generators
+enum { CAP_OPENNI_DEPTH_GENERATOR = 1 << 31,
+       CAP_OPENNI_IMAGE_GENERATOR = 1 << 30,
+       CAP_OPENNI_IR_GENERATOR    = 1 << 29,
+       CAP_OPENNI_GENERATORS_MASK = CAP_OPENNI_DEPTH_GENERATOR + CAP_OPENNI_IMAGE_GENERATOR + CAP_OPENNI_IR_GENERATOR
+     };
+
+//! Properties of cameras available through OpenNI backend
+enum { CAP_PROP_OPENNI_OUTPUT_MODE       = 100,
+       CAP_PROP_OPENNI_FRAME_MAX_DEPTH   = 101, //!< In mm
+       CAP_PROP_OPENNI_BASELINE          = 102, //!< In mm
+       CAP_PROP_OPENNI_FOCAL_LENGTH      = 103, //!< In pixels
+       CAP_PROP_OPENNI_REGISTRATION      = 104, //!< Flag that synchronizes the remapping depth map to image map
+                                                //!< by changing depth generator's view point (if the flag is "on") or
+                                                //!< sets this view point to its normal one (if the flag is "off").
+       CAP_PROP_OPENNI_REGISTRATION_ON   = CAP_PROP_OPENNI_REGISTRATION,
+       CAP_PROP_OPENNI_APPROX_FRAME_SYNC = 105,
+       CAP_PROP_OPENNI_MAX_BUFFER_SIZE   = 106,
+       CAP_PROP_OPENNI_CIRCLE_BUFFER     = 107,
+       CAP_PROP_OPENNI_MAX_TIME_DURATION = 108,
+       CAP_PROP_OPENNI_GENERATOR_PRESENT = 109,
+       CAP_PROP_OPENNI2_SYNC             = 110,
+       CAP_PROP_OPENNI2_MIRROR           = 111
+     };
+
+//! OpenNI shortcuts
+enum { CAP_OPENNI_IMAGE_GENERATOR_PRESENT         = CAP_OPENNI_IMAGE_GENERATOR + CAP_PROP_OPENNI_GENERATOR_PRESENT,
+       CAP_OPENNI_IMAGE_GENERATOR_OUTPUT_MODE     = CAP_OPENNI_IMAGE_GENERATOR + CAP_PROP_OPENNI_OUTPUT_MODE,
+       CAP_OPENNI_DEPTH_GENERATOR_PRESENT         = CAP_OPENNI_DEPTH_GENERATOR + CAP_PROP_OPENNI_GENERATOR_PRESENT,
+       CAP_OPENNI_DEPTH_GENERATOR_BASELINE        = CAP_OPENNI_DEPTH_GENERATOR + CAP_PROP_OPENNI_BASELINE,
+       CAP_OPENNI_DEPTH_GENERATOR_FOCAL_LENGTH    = CAP_OPENNI_DEPTH_GENERATOR + CAP_PROP_OPENNI_FOCAL_LENGTH,
+       CAP_OPENNI_DEPTH_GENERATOR_REGISTRATION    = CAP_OPENNI_DEPTH_GENERATOR + CAP_PROP_OPENNI_REGISTRATION,
+       CAP_OPENNI_DEPTH_GENERATOR_REGISTRATION_ON = CAP_OPENNI_DEPTH_GENERATOR_REGISTRATION,
+       CAP_OPENNI_IR_GENERATOR_PRESENT            = CAP_OPENNI_IR_GENERATOR + CAP_PROP_OPENNI_GENERATOR_PRESENT,
+     };
+
+//! OpenNI data given from depth generator
+enum { CAP_OPENNI_DEPTH_MAP         = 0, //!< Depth values in mm (CV_16UC1)
+       CAP_OPENNI_POINT_CLOUD_MAP   = 1, //!< XYZ in meters (CV_32FC3)
+       CAP_OPENNI_DISPARITY_MAP     = 2, //!< Disparity in pixels (CV_8UC1)
+       CAP_OPENNI_DISPARITY_MAP_32F = 3, //!< Disparity in pixels (CV_32FC1)
+       CAP_OPENNI_VALID_DEPTH_MASK  = 4, //!< CV_8UC1
+
+       CAP_OPENNI_BGR_IMAGE         = 5, //!< Data given from RGB image generator
+       CAP_OPENNI_GRAY_IMAGE        = 6, //!< Data given from RGB image generator
+
+       CAP_OPENNI_IR_IMAGE          = 7  //!< Data given from IR image generator
+     };
+
+//! Supported output modes of OpenNI image generator
+enum { CAP_OPENNI_VGA_30HZ  = 0,
+       CAP_OPENNI_SXGA_15HZ = 1,
+       CAP_OPENNI_SXGA_30HZ = 2,
+       CAP_OPENNI_QVGA_30HZ = 3,
+       CAP_OPENNI_QVGA_60HZ = 4
+     };
+
+//! @} OpenNI
+
+/** @name GStreamer
