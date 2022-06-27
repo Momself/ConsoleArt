@@ -474,4 +474,85 @@ enum { CAP_PROP_XI_DOWNSAMPLING                                 = 400, //!< Chan
        CAP_PROP_XI_KNEEPOINT2                                   = 564, //!< Value of second kneepoint (% of sensor saturation).
        CAP_PROP_XI_IMAGE_BLACK_LEVEL                            = 565, //!< Last image black level counts. Can be used for Offline processing to recall it.
        CAP_PROP_XI_HW_REVISION                                  = 571, //!< Returns hardware revision number.
-       CAP_PROP_XI
+       CAP_PROP_XI_DEBUG_LEVEL                                  = 572, //!< Set debug level.
+       CAP_PROP_XI_AUTO_BANDWIDTH_CALCULATION                   = 573, //!< Automatic bandwidth calculation.
+       CAP_PROP_XI_FFS_FILE_ID                                  = 594, //!< File number.
+       CAP_PROP_XI_FFS_FILE_SIZE                                = 580, //!< Size of file.
+       CAP_PROP_XI_FREE_FFS_SIZE                                = 581, //!< Size of free camera FFS.
+       CAP_PROP_XI_USED_FFS_SIZE                                = 582, //!< Size of used camera FFS.
+       CAP_PROP_XI_FFS_ACCESS_KEY                               = 583, //!< Setting of key enables file operations on some cameras.
+       CAP_PROP_XI_SENSOR_FEATURE_SELECTOR                      = 585, //!< Selects the current feature which is accessible by XI_PRM_SENSOR_FEATURE_VALUE.
+       CAP_PROP_XI_SENSOR_FEATURE_VALUE                         = 586, //!< Allows access to sensor feature value currently selected by XI_PRM_SENSOR_FEATURE_SELECTOR.
+     };
+
+//! @} XIMEA
+
+/** @name AVFoundation framework for iOS
+    OS X Lion will have the same API
+    @{
+*/
+
+//! Properties of cameras available through AVFOUNDATION backend
+enum { CAP_PROP_IOS_DEVICE_FOCUS        = 9001,
+       CAP_PROP_IOS_DEVICE_EXPOSURE     = 9002,
+       CAP_PROP_IOS_DEVICE_FLASH        = 9003,
+       CAP_PROP_IOS_DEVICE_WHITEBALANCE = 9004,
+       CAP_PROP_IOS_DEVICE_TORCH        = 9005
+     };
+
+/** @name Smartek Giganetix GigEVisionSDK
+    @{
+*/
+
+//! Properties of cameras available through Smartek Giganetix Ethernet Vision backend
+/* --- Vladimir Litvinenko (litvinenko.vladimir@gmail.com) --- */
+enum { CAP_PROP_GIGA_FRAME_OFFSET_X   = 10001,
+       CAP_PROP_GIGA_FRAME_OFFSET_Y   = 10002,
+       CAP_PROP_GIGA_FRAME_WIDTH_MAX  = 10003,
+       CAP_PROP_GIGA_FRAME_HEIGH_MAX  = 10004,
+       CAP_PROP_GIGA_FRAME_SENS_WIDTH = 10005,
+       CAP_PROP_GIGA_FRAME_SENS_HEIGH = 10006
+     };
+
+//! @} Smartek
+
+/** @name Intel Perceptual Computing SDK
+    @{
+*/
+enum { CAP_PROP_INTELPERC_PROFILE_COUNT               = 11001,
+       CAP_PROP_INTELPERC_PROFILE_IDX                 = 11002,
+       CAP_PROP_INTELPERC_DEPTH_LOW_CONFIDENCE_VALUE  = 11003,
+       CAP_PROP_INTELPERC_DEPTH_SATURATION_VALUE      = 11004,
+       CAP_PROP_INTELPERC_DEPTH_CONFIDENCE_THRESHOLD  = 11005,
+       CAP_PROP_INTELPERC_DEPTH_FOCAL_LENGTH_HORZ     = 11006,
+       CAP_PROP_INTELPERC_DEPTH_FOCAL_LENGTH_VERT     = 11007
+     };
+
+//! Intel Perceptual Streams
+enum { CAP_INTELPERC_DEPTH_GENERATOR = 1 << 29,
+       CAP_INTELPERC_IMAGE_GENERATOR = 1 << 28,
+       CAP_INTELPERC_GENERATORS_MASK = CAP_INTELPERC_DEPTH_GENERATOR + CAP_INTELPERC_IMAGE_GENERATOR
+     };
+
+enum { CAP_INTELPERC_DEPTH_MAP              = 0, //!< Each pixel is a 16-bit integer. The value indicates the distance from an object to the camera's XY plane or the Cartesian depth.
+       CAP_INTELPERC_UVDEPTH_MAP            = 1, //!< Each pixel contains two 32-bit floating point values in the range of 0-1, representing the mapping of depth coordinates to the color coordinates.
+       CAP_INTELPERC_IR_MAP                 = 2, //!< Each pixel is a 16-bit integer. The value indicates the intensity of the reflected laser beam.
+       CAP_INTELPERC_IMAGE                  = 3
+     };
+
+//! @} Intel Perceptual
+
+/** @name gPhoto2 connection
+    @{
+*/
+
+/** @brief gPhoto2 properties
+
+If `propertyId` is less than 0 then work on widget with that __additive inversed__ camera setting ID
+Get IDs by using CAP_PROP_GPHOTO2_WIDGET_ENUMERATE.
+@see CvCaptureCAM_GPHOTO2 for more info
+*/
+enum { CAP_PROP_GPHOTO2_PREVIEW           = 17001, //!< Capture only preview from liveview mode.
+       CAP_PROP_GPHOTO2_WIDGET_ENUMERATE  = 17002, //!< Readonly, returns (const char *).
+       CAP_PROP_GPHOTO2_RELOAD_CONFIG     = 17003, //!< Trigger, only by set. Reload camera settings.
+       CAP_PROP_GPHOTO2_RELOAD_ON_CHANGE  = 17004, //!< Reload 
