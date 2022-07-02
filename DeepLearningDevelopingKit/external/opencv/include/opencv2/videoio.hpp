@@ -644,4 +644,99 @@ public:
 
     @sa The list of supported API backends cv::VideoCaptureAPIs
     */
-    CV_W
+    CV_WRAP VideoCapture(int index);
+
+    /** @brief Default destructor
+
+    The method first calls VideoCapture::release to close the already opened file or camera.
+    */
+    virtual ~VideoCapture();
+
+    /** @brief  Open video file or a capturing device or a IP video stream for video capturing
+
+    @overload
+
+    Parameters are same as the constructor VideoCapture(const String& filename)
+    @return `true` if the file has been successfully opened
+
+    The method first calls VideoCapture::release to close the already opened file or camera.
+     */
+    CV_WRAP virtual bool open(const String& filename);
+
+    /** @brief  Open a camera for video capturing
+
+    @overload
+
+    Parameters are same as the constructor VideoCapture(int index)
+    @return `true` if the camera has been successfully opened.
+
+    The method first calls VideoCapture::release to close the already opened file or camera.
+    */
+    CV_WRAP virtual bool open(int index);
+
+   /** @brief  Open a camera for video capturing
+
+    @overload
+
+    Parameters are similar as the constructor VideoCapture(int index),except it takes an additional argument apiPreference.
+    Definitely, is same as open(int index) where `index=cameraNum + apiPreference`
+    @return `true` if the camera has been successfully opened.
+    */
+    CV_WRAP bool open(int cameraNum, int apiPreference);
+
+    /** @brief Returns true if video capturing has been initialized already.
+
+    If the previous call to VideoCapture constructor or VideoCapture::open() succeeded, the method returns
+    true.
+     */
+    CV_WRAP virtual bool isOpened() const;
+
+    /** @brief Closes video file or capturing device.
+
+    The method is automatically called by subsequent VideoCapture::open and by VideoCapture
+    destructor.
+
+    The C function also deallocates memory and clears \*capture pointer.
+     */
+    CV_WRAP virtual void release();
+
+    /** @brief Grabs the next frame from video file or capturing device.
+
+    @return `true` (non-zero) in the case of success.
+
+    The method/function grabs the next frame from video file or camera and returns true (non-zero) in
+    the case of success.
+
+    The primary use of the function is in multi-camera environments, especially when the cameras do not
+    have hardware synchronization. That is, you call VideoCapture::grab() for each camera and after that
+    call the slower method VideoCapture::retrieve() to decode and get frame from each camera. This way
+    the overhead on demosaicing or motion jpeg decompression etc. is eliminated and the retrieved frames
+    from different cameras will be closer in time.
+
+    Also, when a connected camera is multi-head (for example, a stereo camera or a Kinect device), the
+    correct way of retrieving data from it is to call VideoCapture::grab() first and then call
+    VideoCapture::retrieve() one or more times with different values of the channel parameter.
+
+    @ref tutorial_kinect_openni
+     */
+    CV_WRAP virtual bool grab();
+
+    /** @brief Decodes and returns the grabbed video frame.
+
+    @param [out] image the video frame is returned here. If no frames has been grabbed the image will be empty.
+    @param flag it could be a frame index or a driver specific flag
+    @return `false` if no frames has been grabbed
+
+    The method decodes and returns the just grabbed frame. If no frames has been grabbed
+    (camera has been disconnected, or there are no more frames in video file), the method returns false
+    and the function returns an empty image (with %cv::Mat, test it with Mat::empty()).
+
+    @sa read()
+
+    @note In @ref videoio_c "C API", functions cvRetrieveFrame() and cv.RetrieveFrame() return image stored inside the video
+    capturing structure. It is not allowed to modify or release the image! You can copy the frame using
+    :ocvcvCloneImage and then do whatever you want with the copy.
+     */
+    CV_WRAP virtual bool retrieve(OutputArray image, int flag = 0);
+
+    /** @brief Stream operator to read the next v
