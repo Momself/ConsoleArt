@@ -922,4 +922,36 @@ public:
 
     /** @brief Returns the specified VideoWriter property
 
-     @param propId Property identifier from cv::VideoWrite
+     @param propId Property identifier from cv::VideoWriterProperties (eg. cv::VIDEOWRITER_PROP_QUALITY)
+     or one of @ref videoio_flags_others
+
+     @return Value for the specified property. Value 0 is returned when querying a property that is
+     not supported by the backend used by the VideoWriter instance.
+     */
+    CV_WRAP virtual double get(int propId) const;
+
+    /** @brief Concatenates 4 chars to a fourcc code
+
+    @return a fourcc code
+
+    This static method constructs the fourcc code of the codec to be used in the constructor
+    VideoWriter::VideoWriter or VideoWriter::open.
+     */
+    CV_WRAP static int fourcc(char c1, char c2, char c3, char c4);
+
+protected:
+    Ptr<CvVideoWriter> writer;
+    Ptr<IVideoWriter> iwriter;
+
+    static Ptr<IVideoWriter> create(const String& filename, int fourcc, double fps,
+                                    Size frameSize, bool isColor = true);
+};
+
+template<> CV_EXPORTS void DefaultDeleter<CvCapture>::operator ()(CvCapture* obj) const;
+template<> CV_EXPORTS void DefaultDeleter<CvVideoWriter>::operator ()(CvVideoWriter* obj) const;
+
+//! @} videoio
+
+} // cv
+
+#endif //OPENCV_VIDEOIO_HPP
