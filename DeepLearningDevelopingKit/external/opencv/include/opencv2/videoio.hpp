@@ -835,4 +835,91 @@ public:
     /** @overload
     @param filename Name of the output video file.
     @param fourcc 4-character code of codec used to compress the frames. For example,
-    VideoWriter::fourc
+    VideoWriter::fourcc('P','I','M','1') is a MPEG-1 codec, VideoWriter::fourcc('M','J','P','G') is a
+    motion-jpeg codec etc. List of codes can be obtained at [Video Codecs by
+    FOURCC](http://www.fourcc.org/codecs.php) page. FFMPEG backend with MP4 container natively uses
+    other values as fourcc code: see [ObjectType](http://www.mp4ra.org/codecs.html),
+    so you may receive a warning message from OpenCV about fourcc code conversion.
+    @param fps Framerate of the created video stream.
+    @param frameSize Size of the video frames.
+    @param isColor If it is not zero, the encoder will expect and encode color frames, otherwise it
+    will work with grayscale frames (the flag is currently supported on Windows only).
+
+    @b Tips:
+    - With some backends `fourcc=-1` pops up the codec selection dialog from the system.
+    - To save image sequence use a proper filename (eg. `img_%02d.jpg`) and `fourcc=0`
+      OR `fps=0`. Use uncompressed image format (eg. `img_%02d.BMP`) to save raw frames.
+    - Most codecs are lossy. If you want lossless video file you need to use a lossless codecs
+      (eg. FFMPEG FFV1, Huffman HFYU, Lagarith LAGS, etc...)
+    - If FFMPEG is enabled, using `codec=0; fps=0;` you can create an uncompressed (raw) video file.
+    */
+    CV_WRAP VideoWriter(const String& filename, int fourcc, double fps,
+                Size frameSize, bool isColor = true);
+
+    /** @overload
+    The `apiPreference` parameter allows to specify API backends to use. Can be used to enforce a specific reader implementation
+    if multiple are available: e.g. cv::CAP_FFMPEG or cv::CAP_GSTREAMER.
+     */
+    CV_WRAP VideoWriter(const String& filename, int apiPreference, int fourcc, double fps,
+                Size frameSize, bool isColor = true);
+
+    /** @brief Default destructor
+
+    The method first calls VideoWriter::release to close the already opened file.
+    */
+    virtual ~VideoWriter();
+
+    /** @brief Initializes or reinitializes video writer.
+
+    The method opens video writer. Parameters are the same as in the constructor
+    VideoWriter::VideoWriter.
+    @return `true` if video writer has been successfully initialized
+
+    The method first calls VideoWriter::release to close the already opened file.
+     */
+    CV_WRAP virtual bool open(const String& filename, int fourcc, double fps,
+                      Size frameSize, bool isColor = true);
+
+    /** @overload
+     */
+    CV_WRAP bool open(const String& filename, int apiPreference, int fourcc, double fps,
+                      Size frameSize, bool isColor = true);
+
+    /** @brief Returns true if video writer has been successfully initialized.
+    */
+    CV_WRAP virtual bool isOpened() const;
+
+    /** @brief Closes the video writer.
+
+    The method is automatically called by subsequent VideoWriter::open and by the VideoWriter
+    destructor.
+     */
+    CV_WRAP virtual void release();
+
+    /** @brief Stream operator to write the next video frame.
+    @sa write
+    */
+    virtual VideoWriter& operator << (const Mat& image);
+
+    /** @brief Writes the next video frame
+
+    @param image The written frame
+
+    The function/method writes the specified image to video file. It must have the same size as has
+    been specified when opening the video writer.
+     */
+    CV_WRAP virtual void write(const Mat& image);
+
+    /** @brief Sets a property in the VideoWriter.
+
+     @param propId Property identifier from cv::VideoWriterProperties (eg. cv::VIDEOWRITER_PROP_QUALITY)
+     or one of @ref videoio_flags_others
+
+     @param value Value of the property.
+     @return  `true` if the property is supported by the backend used by the VideoWriter instance.
+     */
+    CV_WRAP virtual bool set(int propId, double value);
+
+    /** @brief Returns the specified VideoWriter property
+
+     @param propId Property identifier from cv::VideoWrite
