@@ -40,55 +40,10 @@
 //
 //M*/
 
-#ifndef OPENCV_VIDEOSTAB_FRAME_SOURCE_HPP
-#define OPENCV_VIDEOSTAB_FRAME_SOURCE_HPP
+#ifndef OPENCV_VIDEOSTAB_OPTICAL_FLOW_HPP
+#define OPENCV_VIDEOSTAB_OPTICAL_FLOW_HPP
 
-#include <vector>
 #include "opencv2/core.hpp"
+#include "opencv2/opencv_modules.hpp"
 
-namespace cv
-{
-namespace videostab
-{
-
-//! @addtogroup videostab
-//! @{
-
-class CV_EXPORTS IFrameSource
-{
-public:
-    virtual ~IFrameSource() {}
-    virtual void reset() = 0;
-    virtual Mat nextFrame() = 0;
-};
-
-class CV_EXPORTS NullFrameSource : public IFrameSource
-{
-public:
-    virtual void reset() {}
-    virtual Mat nextFrame() { return Mat(); }
-};
-
-class CV_EXPORTS VideoFileSource : public IFrameSource
-{
-public:
-    VideoFileSource(const String &path, bool volatileFrame = false);
-
-    virtual void reset();
-    virtual Mat nextFrame();
-
-    int width();
-    int height();
-    int count();
-    double fps();
-
-private:
-    Ptr<IFrameSource> impl;
-};
-
-//! @}
-
-} // namespace videostab
-} // namespace cv
-
-#endif
+#ifdef HAVE_OP

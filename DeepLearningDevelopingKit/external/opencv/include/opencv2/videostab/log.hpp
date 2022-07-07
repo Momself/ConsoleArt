@@ -1,3 +1,4 @@
+
 /*M///////////////////////////////////////////////////////////////////////////////////////
 //
 //  IMPORTANT: READ BEFORE DOWNLOADING, COPYING, INSTALLING OR USING.
@@ -40,10 +41,9 @@
 //
 //M*/
 
-#ifndef OPENCV_VIDEOSTAB_FRAME_SOURCE_HPP
-#define OPENCV_VIDEOSTAB_FRAME_SOURCE_HPP
+#ifndef OPENCV_VIDEOSTAB_LOG_HPP
+#define OPENCV_VIDEOSTAB_LOG_HPP
 
-#include <vector>
 #include "opencv2/core.hpp"
 
 namespace cv
@@ -54,36 +54,23 @@ namespace videostab
 //! @addtogroup videostab
 //! @{
 
-class CV_EXPORTS IFrameSource
+class CV_EXPORTS ILog
 {
 public:
-    virtual ~IFrameSource() {}
-    virtual void reset() = 0;
-    virtual Mat nextFrame() = 0;
+    virtual ~ILog() {}
+    virtual void print(const char *format, ...) = 0;
 };
 
-class CV_EXPORTS NullFrameSource : public IFrameSource
+class CV_EXPORTS NullLog : public ILog
 {
 public:
-    virtual void reset() {}
-    virtual Mat nextFrame() { return Mat(); }
+    virtual void print(const char * /*format*/, ...) {}
 };
 
-class CV_EXPORTS VideoFileSource : public IFrameSource
+class CV_EXPORTS LogToStdout : public ILog
 {
 public:
-    VideoFileSource(const String &path, bool volatileFrame = false);
-
-    virtual void reset();
-    virtual Mat nextFrame();
-
-    int width();
-    int height();
-    int count();
-    double fps();
-
-private:
-    Ptr<IFrameSource> impl;
+    virtual void print(const char *format, ...);
 };
 
 //! @}
