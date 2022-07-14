@@ -40,33 +40,9 @@
 //
 //M*/
 
-#ifndef OPENCV_VIDEOSTAB_RING_BUFFER_HPP
-#define OPENCV_VIDEOSTAB_RING_BUFFER_HPP
+#ifndef OPENCV_VIDEOSTAB_WOBBLE_SUPPRESSION_HPP
+#define OPENCV_VIDEOSTAB_WOBBLE_SUPPRESSION_HPP
 
 #include <vector>
-#include "opencv2/imgproc.hpp"
-
-namespace cv
-{
-namespace videostab
-{
-
-//! @addtogroup videostab
-//! @{
-
-template <typename T> inline T& at(int idx, std::vector<T> &items)
-{
-    return items[cv::borderInterpolate(idx, static_cast<int>(items.size()), cv::BORDER_WRAP)];
-}
-
-template <typename T> inline const T& at(int idx, const std::vector<T> &items)
-{
-    return items[cv::borderInterpolate(idx, static_cast<int>(items.size()), cv::BORDER_WRAP)];
-}
-
-//! @}
-
-} // namespace videostab
-} // namespace cv
-
-#endif
+#include "opencv2/core.hpp"
+#include "opencv2/c
