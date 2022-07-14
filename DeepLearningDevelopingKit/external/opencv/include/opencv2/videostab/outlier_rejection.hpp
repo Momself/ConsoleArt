@@ -21,4 +21,81 @@
 //     this list of conditions and the following disclaimer.
 //
 //   * Redistribution's in binary form must reproduce the above copyright notice,
+//     this list of conditions and the following disclaimer in the documentation
+//     and/or other materials provided with the distribution.
 //
+//   * The name of the copyright holders may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
+//
+// This software is provided by the copyright holders and contributors "as is" and
+// any express or implied warranties, including, but not limited to, the implied
+// warranties of merchantability and fitness for a particular purpose are disclaimed.
+// In no event shall the Intel Corporation or contributors be liable for any direct,
+// indirect, incidental, special, exemplary, or consequential damages
+// (including, but not limited to, procurement of substitute goods or services;
+// loss of use, data, or profits; or business interruption) however caused
+// and on any theory of liability, whether in contract, strict liability,
+// or tort (including negligence or otherwise) arising in any way out of
+// the use of this software, even if advised of the possibility of such damage.
+//
+//M*/
+
+#ifndef OPENCV_VIDEOSTAB_OUTLIER_REJECTION_HPP
+#define OPENCV_VIDEOSTAB_OUTLIER_REJECTION_HPP
+
+#include <vector>
+#include "opencv2/core.hpp"
+#include "opencv2/videostab/motion_core.hpp"
+
+namespace cv
+{
+namespace videostab
+{
+
+//! @addtogroup videostab
+//! @{
+
+class CV_EXPORTS IOutlierRejector
+{
+public:
+    virtual ~IOutlierRejector() {}
+
+    virtual void process(
+            Size frameSize, InputArray points0, InputArray points1, OutputArray mask) = 0;
+};
+
+class CV_EXPORTS NullOutlierRejector : public IOutlierRejector
+{
+public:
+    virtual void process(
+            Size frameSize, InputArray points0, InputArray points1, OutputArray mask);
+};
+
+class CV_EXPORTS TranslationBasedLocalOutlierRejector : public IOutlierRejector
+{
+public:
+    TranslationBasedLocalOutlierRejector();
+
+    void setCellSize(Size val) { cellSize_ = val; }
+    Size cellSize() const { return cellSize_; }
+
+    void setRansacParams(RansacParams val) { ransacParams_ = val; }
+    RansacParams ransacParams() const { return ransacParams_; }
+
+    virtual void process(
+            Size frameSize, InputArray points0, InputArray points1, OutputArray mask);
+
+private:
+    Size cellSize_;
+    RansacParams ransacParams_;
+
+    typedef std::vector<int> Cell;
+    std::vector<Cell> grid_;
+};
+
+//! @}
+
+} // namespace videostab
+} // namespace cv
+
+#endif
