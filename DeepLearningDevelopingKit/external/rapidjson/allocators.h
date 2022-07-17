@@ -217,4 +217,68 @@ public:
 
         // Simply expand it if it is the last allocation and there is sufficient space
         if (originalPtr == reinterpret_cast<char *>(chunkHead_) + RAPIDJSON_ALIGN(sizeof(ChunkHeader)) + chunkHead_->size - originalSize) {
-            size_t increment = static_cast<size_t>
+            size_t increment = static_cast<size_t>(newSize - originalSize);
+            if (chunkHead_->size + increment <= chunkHead_->capacity) {
+                chunkHead_->size += increment;
+                return originalPtr;
+            }
+        }
+
+        // Realloc process: allocate and copy memory, do not free original buffer.
+        if (void* newBuffer = Malloc(newSize)) {
+            if (originalSize)
+                std::memcpy(newBuffer, originalPtr, originalSize);
+            return newBuffer;
+        }
+        else
+            return NULL;
+    }
+
+    //! Frees a memory block (concept Allocator)
+    static void Free(void *ptr) { (void)ptr; } // Do nothing
+
+private:
+    //! Copy constructor is not permitted.
+    MemoryPoolAllocator(const MemoryPoolAllocator& rhs) /* = delete */;
+    //! Copy assignment operator is not permitted.
+    MemoryPoolAllocator& operator=(const MemoryPoolAllocator& rhs) /* = delete */;
+
+    //! Creates a new chunk.
+    /*! \param capacity Capacity of the chunk in bytes.
+        \return true if success.
+    */
+    bool AddChunk(size_t capacity) {
+        if (!baseAllocator_)
+            ownBaseAllocator_ = baseAllocator_ = RAPIDJSON_NEW(BaseAllocator)();
+        if (ChunkHeader* chunk = reinterpret_cast<ChunkHeader*>(baseAllocator_->Malloc(RAPIDJSON_ALIGN(sizeof(ChunkHeader)) + capacity))) {
+            chunk->capacity = capacity;
+            chunk->size = 0;
+            chunk->next = chunkHead_;
+            chunkHead_ =  chunk;
+            return true;
+        }
+        else
+            return false;
+    }
+
+    static const int kDefaultChunkCapacity = RAPIDJSON_ALLOCATOR_DEFAULT_CHUNK_CAPACITY; //!< Default chunk capacity.
+
+    //! Chunk header for perpending to each chunk.
+    /*! Chunks are stored as a singly linked list.
+    */
+    struct ChunkHeader {
+        size_t capacity;    //!< Capacity of the chunk in bytes (excluding the header itself).
+        size_t size;        //!< Current size of allocated memory in bytes.
+        ChunkHeader *next;  //!< Next chunk in the linked list.
+    };
+
+    ChunkHeader *chunkHead_;    //!< Head of the chunk linked-list. Only the head chunk serves allocation.
+    size_t chunk_capacity_;     //!< The minimum capacity of chunk when they are allocated.
+    void *userBuffer_;          //!< User supplied buffer.
+    BaseAllocator* baseAllocator_;  //!< base allocator for allocating memory chunks.
+    BaseAllocator* ownBaseAllocator_;   //!< base allocator created by this object.
+};
+
+RAPIDJSON_NAMESPACE_END
+
+#endif // RAPIDJSON_ENCODINGS_H_
