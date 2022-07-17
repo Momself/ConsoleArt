@@ -118,4 +118,103 @@ public:
 
     //! Constructor with chunkSize.
     /*! \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
-       
+        \param baseAllocator The allocator for allocating memory chunks.
+    */
+    MemoryPoolAllocator(size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) : 
+        chunkHead_(0), chunk_capacity_(chunkSize), userBuffer_(0), baseAllocator_(baseAllocator), ownBaseAllocator_(0)
+    {
+    }
+
+    //! Constructor with user-supplied buffer.
+    /*! The user buffer will be used firstly. When it is full, memory pool allocates new chunk with chunk size.
+
+        The user buffer will not be deallocated when this allocator is destructed.
+
+        \param buffer User supplied buffer.
+        \param size Size of the buffer in bytes. It must at least larger than sizeof(ChunkHeader).
+        \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
+        \param baseAllocator The allocator for allocating memory chunks.
+    */
+    MemoryPoolAllocator(void *buffer, size_t size, size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) :
+        chunkHead_(0), chunk_capacity_(chunkSize), userBuffer_(buffer), baseAllocator_(baseAllocator), ownBaseAllocator_(0)
+    {
+        RAPIDJSON_ASSERT(buffer != 0);
+        RAPIDJSON_ASSERT(size > sizeof(ChunkHeader));
+        chunkHead_ = reinterpret_cast<ChunkHeader*>(buffer);
+        chunkHead_->capacity = size - sizeof(ChunkHeader);
+        chunkHead_->size = 0;
+        chunkHead_->next = 0;
+    }
+
+    //! Destructor.
+    /*! This deallocates all memory chunks, excluding the user-supplied buffer.
+    */
+    ~MemoryPoolAllocator() {
+        Clear();
+        RAPIDJSON_DELETE(ownBaseAllocator_);
+    }
+
+    //! Deallocates all memory chunks, excluding the user-supplied buffer.
+    void Clear() {
+        while (chunkHead_ && chunkHead_ != userBuffer_) {
+            ChunkHeader* next = chunkHead_->next;
+            baseAllocator_->Free(chunkHead_);
+            chunkHead_ = next;
+        }
+        if (chunkHead_ && chunkHead_ == userBuffer_)
+            chunkHead_->size = 0; // Clear user buffer
+    }
+
+    //! Computes the total capacity of allocated memory chunks.
+    /*! \return total capacity in bytes.
+    */
+    size_t Capacity() const {
+        size_t capacity = 0;
+        for (ChunkHeader* c = chunkHead_; c != 0; c = c->next)
+            capacity += c->capacity;
+        return capacity;
+    }
+
+    //! Computes the memory blocks allocated.
+    /*! \return total used bytes.
+    */
+    size_t Size() const {
+        size_t size = 0;
+        for (ChunkHeader* c = chunkHead_; c != 0; c = c->next)
+            size += c->size;
+        return size;
+    }
+
+    //! Allocates a memory block. (concept Allocator)
+    void* Malloc(size_t size) {
+        if (!size)
+            return NULL;
+
+        size = RAPIDJSON_ALIGN(size);
+        if (chunkHead_ == 0 || chunkHead_->size + size > chunkHead_->capacity)
+            if (!AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size))
+                return NULL;
+
+        void *buffer = reinterpret_cast<char *>(chunkHead_) + RAPIDJSON_ALIGN(sizeof(ChunkHeader)) + chunkHead_->size;
+        chunkHead_->size += size;
+        return buffer;
+    }
+
+    //! Resizes a memory block (concept Allocator)
+    void* Realloc(void* originalPtr, size_t originalSize, size_t newSize) {
+        if (originalPtr == 0)
+            return Malloc(newSize);
+
+        if (newSize == 0)
+            return NULL;
+
+        originalSize = RAPIDJSON_ALIGN(originalSize);
+        newSize = RAPIDJSON_ALIGN(newSize);
+
+        // Do not shrink if new size is smaller than original
+        if (originalSize >= newSize)
+            return originalPtr;
+
+        // Simply expand it if it is the last allocation and there is sufficient space
+        if (originalPtr == reinterpret_cast<char *>(chunkHead_) + RAPIDJSON_ALIGN(sizeof(ChunkHeader)) + chunkHead_->size - originalSize) {
+            size_t increment = static_cast<size_t>
