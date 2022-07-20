@@ -182,4 +182,112 @@ public:
 
     //! @name dereference
     //@{
-    Referenc
+    Reference operator*() const { return *ptr_; }
+    Pointer   operator->() const { return ptr_; }
+    Reference operator[](DifferenceType n) const { return ptr_[n]; }
+    //@}
+
+    //! Distance
+    DifferenceType operator-(ConstIterator that) const { return ptr_-that.ptr_; }
+
+private:
+    //! Internal constructor from plain pointer
+    explicit GenericMemberIterator(Pointer p) : ptr_(p) {}
+
+    Pointer ptr_; //!< raw pointer
+};
+
+#else // RAPIDJSON_NOMEMBERITERATORCLASS
+
+// class-based member iterator implementation disabled, use plain pointers
+
+template <bool Const, typename Encoding, typename Allocator>
+struct GenericMemberIterator;
+
+//! non-const GenericMemberIterator
+template <typename Encoding, typename Allocator>
+struct GenericMemberIterator<false,Encoding,Allocator> {
+    //! use plain pointer as iterator type
+    typedef GenericMember<Encoding,Allocator>* Iterator;
+};
+//! const GenericMemberIterator
+template <typename Encoding, typename Allocator>
+struct GenericMemberIterator<true,Encoding,Allocator> {
+    //! use plain const pointer as iterator type
+    typedef const GenericMember<Encoding,Allocator>* Iterator;
+};
+
+#endif // RAPIDJSON_NOMEMBERITERATORCLASS
+
+///////////////////////////////////////////////////////////////////////////////
+// GenericStringRef
+
+//! Reference to a constant string (not taking a copy)
+/*!
+    \tparam CharType character type of the string
+
+    This helper class is used to automatically infer constant string
+    references for string literals, especially from \c const \b (!)
+    character arrays.
+
+    The main use is for creating JSON string values without copying the
+    source string via an \ref Allocator.  This requires that the referenced
+    string pointers have a sufficient lifetime, which exceeds the lifetime
+    of the associated GenericValue.
+
+    \b Example
+    \code
+    Value v("foo");   // ok, no need to copy & calculate length
+    const char foo[] = "foo";
+    v.SetString(foo); // ok
+
+    const char* bar = foo;
+    // Value x(bar); // not ok, can't rely on bar's lifetime
+    Value x(StringRef(bar)); // lifetime explicitly guaranteed by user
+    Value y(StringRef(bar, 3));  // ok, explicitly pass length
+    \endcode
+
+    \see StringRef, GenericValue::SetString
+*/
+template<typename CharType>
+struct GenericStringRef {
+    typedef CharType Ch; //!< character type of the string
+
+    //! Create string reference from \c const character array
+#ifndef __clang__ // -Wdocumentation
+    /*!
+        This constructor implicitly creates a constant string reference from
+        a \c const character array.  It has better performance than
+        \ref StringRef(const CharType*) by inferring the string \ref length
+        from the array length, and also supports strings containing null
+        characters.
+
+        \tparam N length of the string, automatically inferred
+
+        \param str Constant character array, lifetime assumed to be longer
+            than the use of the string in e.g. a GenericValue
+
+        \post \ref s == str
+
+        \note Constant complexity.
+        \note There is a hidden, private overload to disallow references to
+            non-const character arrays to be created via this constructor.
+            By this, e.g. function-scope arrays used to be filled via
+            \c snprintf are excluded from consideration.
+            In such cases, the referenced string should be \b copied to the
+            GenericValue instead.
+     */
+#endif
+    template<SizeType N>
+    GenericStringRef(const CharType (&str)[N]) RAPIDJSON_NOEXCEPT
+        : s(str), length(N-1) {}
+
+    //! Explicitly create string reference from \c const character pointer
+#ifndef __clang__ // -Wdocumentation
+    /*!
+        This constructor can be used to \b explicitly  create a reference to
+        a constant string pointer.
+
+        \see StringRef(const CharType*)
+
+        \param str Constant character pointer, lifetime assumed t
