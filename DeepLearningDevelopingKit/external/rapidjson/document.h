@@ -290,4 +290,97 @@ struct GenericStringRef {
 
         \see StringRef(const CharType*)
 
-        \param str Constant character pointer, lifetime assumed t
+        \param str Constant character pointer, lifetime assumed to be longer
+            than the use of the string in e.g. a GenericValue
+
+        \post \ref s == str
+
+        \note There is a hidden, private overload to disallow references to
+            non-const character arrays to be created via this constructor.
+            By this, e.g. function-scope arrays used to be filled via
+            \c snprintf are excluded from consideration.
+            In such cases, the referenced string should be \b copied to the
+            GenericValue instead.
+     */
+#endif
+    explicit GenericStringRef(const CharType* str)
+        : s(str), length(NotNullStrLen(str)) {}
+
+    //! Create constant string reference from pointer and length
+#ifndef __clang__ // -Wdocumentation
+    /*! \param str constant string, lifetime assumed to be longer than the use of the string in e.g. a GenericValue
+        \param len length of the string, excluding the trailing NULL terminator
+
+        \post \ref s == str && \ref length == len
+        \note Constant complexity.
+     */
+#endif
+    GenericStringRef(const CharType* str, SizeType len)
+        : s(RAPIDJSON_LIKELY(str) ? str : emptyString), length(len) { RAPIDJSON_ASSERT(str != 0 || len == 0u); }
+
+    GenericStringRef(const GenericStringRef& rhs) : s(rhs.s), length(rhs.length) {}
+
+    //! implicit conversion to plain CharType pointer
+    operator const Ch *() const { return s; }
+
+    const Ch* const s; //!< plain CharType pointer
+    const SizeType length; //!< length of the string (excluding the trailing NULL terminator)
+
+private:
+    SizeType NotNullStrLen(const CharType* str) {
+        RAPIDJSON_ASSERT(str != 0);
+        return internal::StrLen(str);
+    }
+
+    /// Empty string - used when passing in a NULL pointer
+    static const Ch emptyString[];
+
+    //! Disallow construction from non-const array
+    template<SizeType N>
+    GenericStringRef(CharType (&str)[N]) /* = delete */;
+    //! Copy assignment operator not permitted - immutable type
+    GenericStringRef& operator=(const GenericStringRef& rhs) /* = delete */;
+};
+
+template<typename CharType>
+const CharType GenericStringRef<CharType>::emptyString[] = { CharType() };
+
+//! Mark a character pointer as constant string
+/*! Mark a plain character pointer as a "string literal".  This function
+    can be used to avoid copying a character string to be referenced as a
+    value in a JSON GenericValue object, if the string's lifetime is known
+    to be valid long enough.
+    \tparam CharType Character type of the string
+    \param str Constant string, lifetime assumed to be longer than the use of the string in e.g. a GenericValue
+    \return GenericStringRef string reference object
+    \relatesalso GenericStringRef
+
+    \see GenericValue::GenericValue(StringRefType), GenericValue::operator=(StringRefType), GenericValue::SetString(StringRefType), GenericValue::PushBack(StringRefType, Allocator&), GenericValue::AddMember
+*/
+template<typename CharType>
+inline GenericStringRef<CharType> StringRef(const CharType* str) {
+    return GenericStringRef<CharType>(str);
+}
+
+//! Mark a character pointer as constant string
+/*! Mark a plain character pointer as a "string literal".  This function
+    can be used to avoid copying a character string to be referenced as a
+    value in a JSON GenericValue object, if the string's lifetime is known
+    to be valid long enough.
+
+    This version has better performance with supplied length, and also
+    supports string containing null characters.
+
+    \tparam CharType character type of the string
+    \param str Constant string, lifetime assumed to be longer than the use of the string in e.g. a GenericValue
+    \param length The length of source string.
+    \return GenericStringRef string reference object
+    \relatesalso GenericStringRef
+*/
+template<typename CharType>
+inline GenericStringRef<CharType> StringRef(const CharType* str, size_t length) {
+    return GenericStringRef<CharType>(str, SizeType(length));
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+//! Mark a string object as constant st
