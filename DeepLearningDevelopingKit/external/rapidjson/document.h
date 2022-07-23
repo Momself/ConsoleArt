@@ -383,4 +383,90 @@ inline GenericStringRef<CharType> StringRef(const CharType* str, size_t length) 
 }
 
 #if RAPIDJSON_HAS_STDSTRING
-//! Mark a string object as constant st
+//! Mark a string object as constant string
+/*! Mark a string object (e.g. \c std::string) as a "string literal".
+    This function can be used to avoid copying a string to be referenced as a
+    value in a JSON GenericValue object, if the string's lifetime is known
+    to be valid long enough.
+
+    \tparam CharType character type of the string
+    \param str Constant string, lifetime assumed to be longer than the use of the string in e.g. a GenericValue
+    \return GenericStringRef string reference object
+    \relatesalso GenericStringRef
+    \note Requires the definition of the preprocessor symbol \ref RAPIDJSON_HAS_STDSTRING.
+*/
+template<typename CharType>
+inline GenericStringRef<CharType> StringRef(const std::basic_string<CharType>& str) {
+    return GenericStringRef<CharType>(str.data(), SizeType(str.size()));
+}
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
+// GenericValue type traits
+namespace internal {
+
+template <typename T, typename Encoding = void, typename Allocator = void>
+struct IsGenericValueImpl : FalseType {};
+
+// select candidates according to nested encoding and allocator types
+template <typename T> struct IsGenericValueImpl<T, typename Void<typename T::EncodingType>::Type, typename Void<typename T::AllocatorType>::Type>
+    : IsBaseOf<GenericValue<typename T::EncodingType, typename T::AllocatorType>, T>::Type {};
+
+// helper to match arbitrary GenericValue instantiations, including derived classes
+template <typename T> struct IsGenericValue : IsGenericValueImpl<T>::Type {};
+
+} // namespace internal
+
+///////////////////////////////////////////////////////////////////////////////
+// TypeHelper
+
+namespace internal {
+
+template <typename ValueType, typename T>
+struct TypeHelper {};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, bool> {
+    static bool Is(const ValueType& v) { return v.IsBool(); }
+    static bool Get(const ValueType& v) { return v.GetBool(); }
+    static ValueType& Set(ValueType& v, bool data) { return v.SetBool(data); }
+    static ValueType& Set(ValueType& v, bool data, typename ValueType::AllocatorType&) { return v.SetBool(data); }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, int> {
+    static bool Is(const ValueType& v) { return v.IsInt(); }
+    static int Get(const ValueType& v) { return v.GetInt(); }
+    static ValueType& Set(ValueType& v, int data) { return v.SetInt(data); }
+    static ValueType& Set(ValueType& v, int data, typename ValueType::AllocatorType&) { return v.SetInt(data); }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, unsigned> {
+    static bool Is(const ValueType& v) { return v.IsUint(); }
+    static unsigned Get(const ValueType& v) { return v.GetUint(); }
+    static ValueType& Set(ValueType& v, unsigned data) { return v.SetUint(data); }
+    static ValueType& Set(ValueType& v, unsigned data, typename ValueType::AllocatorType&) { return v.SetUint(data); }
+};
+
+#ifdef _MSC_VER
+RAPIDJSON_STATIC_ASSERT(sizeof(long) == sizeof(int));
+template<typename ValueType>
+struct TypeHelper<ValueType, long> {
+    static bool Is(const ValueType& v) { return v.IsInt(); }
+    static long Get(const ValueType& v) { return v.GetInt(); }
+    static ValueType& Set(ValueType& v, long data) { return v.SetInt(data); }
+    static ValueType& Set(ValueType& v, long data, typename ValueType::AllocatorType&) { return v.SetInt(data); }
+};
+
+RAPIDJSON_STATIC_ASSERT(sizeof(unsigned long) == sizeof(unsigned));
+template<typename ValueType>
+struct TypeHelper<ValueType, unsigned long> {
+    static bool Is(const ValueType& v) { return v.IsUint(); }
+    static unsigned long Get(const ValueType& v) { return v.GetUint(); }
+    static ValueType& Set(ValueType& v, unsigned long data) { return v.SetUint(data); }
+    static ValueType& Set(ValueType& v, unsigned long data, typename ValueType::AllocatorType&) { return v.SetUint(data); }
+};
+#endif
+
+template<typename ValueTy
