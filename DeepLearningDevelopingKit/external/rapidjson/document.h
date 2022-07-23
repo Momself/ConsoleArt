@@ -546,4 +546,96 @@ struct TypeHelper<ValueType, typename ValueType::Object> {
 };
 
 template<typename ValueType> 
-struct TypeHelper<ValueType, typename ValueType::Const
+struct TypeHelper<ValueType, typename ValueType::ConstObject> {
+    typedef typename ValueType::ConstObject ObjectType;
+    static bool Is(const ValueType& v) { return v.IsObject(); }
+    static ObjectType Get(const ValueType& v) { return v.GetObject(); }
+};
+
+} // namespace internal
+
+// Forward declarations
+template <bool, typename> class GenericArray;
+template <bool, typename> class GenericObject;
+
+///////////////////////////////////////////////////////////////////////////////
+// GenericValue
+
+//! Represents a JSON value. Use Value for UTF8 encoding and default allocator.
+/*!
+    A JSON value can be one of 7 types. This class is a variant type supporting
+    these types.
+
+    Use the Value if UTF8 and default allocator
+
+    \tparam Encoding    Encoding of the value. (Even non-string values need to have the same encoding in a document)
+    \tparam Allocator   Allocator type for allocating memory of object, array and string.
+*/
+template <typename Encoding, typename Allocator = MemoryPoolAllocator<> > 
+class GenericValue {
+public:
+    //! Name-value pair in an object.
+    typedef GenericMember<Encoding, Allocator> Member;
+    typedef Encoding EncodingType;                  //!< Encoding type from template parameter.
+    typedef Allocator AllocatorType;                //!< Allocator type from template parameter.
+    typedef typename Encoding::Ch Ch;               //!< Character type derived from Encoding.
+    typedef GenericStringRef<Ch> StringRefType;     //!< Reference to a constant string
+    typedef typename GenericMemberIterator<false,Encoding,Allocator>::Iterator MemberIterator;  //!< Member iterator for iterating in object.
+    typedef typename GenericMemberIterator<true,Encoding,Allocator>::Iterator ConstMemberIterator;  //!< Constant member iterator for iterating in object.
+    typedef GenericValue* ValueIterator;            //!< Value iterator for iterating in array.
+    typedef const GenericValue* ConstValueIterator; //!< Constant value iterator for iterating in array.
+    typedef GenericValue<Encoding, Allocator> ValueType;    //!< Value type of itself.
+    typedef GenericArray<false, ValueType> Array;
+    typedef GenericArray<true, ValueType> ConstArray;
+    typedef GenericObject<false, ValueType> Object;
+    typedef GenericObject<true, ValueType> ConstObject;
+
+    //!@name Constructors and destructor.
+    //@{
+
+    //! Default constructor creates a null value.
+    GenericValue() RAPIDJSON_NOEXCEPT : data_() { data_.f.flags = kNullFlag; }
+
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    //! Move constructor in C++11
+    GenericValue(GenericValue&& rhs) RAPIDJSON_NOEXCEPT : data_(rhs.data_) {
+        rhs.data_.f.flags = kNullFlag; // give up contents
+    }
+#endif
+
+private:
+    //! Copy constructor is not permitted.
+    GenericValue(const GenericValue& rhs);
+
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    //! Moving from a GenericDocument is not permitted.
+    template <typename StackAllocator>
+    GenericValue(GenericDocument<Encoding,Allocator,StackAllocator>&& rhs);
+
+    //! Move assignment from a GenericDocument is not permitted.
+    template <typename StackAllocator>
+    GenericValue& operator=(GenericDocument<Encoding,Allocator,StackAllocator>&& rhs);
+#endif
+
+public:
+
+    //! Constructor with JSON value type.
+    /*! This creates a Value of specified type with default content.
+        \param type Type of the value.
+        \note Default content for number is zero.
+    */
+    explicit GenericValue(Type type) RAPIDJSON_NOEXCEPT : data_() {
+        static const uint16_t defaultFlags[7] = {
+            kNullFlag, kFalseFlag, kTrueFlag, kObjectFlag, kArrayFlag, kShortStringFlag,
+            kNumberAnyFlag
+        };
+        RAPIDJSON_ASSERT(type >= kNullType && type <= kNumberType);
+        data_.f.flags = defaultFlags[type];
+
+        // Use ShortString to store empty string.
+        if (type == kStringType)
+            data_.ss.SetLength(0);
+    }
+
+    //! Explicit copy constructor (with allocator)
+    /*! Creates a copy of a Value by using the 
