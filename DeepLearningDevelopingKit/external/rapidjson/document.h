@@ -469,4 +469,81 @@ struct TypeHelper<ValueType, unsigned long> {
 };
 #endif
 
-template<typename ValueTy
+template<typename ValueType> 
+struct TypeHelper<ValueType, int64_t> {
+    static bool Is(const ValueType& v) { return v.IsInt64(); }
+    static int64_t Get(const ValueType& v) { return v.GetInt64(); }
+    static ValueType& Set(ValueType& v, int64_t data) { return v.SetInt64(data); }
+    static ValueType& Set(ValueType& v, int64_t data, typename ValueType::AllocatorType&) { return v.SetInt64(data); }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, uint64_t> {
+    static bool Is(const ValueType& v) { return v.IsUint64(); }
+    static uint64_t Get(const ValueType& v) { return v.GetUint64(); }
+    static ValueType& Set(ValueType& v, uint64_t data) { return v.SetUint64(data); }
+    static ValueType& Set(ValueType& v, uint64_t data, typename ValueType::AllocatorType&) { return v.SetUint64(data); }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, double> {
+    static bool Is(const ValueType& v) { return v.IsDouble(); }
+    static double Get(const ValueType& v) { return v.GetDouble(); }
+    static ValueType& Set(ValueType& v, double data) { return v.SetDouble(data); }
+    static ValueType& Set(ValueType& v, double data, typename ValueType::AllocatorType&) { return v.SetDouble(data); }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, float> {
+    static bool Is(const ValueType& v) { return v.IsFloat(); }
+    static float Get(const ValueType& v) { return v.GetFloat(); }
+    static ValueType& Set(ValueType& v, float data) { return v.SetFloat(data); }
+    static ValueType& Set(ValueType& v, float data, typename ValueType::AllocatorType&) { return v.SetFloat(data); }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, const typename ValueType::Ch*> {
+    typedef const typename ValueType::Ch* StringType;
+    static bool Is(const ValueType& v) { return v.IsString(); }
+    static StringType Get(const ValueType& v) { return v.GetString(); }
+    static ValueType& Set(ValueType& v, const StringType data) { return v.SetString(typename ValueType::StringRefType(data)); }
+    static ValueType& Set(ValueType& v, const StringType data, typename ValueType::AllocatorType& a) { return v.SetString(data, a); }
+};
+
+#if RAPIDJSON_HAS_STDSTRING
+template<typename ValueType> 
+struct TypeHelper<ValueType, std::basic_string<typename ValueType::Ch> > {
+    typedef std::basic_string<typename ValueType::Ch> StringType;
+    static bool Is(const ValueType& v) { return v.IsString(); }
+    static StringType Get(const ValueType& v) { return StringType(v.GetString(), v.GetStringLength()); }
+    static ValueType& Set(ValueType& v, const StringType& data, typename ValueType::AllocatorType& a) { return v.SetString(data, a); }
+};
+#endif
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, typename ValueType::Array> {
+    typedef typename ValueType::Array ArrayType;
+    static bool Is(const ValueType& v) { return v.IsArray(); }
+    static ArrayType Get(ValueType& v) { return v.GetArray(); }
+    static ValueType& Set(ValueType& v, ArrayType data) { return v = data; }
+    static ValueType& Set(ValueType& v, ArrayType data, typename ValueType::AllocatorType&) { return v = data; }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, typename ValueType::ConstArray> {
+    typedef typename ValueType::ConstArray ArrayType;
+    static bool Is(const ValueType& v) { return v.IsArray(); }
+    static ArrayType Get(const ValueType& v) { return v.GetArray(); }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, typename ValueType::Object> {
+    typedef typename ValueType::Object ObjectType;
+    static bool Is(const ValueType& v) { return v.IsObject(); }
+    static ObjectType Get(ValueType& v) { return v.GetObject(); }
+    static ValueType& Set(ValueType& v, ObjectType data) { return v = data; }
+    static ValueType& Set(ValueType& v, ObjectType data, typename ValueType::AllocatorType&) { return v = data; }
+};
+
+template<typename ValueType> 
+struct TypeHelper<ValueType, typename ValueType::Const
