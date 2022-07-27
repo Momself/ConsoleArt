@@ -638,4 +638,89 @@ public:
     }
 
     //! Explicit copy constructor (with allocator)
-    /*! Creates a copy of a Value by using the 
+    /*! Creates a copy of a Value by using the given Allocator
+        \tparam SourceAllocator allocator of \c rhs
+        \param rhs Value to copy from (read-only)
+        \param allocator Allocator for allocating copied elements and buffers. Commonly use GenericDocument::GetAllocator().
+        \param copyConstStrings Force copying of constant strings (e.g. referencing an in-situ buffer)
+        \see CopyFrom()
+    */
+    template <typename SourceAllocator>
+    GenericValue(const GenericValue<Encoding,SourceAllocator>& rhs, Allocator& allocator, bool copyConstStrings = false) {
+        switch (rhs.GetType()) {
+        case kObjectType: {
+                SizeType count = rhs.data_.o.size;
+                Member* lm = reinterpret_cast<Member*>(allocator.Malloc(count * sizeof(Member)));
+                const typename GenericValue<Encoding,SourceAllocator>::Member* rm = rhs.GetMembersPointer();
+                for (SizeType i = 0; i < count; i++) {
+                    new (&lm[i].name) GenericValue(rm[i].name, allocator, copyConstStrings);
+                    new (&lm[i].value) GenericValue(rm[i].value, allocator, copyConstStrings);
+                }
+                data_.f.flags = kObjectFlag;
+                data_.o.size = data_.o.capacity = count;
+                SetMembersPointer(lm);
+            }
+            break;
+        case kArrayType: {
+                SizeType count = rhs.data_.a.size;
+                GenericValue* le = reinterpret_cast<GenericValue*>(allocator.Malloc(count * sizeof(GenericValue)));
+                const GenericValue<Encoding,SourceAllocator>* re = rhs.GetElementsPointer();
+                for (SizeType i = 0; i < count; i++)
+                    new (&le[i]) GenericValue(re[i], allocator, copyConstStrings);
+                data_.f.flags = kArrayFlag;
+                data_.a.size = data_.a.capacity = count;
+                SetElementsPointer(le);
+            }
+            break;
+        case kStringType:
+            if (rhs.data_.f.flags == kConstStringFlag && !copyConstStrings) {
+                data_.f.flags = rhs.data_.f.flags;
+                data_  = *reinterpret_cast<const Data*>(&rhs.data_);
+            }
+            else
+                SetStringRaw(StringRef(rhs.GetString(), rhs.GetStringLength()), allocator);
+            break;
+        default:
+            data_.f.flags = rhs.data_.f.flags;
+            data_  = *reinterpret_cast<const Data*>(&rhs.data_);
+            break;
+        }
+    }
+
+    //! Constructor for boolean value.
+    /*! \param b Boolean value
+        \note This constructor is limited to \em real boolean values and rejects
+            implicitly converted types like arbitrary pointers.  Use an explicit cast
+            to \c bool, if you want to construct a boolean JSON value in such cases.
+     */
+#ifndef RAPIDJSON_DOXYGEN_RUNNING // hide SFINAE from Doxygen
+    template <typename T>
+    explicit GenericValue(T b, RAPIDJSON_ENABLEIF((internal::IsSame<bool, T>))) RAPIDJSON_NOEXCEPT  // See #472
+#else
+    explicit GenericValue(bool b) RAPIDJSON_NOEXCEPT
+#endif
+        : data_() {
+            // safe-guard against failing SFINAE
+            RAPIDJSON_STATIC_ASSERT((internal::IsSame<bool,T>::Value));
+            data_.f.flags = b ? kTrueFlag : kFalseFlag;
+    }
+
+    //! Constructor for int value.
+    explicit GenericValue(int i) RAPIDJSON_NOEXCEPT : data_() {
+        data_.n.i64 = i;
+        data_.f.flags = (i >= 0) ? (kNumberIntFlag | kUintFlag | kUint64Flag) : kNumberIntFlag;
+    }
+
+    //! Constructor for unsigned value.
+    explicit GenericValue(unsigned u) RAPIDJSON_NOEXCEPT : data_() {
+        data_.n.u64 = u; 
+        data_.f.flags = (u & 0x80000000) ? kNumberUintFlag : (kNumberUintFlag | kIntFlag | kInt64Flag);
+    }
+
+    //! Constructor for int64_t value.
+    explicit GenericValue(int64_t i64) RAPIDJSON_NOEXCEPT : data_() {
+        data_.n.i64 = i64;
+        data_.f.flags = kNumberInt64Flag;
+        if (i64 >= 0) {
+            data_.f.flags |= kNumberUint64Flag;
+            if (!(static_cast<uint64_t
