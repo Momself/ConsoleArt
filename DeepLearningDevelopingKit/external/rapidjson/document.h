@@ -723,4 +723,94 @@ public:
         data_.f.flags = kNumberInt64Flag;
         if (i64 >= 0) {
             data_.f.flags |= kNumberUint64Flag;
-            if (!(static_cast<uint64_t
+            if (!(static_cast<uint64_t>(i64) & RAPIDJSON_UINT64_C2(0xFFFFFFFF, 0x00000000)))
+                data_.f.flags |= kUintFlag;
+            if (!(static_cast<uint64_t>(i64) & RAPIDJSON_UINT64_C2(0xFFFFFFFF, 0x80000000)))
+                data_.f.flags |= kIntFlag;
+        }
+        else if (i64 >= static_cast<int64_t>(RAPIDJSON_UINT64_C2(0xFFFFFFFF, 0x80000000)))
+            data_.f.flags |= kIntFlag;
+    }
+
+    //! Constructor for uint64_t value.
+    explicit GenericValue(uint64_t u64) RAPIDJSON_NOEXCEPT : data_() {
+        data_.n.u64 = u64;
+        data_.f.flags = kNumberUint64Flag;
+        if (!(u64 & RAPIDJSON_UINT64_C2(0x80000000, 0x00000000)))
+            data_.f.flags |= kInt64Flag;
+        if (!(u64 & RAPIDJSON_UINT64_C2(0xFFFFFFFF, 0x00000000)))
+            data_.f.flags |= kUintFlag;
+        if (!(u64 & RAPIDJSON_UINT64_C2(0xFFFFFFFF, 0x80000000)))
+            data_.f.flags |= kIntFlag;
+    }
+
+    //! Constructor for double value.
+    explicit GenericValue(double d) RAPIDJSON_NOEXCEPT : data_() { data_.n.d = d; data_.f.flags = kNumberDoubleFlag; }
+
+    //! Constructor for float value.
+    explicit GenericValue(float f) RAPIDJSON_NOEXCEPT : data_() { data_.n.d = static_cast<double>(f); data_.f.flags = kNumberDoubleFlag; }
+
+    //! Constructor for constant string (i.e. do not make a copy of string)
+    GenericValue(const Ch* s, SizeType length) RAPIDJSON_NOEXCEPT : data_() { SetStringRaw(StringRef(s, length)); }
+
+    //! Constructor for constant string (i.e. do not make a copy of string)
+    explicit GenericValue(StringRefType s) RAPIDJSON_NOEXCEPT : data_() { SetStringRaw(s); }
+
+    //! Constructor for copy-string (i.e. do make a copy of string)
+    GenericValue(const Ch* s, SizeType length, Allocator& allocator) : data_() { SetStringRaw(StringRef(s, length), allocator); }
+
+    //! Constructor for copy-string (i.e. do make a copy of string)
+    GenericValue(const Ch*s, Allocator& allocator) : data_() { SetStringRaw(StringRef(s), allocator); }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Constructor for copy-string from a string object (i.e. do make a copy of string)
+    /*! \note Requires the definition of the preprocessor symbol \ref RAPIDJSON_HAS_STDSTRING.
+     */
+    GenericValue(const std::basic_string<Ch>& s, Allocator& allocator) : data_() { SetStringRaw(StringRef(s), allocator); }
+#endif
+
+    //! Constructor for Array.
+    /*!
+        \param a An array obtained by \c GetArray().
+        \note \c Array is always pass-by-value.
+        \note the source array is moved into this value and the sourec array becomes empty.
+    */
+    GenericValue(Array a) RAPIDJSON_NOEXCEPT : data_(a.value_.data_) {
+        a.value_.data_ = Data();
+        a.value_.data_.f.flags = kArrayFlag;
+    }
+
+    //! Constructor for Object.
+    /*!
+        \param o An object obtained by \c GetObject().
+        \note \c Object is always pass-by-value.
+        \note the source object is moved into this value and the sourec object becomes empty.
+    */
+    GenericValue(Object o) RAPIDJSON_NOEXCEPT : data_(o.value_.data_) {
+        o.value_.data_ = Data();
+        o.value_.data_.f.flags = kObjectFlag;
+    }
+
+    //! Destructor.
+    /*! Need to destruct elements of array, members of object, or copy-string.
+    */
+    ~GenericValue() {
+        if (Allocator::kNeedFree) { // Shortcut by Allocator's trait
+            switch(data_.f.flags) {
+            case kArrayFlag:
+                {
+                    GenericValue* e = GetElementsPointer();
+                    for (GenericValue* v = e; v != e + data_.a.size; ++v)
+                        v->~GenericValue();
+                    Allocator::Free(e);
+                }
+                break;
+
+            case kObjectFlag:
+                for (MemberIterator m = MemberBegin(); m != MemberEnd(); ++m)
+                    m->~Member();
+                Allocator::Free(GetMembersPointer());
+                break;
+
+            case kCopyStringFlag:
+                Allocator::Free(const_cast<Ch*>(GetStr
