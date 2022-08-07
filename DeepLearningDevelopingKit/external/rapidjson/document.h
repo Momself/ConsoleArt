@@ -813,4 +813,116 @@ public:
                 break;
 
             case kCopyStringFlag:
-                Allocator::Free(const_cast<Ch*>(GetStr
+                Allocator::Free(const_cast<Ch*>(GetStringPointer()));
+                break;
+
+            default:
+                break;  // Do nothing for other types.
+            }
+        }
+    }
+
+    //@}
+
+    //!@name Assignment operators
+    //@{
+
+    //! Assignment with move semantics.
+    /*! \param rhs Source of the assignment. It will become a null value after assignment.
+    */
+    GenericValue& operator=(GenericValue& rhs) RAPIDJSON_NOEXCEPT {
+        RAPIDJSON_ASSERT(this != &rhs);
+        this->~GenericValue();
+        RawAssign(rhs);
+        return *this;
+    }
+
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    //! Move assignment in C++11
+    GenericValue& operator=(GenericValue&& rhs) RAPIDJSON_NOEXCEPT {
+        return *this = rhs.Move();
+    }
+#endif
+
+    //! Assignment of constant string reference (no copy)
+    /*! \param str Constant string reference to be assigned
+        \note This overload is needed to avoid clashes with the generic primitive type assignment overload below.
+        \see GenericStringRef, operator=(T)
+    */
+    GenericValue& operator=(StringRefType str) RAPIDJSON_NOEXCEPT {
+        GenericValue s(str);
+        return *this = s;
+    }
+
+    //! Assignment with primitive types.
+    /*! \tparam T Either \ref Type, \c int, \c unsigned, \c int64_t, \c uint64_t
+        \param value The value to be assigned.
+
+        \note The source type \c T explicitly disallows all pointer types,
+            especially (\c const) \ref Ch*.  This helps avoiding implicitly
+            referencing character strings with insufficient lifetime, use
+            \ref SetString(const Ch*, Allocator&) (for copying) or
+            \ref StringRef() (to explicitly mark the pointer as constant) instead.
+            All other pointer types would implicitly convert to \c bool,
+            use \ref SetBool() instead.
+    */
+    template <typename T>
+    RAPIDJSON_DISABLEIF_RETURN((internal::IsPointer<T>), (GenericValue&))
+    operator=(T value) {
+        GenericValue v(value);
+        return *this = v;
+    }
+
+    //! Deep-copy assignment from Value
+    /*! Assigns a \b copy of the Value to the current Value object
+        \tparam SourceAllocator Allocator type of \c rhs
+        \param rhs Value to copy from (read-only)
+        \param allocator Allocator to use for copying
+        \param copyConstStrings Force copying of constant strings (e.g. referencing an in-situ buffer)
+     */
+    template <typename SourceAllocator>
+    GenericValue& CopyFrom(const GenericValue<Encoding, SourceAllocator>& rhs, Allocator& allocator, bool copyConstStrings = false) {
+        RAPIDJSON_ASSERT(static_cast<void*>(this) != static_cast<void const*>(&rhs));
+        this->~GenericValue();
+        new (this) GenericValue(rhs, allocator, copyConstStrings);
+        return *this;
+    }
+
+    //! Exchange the contents of this value with those of other.
+    /*!
+        \param other Another value.
+        \note Constant complexity.
+    */
+    GenericValue& Swap(GenericValue& other) RAPIDJSON_NOEXCEPT {
+        GenericValue temp;
+        temp.RawAssign(*this);
+        RawAssign(other);
+        other.RawAssign(temp);
+        return *this;
+    }
+
+    //! free-standing swap function helper
+    /*!
+        Helper function to enable support for common swap implementation pattern based on \c std::swap:
+        \code
+        void swap(MyClass& a, MyClass& b) {
+            using std::swap;
+            swap(a.value, b.value);
+            // ...
+        }
+        \endcode
+        \see Swap()
+     */
+    friend inline void swap(GenericValue& a, GenericValue& b) RAPIDJSON_NOEXCEPT { a.Swap(b); }
+
+    //! Prepare Value for move semantics
+    /*! \return *this */
+    GenericValue& Move() RAPIDJSON_NOEXCEPT { return *this; }
+    //@}
+
+    //!@name Equal-to and not-equal-to operators
+    //@{
+    //! Equal-to operator
+    /*!
+        \note If an object contains duplicated named member, comparing equality with any object is always \c false.
+        \note Linear time complexity (number of all values in the subtree and 
