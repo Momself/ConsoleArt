@@ -925,4 +925,94 @@ public:
     //! Equal-to operator
     /*!
         \note If an object contains duplicated named member, comparing equality with any object is always \c false.
-        \note Linear time complexity (number of all values in the subtree and 
+        \note Linear time complexity (number of all values in the subtree and total lengths of all strings).
+    */
+    template <typename SourceAllocator>
+    bool operator==(const GenericValue<Encoding, SourceAllocator>& rhs) const {
+        typedef GenericValue<Encoding, SourceAllocator> RhsType;
+        if (GetType() != rhs.GetType())
+            return false;
+
+        switch (GetType()) {
+        case kObjectType: // Warning: O(n^2) inner-loop
+            if (data_.o.size != rhs.data_.o.size)
+                return false;           
+            for (ConstMemberIterator lhsMemberItr = MemberBegin(); lhsMemberItr != MemberEnd(); ++lhsMemberItr) {
+                typename RhsType::ConstMemberIterator rhsMemberItr = rhs.FindMember(lhsMemberItr->name);
+                if (rhsMemberItr == rhs.MemberEnd() || lhsMemberItr->value != rhsMemberItr->value)
+                    return false;
+            }
+            return true;
+            
+        case kArrayType:
+            if (data_.a.size != rhs.data_.a.size)
+                return false;
+            for (SizeType i = 0; i < data_.a.size; i++)
+                if ((*this)[i] != rhs[i])
+                    return false;
+            return true;
+
+        case kStringType:
+            return StringEqual(rhs);
+
+        case kNumberType:
+            if (IsDouble() || rhs.IsDouble()) {
+                double a = GetDouble();     // May convert from integer to double.
+                double b = rhs.GetDouble(); // Ditto
+                return a >= b && a <= b;    // Prevent -Wfloat-equal
+            }
+            else
+                return data_.n.u64 == rhs.data_.n.u64;
+
+        default:
+            return true;
+        }
+    }
+
+    //! Equal-to operator with const C-string pointer
+    bool operator==(const Ch* rhs) const { return *this == GenericValue(StringRef(rhs)); }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Equal-to operator with string object
+    /*! \note Requires the definition of the preprocessor symbol \ref RAPIDJSON_HAS_STDSTRING.
+     */
+    bool operator==(const std::basic_string<Ch>& rhs) const { return *this == GenericValue(StringRef(rhs)); }
+#endif
+
+    //! Equal-to operator with primitive types
+    /*! \tparam T Either \ref Type, \c int, \c unsigned, \c int64_t, \c uint64_t, \c double, \c true, \c false
+    */
+    template <typename T> RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>,internal::IsGenericValue<T> >), (bool)) operator==(const T& rhs) const { return *this == GenericValue(rhs); }
+
+    //! Not-equal-to operator
+    /*! \return !(*this == rhs)
+     */
+    template <typename SourceAllocator>
+    bool operator!=(const GenericValue<Encoding, SourceAllocator>& rhs) const { return !(*this == rhs); }
+
+    //! Not-equal-to operator with const C-string pointer
+    bool operator!=(const Ch* rhs) const { return !(*this == rhs); }
+
+    //! Not-equal-to operator with arbitrary types
+    /*! \return !(*this == rhs)
+     */
+    template <typename T> RAPIDJSON_DISABLEIF_RETURN((internal::IsGenericValue<T>), (bool)) operator!=(const T& rhs) const { return !(*this == rhs); }
+
+    //! Equal-to operator with arbitrary types (symmetric version)
+    /*! \return (rhs == lhs)
+     */
+    template <typename T> friend RAPIDJSON_DISABLEIF_RETURN((internal::IsGenericValue<T>), (bool)) operator==(const T& lhs, const GenericValue& rhs) { return rhs == lhs; }
+
+    //! Not-Equal-to operator with arbitrary types (symmetric version)
+    /*! \return !(rhs == lhs)
+     */
+    template <typename T> friend RAPIDJSON_DISABLEIF_RETURN((internal::IsGenericValue<T>), (bool)) operator!=(const T& lhs, const GenericValue& rhs) { return !(rhs == lhs); }
+    //@}
+
+    //!@name Type
+    //@{
+
+    Type GetType()  const { return static_cast<Type>(data_.f.flags & kTypeMask); }
+    bool IsNull()   const { return data_.f.flags == kNullFlag; }
+    bool IsFalse()  const { return data_.f.flags == kFalseFlag; }
+    bool IsTrue()   const { return data_.f.flags == kT
