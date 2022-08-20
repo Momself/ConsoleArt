@@ -1015,4 +1015,95 @@ public:
     Type GetType()  const { return static_cast<Type>(data_.f.flags & kTypeMask); }
     bool IsNull()   const { return data_.f.flags == kNullFlag; }
     bool IsFalse()  const { return data_.f.flags == kFalseFlag; }
-    bool IsTrue()   const { return data_.f.flags == kT
+    bool IsTrue()   const { return data_.f.flags == kTrueFlag; }
+    bool IsBool()   const { return (data_.f.flags & kBoolFlag) != 0; }
+    bool IsObject() const { return data_.f.flags == kObjectFlag; }
+    bool IsArray()  const { return data_.f.flags == kArrayFlag; }
+    bool IsNumber() const { return (data_.f.flags & kNumberFlag) != 0; }
+    bool IsInt()    const { return (data_.f.flags & kIntFlag) != 0; }
+    bool IsUint()   const { return (data_.f.flags & kUintFlag) != 0; }
+    bool IsInt64()  const { return (data_.f.flags & kInt64Flag) != 0; }
+    bool IsUint64() const { return (data_.f.flags & kUint64Flag) != 0; }
+    bool IsDouble() const { return (data_.f.flags & kDoubleFlag) != 0; }
+    bool IsString() const { return (data_.f.flags & kStringFlag) != 0; }
+
+    // Checks whether a number can be losslessly converted to a double.
+    bool IsLosslessDouble() const {
+        if (!IsNumber()) return false;
+        if (IsUint64()) {
+            uint64_t u = GetUint64();
+            volatile double d = static_cast<double>(u);
+            return (d >= 0.0)
+                && (d < static_cast<double>((std::numeric_limits<uint64_t>::max)()))
+                && (u == static_cast<uint64_t>(d));
+        }
+        if (IsInt64()) {
+            int64_t i = GetInt64();
+            volatile double d = static_cast<double>(i);
+            return (d >= static_cast<double>((std::numeric_limits<int64_t>::min)()))
+                && (d < static_cast<double>((std::numeric_limits<int64_t>::max)()))
+                && (i == static_cast<int64_t>(d));
+        }
+        return true; // double, int, uint are always lossless
+    }
+
+    // Checks whether a number is a float (possible lossy).
+    bool IsFloat() const  {
+        if ((data_.f.flags & kDoubleFlag) == 0)
+            return false;
+        double d = GetDouble();
+        return d >= -3.4028234e38 && d <= 3.4028234e38;
+    }
+    // Checks whether a number can be losslessly converted to a float.
+    bool IsLosslessFloat() const {
+        if (!IsNumber()) return false;
+        double a = GetDouble();
+        if (a < static_cast<double>(-(std::numeric_limits<float>::max)())
+                || a > static_cast<double>((std::numeric_limits<float>::max)()))
+            return false;
+        double b = static_cast<double>(static_cast<float>(a));
+        return a >= b && a <= b;    // Prevent -Wfloat-equal
+    }
+
+    //@}
+
+    //!@name Null
+    //@{
+
+    GenericValue& SetNull() { this->~GenericValue(); new (this) GenericValue(); return *this; }
+
+    //@}
+
+    //!@name Bool
+    //@{
+
+    bool GetBool() const { RAPIDJSON_ASSERT(IsBool()); return data_.f.flags == kTrueFlag; }
+    //!< Set boolean value
+    /*! \post IsBool() == true */
+    GenericValue& SetBool(bool b) { this->~GenericValue(); new (this) GenericValue(b); return *this; }
+
+    //@}
+
+    //!@name Object
+    //@{
+
+    //! Set this value as an empty object.
+    /*! \post IsObject() == true */
+    GenericValue& SetObject() { this->~GenericValue(); new (this) GenericValue(kObjectType); return *this; }
+
+    //! Get the number of members in the object.
+    SizeType MemberCount() const { RAPIDJSON_ASSERT(IsObject()); return data_.o.size; }
+
+    //! Get the capacity of object.
+    SizeType MemberCapacity() const { RAPIDJSON_ASSERT(IsObject()); return data_.o.capacity; }
+
+    //! Check whether the object is empty.
+    bool ObjectEmpty() const { RAPIDJSON_ASSERT(IsObject()); return data_.o.size == 0; }
+
+    //! Get a value from an object associated with the name.
+    /*! \pre IsObject() == true
+        \tparam T Either \c Ch or \c const \c Ch (template used for disambiguation with \ref operator[](SizeType))
+        \note In version 0.1x, if the member is not found, this function returns a null value. This makes issue 7.
+        Since 0.2, if the name is not correct, it will assert.
+        If user is unsure whether a member exists, user should use HasMember() first.
+        A better approach is to use FindMember(
