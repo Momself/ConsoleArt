@@ -1184,4 +1184,92 @@ public:
     /*!
         \param name Member name to be searched.
         \pre IsObject() == true
-     
+        \return Whether a member with that name exists.
+        \note It is better to use FindMember() directly if you need the obtain the value as well.
+        \note Linear time complexity.
+    */
+    bool HasMember(const Ch* name) const { return FindMember(name) != MemberEnd(); }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Check whether a member exists in the object with string object.
+    /*!
+        \param name Member name to be searched.
+        \pre IsObject() == true
+        \return Whether a member with that name exists.
+        \note It is better to use FindMember() directly if you need the obtain the value as well.
+        \note Linear time complexity.
+    */
+    bool HasMember(const std::basic_string<Ch>& name) const { return FindMember(name) != MemberEnd(); }
+#endif
+
+    //! Check whether a member exists in the object with GenericValue name.
+    /*!
+        This version is faster because it does not need a StrLen(). It can also handle string with null character.
+        \param name Member name to be searched.
+        \pre IsObject() == true
+        \return Whether a member with that name exists.
+        \note It is better to use FindMember() directly if you need the obtain the value as well.
+        \note Linear time complexity.
+    */
+    template <typename SourceAllocator>
+    bool HasMember(const GenericValue<Encoding, SourceAllocator>& name) const { return FindMember(name) != MemberEnd(); }
+
+    //! Find member by name.
+    /*!
+        \param name Member name to be searched.
+        \pre IsObject() == true
+        \return Iterator to member, if it exists.
+            Otherwise returns \ref MemberEnd().
+
+        \note Earlier versions of Rapidjson returned a \c NULL pointer, in case
+            the requested member doesn't exist. For consistency with e.g.
+            \c std::map, this has been changed to MemberEnd() now.
+        \note Linear time complexity.
+    */
+    MemberIterator FindMember(const Ch* name) {
+        GenericValue n(StringRef(name));
+        return FindMember(n);
+    }
+
+    ConstMemberIterator FindMember(const Ch* name) const { return const_cast<GenericValue&>(*this).FindMember(name); }
+
+    //! Find member by name.
+    /*!
+        This version is faster because it does not need a StrLen(). It can also handle string with null character.
+        \param name Member name to be searched.
+        \pre IsObject() == true
+        \return Iterator to member, if it exists.
+            Otherwise returns \ref MemberEnd().
+
+        \note Earlier versions of Rapidjson returned a \c NULL pointer, in case
+            the requested member doesn't exist. For consistency with e.g.
+            \c std::map, this has been changed to MemberEnd() now.
+        \note Linear time complexity.
+    */
+    template <typename SourceAllocator>
+    MemberIterator FindMember(const GenericValue<Encoding, SourceAllocator>& name) {
+        RAPIDJSON_ASSERT(IsObject());
+        RAPIDJSON_ASSERT(name.IsString());
+        MemberIterator member = MemberBegin();
+        for ( ; member != MemberEnd(); ++member)
+            if (name.StringEqual(member->name))
+                break;
+        return member;
+    }
+    template <typename SourceAllocator> ConstMemberIterator FindMember(const GenericValue<Encoding, SourceAllocator>& name) const { return const_cast<GenericValue&>(*this).FindMember(name); }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Find member by string object name.
+    /*!
+        \param name Member name to be searched.
+        \pre IsObject() == true
+        \return Iterator to member, if it exists.
+            Otherwise returns \ref MemberEnd().
+    */
+    MemberIterator FindMember(const std::basic_string<Ch>& name) { return FindMember(GenericValue(StringRef(name))); }
+    ConstMemberIterator FindMember(const std::basic_string<Ch>& name) const { return FindMember(GenericValue(StringRef(name))); }
+#endif
+
+    //! Add a member (name-value pair) to the object.
+    /*! \param name A string value as name of member.
+  
