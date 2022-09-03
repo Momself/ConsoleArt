@@ -1513,4 +1513,104 @@ public:
         MemberIterator pos = MemberBegin() + (first - MemberBegin());
         for (MemberIterator itr = pos; itr != last; ++itr)
             itr->~Member();
-        std::memmove(&*pos, &*last, static_cast<size_t>(MemberEnd() - last
+        std::memmove(&*pos, &*last, static_cast<size_t>(MemberEnd() - last) * sizeof(Member));
+        data_.o.size -= static_cast<SizeType>(last - first);
+        return pos;
+    }
+
+    //! Erase a member in object by its name.
+    /*! \param name Name of member to be removed.
+        \return Whether the member existed.
+        \note Linear time complexity.
+    */
+    bool EraseMember(const Ch* name) {
+        GenericValue n(StringRef(name));
+        return EraseMember(n);
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    bool EraseMember(const std::basic_string<Ch>& name) { return EraseMember(GenericValue(StringRef(name))); }
+#endif
+
+    template <typename SourceAllocator>
+    bool EraseMember(const GenericValue<Encoding, SourceAllocator>& name) {
+        MemberIterator m = FindMember(name);
+        if (m != MemberEnd()) {
+            EraseMember(m);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    Object GetObject() { RAPIDJSON_ASSERT(IsObject()); return Object(*this); }
+    ConstObject GetObject() const { RAPIDJSON_ASSERT(IsObject()); return ConstObject(*this); }
+
+    //@}
+
+    //!@name Array
+    //@{
+
+    //! Set this value as an empty array.
+    /*! \post IsArray == true */
+    GenericValue& SetArray() { this->~GenericValue(); new (this) GenericValue(kArrayType); return *this; }
+
+    //! Get the number of elements in array.
+    SizeType Size() const { RAPIDJSON_ASSERT(IsArray()); return data_.a.size; }
+
+    //! Get the capacity of array.
+    SizeType Capacity() const { RAPIDJSON_ASSERT(IsArray()); return data_.a.capacity; }
+
+    //! Check whether the array is empty.
+    bool Empty() const { RAPIDJSON_ASSERT(IsArray()); return data_.a.size == 0; }
+
+    //! Remove all elements in the array.
+    /*! This function do not deallocate memory in the array, i.e. the capacity is unchanged.
+        \note Linear time complexity.
+    */
+    void Clear() {
+        RAPIDJSON_ASSERT(IsArray()); 
+        GenericValue* e = GetElementsPointer();
+        for (GenericValue* v = e; v != e + data_.a.size; ++v)
+            v->~GenericValue();
+        data_.a.size = 0;
+    }
+
+    //! Get an element from array by index.
+    /*! \pre IsArray() == true
+        \param index Zero-based index of element.
+        \see operator[](T*)
+    */
+    GenericValue& operator[](SizeType index) {
+        RAPIDJSON_ASSERT(IsArray());
+        RAPIDJSON_ASSERT(index < data_.a.size);
+        return GetElementsPointer()[index];
+    }
+    const GenericValue& operator[](SizeType index) const { return const_cast<GenericValue&>(*this)[index]; }
+
+    //! Element iterator
+    /*! \pre IsArray() == true */
+    ValueIterator Begin() { RAPIDJSON_ASSERT(IsArray()); return GetElementsPointer(); }
+    //! \em Past-the-end element iterator
+    /*! \pre IsArray() == true */
+    ValueIterator End() { RAPIDJSON_ASSERT(IsArray()); return GetElementsPointer() + data_.a.size; }
+    //! Constant element iterator
+    /*! \pre IsArray() == true */
+    ConstValueIterator Begin() const { return const_cast<GenericValue&>(*this).Begin(); }
+    //! Constant \em past-the-end element iterator
+    /*! \pre IsArray() == true */
+    ConstValueIterator End() const { return const_cast<GenericValue&>(*this).End(); }
+
+    //! Request the array to have enough capacity to store elements.
+    /*! \param newCapacity  The capacity that the array at least need to have.
+        \param allocator    Allocator for reallocating memory. It must be the same one as used before. Commonly use GenericDocument::GetAllocator().
+        \return The value itself for fluent API.
+        \note Linear time complexity.
+    */
+    GenericValue& Reserve(SizeType newCapacity, Allocator &allocator) {
+        RAPIDJSON_ASSERT(IsArray());
+        if (newCapacity > data_.a.capacity) {
+            SetElementsPointer(reinterpret_cast<GenericValue*>(allocator.Realloc(GetElementsPointer(), data_.a.capacity * sizeof(GenericValue), newCapacity * sizeof(GenericValue))));
+            data_.a.capacity = newCapacity;
+        }
+        return 
