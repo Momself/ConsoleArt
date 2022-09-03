@@ -1420,4 +1420,97 @@ public:
 
     //! Remove all members in the object.
     /*! This function do not deallocate memory in the object, i.e. the capacity is unchanged.
-        \note Linear time complexit
+        \note Linear time complexity.
+    */
+    void RemoveAllMembers() {
+        RAPIDJSON_ASSERT(IsObject()); 
+        for (MemberIterator m = MemberBegin(); m != MemberEnd(); ++m)
+            m->~Member();
+        data_.o.size = 0;
+    }
+
+    //! Remove a member in object by its name.
+    /*! \param name Name of member to be removed.
+        \return Whether the member existed.
+        \note This function may reorder the object members. Use \ref
+            EraseMember(ConstMemberIterator) if you need to preserve the
+            relative order of the remaining members.
+        \note Linear time complexity.
+    */
+    bool RemoveMember(const Ch* name) {
+        GenericValue n(StringRef(name));
+        return RemoveMember(n);
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    bool RemoveMember(const std::basic_string<Ch>& name) { return RemoveMember(GenericValue(StringRef(name))); }
+#endif
+
+    template <typename SourceAllocator>
+    bool RemoveMember(const GenericValue<Encoding, SourceAllocator>& name) {
+        MemberIterator m = FindMember(name);
+        if (m != MemberEnd()) {
+            RemoveMember(m);
+            return true;
+        }
+        else
+            return false;
+    }
+
+    //! Remove a member in object by iterator.
+    /*! \param m member iterator (obtained by FindMember() or MemberBegin()).
+        \return the new iterator after removal.
+        \note This function may reorder the object members. Use \ref
+            EraseMember(ConstMemberIterator) if you need to preserve the
+            relative order of the remaining members.
+        \note Constant time complexity.
+    */
+    MemberIterator RemoveMember(MemberIterator m) {
+        RAPIDJSON_ASSERT(IsObject());
+        RAPIDJSON_ASSERT(data_.o.size > 0);
+        RAPIDJSON_ASSERT(GetMembersPointer() != 0);
+        RAPIDJSON_ASSERT(m >= MemberBegin() && m < MemberEnd());
+
+        MemberIterator last(GetMembersPointer() + (data_.o.size - 1));
+        if (data_.o.size > 1 && m != last)
+            *m = *last; // Move the last one to this place
+        else
+            m->~Member(); // Only one left, just destroy
+        --data_.o.size;
+        return m;
+    }
+
+    //! Remove a member from an object by iterator.
+    /*! \param pos iterator to the member to remove
+        \pre IsObject() == true && \ref MemberBegin() <= \c pos < \ref MemberEnd()
+        \return Iterator following the removed element.
+            If the iterator \c pos refers to the last element, the \ref MemberEnd() iterator is returned.
+        \note This function preserves the relative order of the remaining object
+            members. If you do not need this, use the more efficient \ref RemoveMember(MemberIterator).
+        \note Linear time complexity.
+    */
+    MemberIterator EraseMember(ConstMemberIterator pos) {
+        return EraseMember(pos, pos +1);
+    }
+
+    //! Remove members in the range [first, last) from an object.
+    /*! \param first iterator to the first member to remove
+        \param last  iterator following the last member to remove
+        \pre IsObject() == true && \ref MemberBegin() <= \c first <= \c last <= \ref MemberEnd()
+        \return Iterator following the last removed element.
+        \note This function preserves the relative order of the remaining object
+            members.
+        \note Linear time complexity.
+    */
+    MemberIterator EraseMember(ConstMemberIterator first, ConstMemberIterator last) {
+        RAPIDJSON_ASSERT(IsObject());
+        RAPIDJSON_ASSERT(data_.o.size > 0);
+        RAPIDJSON_ASSERT(GetMembersPointer() != 0);
+        RAPIDJSON_ASSERT(first >= MemberBegin());
+        RAPIDJSON_ASSERT(first <= last);
+        RAPIDJSON_ASSERT(last <= MemberEnd());
+
+        MemberIterator pos = MemberBegin() + (first - MemberBegin());
+        for (MemberIterator itr = pos; itr != last; ++itr)
+            itr->~Member();
+        std::memmove(&*pos, &*last, static_cast<size_t>(MemberEnd() - last
