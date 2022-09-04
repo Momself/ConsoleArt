@@ -1769,4 +1769,72 @@ public:
     const Ch* GetString() const { RAPIDJSON_ASSERT(IsString()); return (data_.f.flags & kInlineStrFlag) ? data_.ss.str : GetStringPointer(); }
 
     //! Get the length of string.
-    /*! Since rapidjson permits "\\u0000" in the json string, strlen(v.GetString()) may
+    /*! Since rapidjson permits "\\u0000" in the json string, strlen(v.GetString()) may not equal to v.GetStringLength().
+    */
+    SizeType GetStringLength() const { RAPIDJSON_ASSERT(IsString()); return ((data_.f.flags & kInlineStrFlag) ? (data_.ss.GetLength()) : data_.s.length); }
+
+    //! Set this value as a string without copying source string.
+    /*! This version has better performance with supplied length, and also support string containing null character.
+        \param s source string pointer. 
+        \param length The length of source string, excluding the trailing null terminator.
+        \return The value itself for fluent API.
+        \post IsString() == true && GetString() == s && GetStringLength() == length
+        \see SetString(StringRefType)
+    */
+    GenericValue& SetString(const Ch* s, SizeType length) { return SetString(StringRef(s, length)); }
+
+    //! Set this value as a string without copying source string.
+    /*! \param s source string reference
+        \return The value itself for fluent API.
+        \post IsString() == true && GetString() == s && GetStringLength() == s.length
+    */
+    GenericValue& SetString(StringRefType s) { this->~GenericValue(); SetStringRaw(s); return *this; }
+
+    //! Set this value as a string by copying from source string.
+    /*! This version has better performance with supplied length, and also support string containing null character.
+        \param s source string. 
+        \param length The length of source string, excluding the trailing null terminator.
+        \param allocator Allocator for allocating copied buffer. Commonly use GenericDocument::GetAllocator().
+        \return The value itself for fluent API.
+        \post IsString() == true && GetString() != s && strcmp(GetString(),s) == 0 && GetStringLength() == length
+    */
+    GenericValue& SetString(const Ch* s, SizeType length, Allocator& allocator) { return SetString(StringRef(s, length), allocator); }
+
+    //! Set this value as a string by copying from source string.
+    /*! \param s source string. 
+        \param allocator Allocator for allocating copied buffer. Commonly use GenericDocument::GetAllocator().
+        \return The value itself for fluent API.
+        \post IsString() == true && GetString() != s && strcmp(GetString(),s) == 0 && GetStringLength() == length
+    */
+    GenericValue& SetString(const Ch* s, Allocator& allocator) { return SetString(StringRef(s), allocator); }
+
+    //! Set this value as a string by copying from source string.
+    /*! \param s source string reference
+        \param allocator Allocator for allocating copied buffer. Commonly use GenericDocument::GetAllocator().
+        \return The value itself for fluent API.
+        \post IsString() == true && GetString() != s.s && strcmp(GetString(),s) == 0 && GetStringLength() == length
+    */
+    GenericValue& SetString(StringRefType s, Allocator& allocator) { this->~GenericValue(); SetStringRaw(s, allocator); return *this; }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Set this value as a string by copying from source string.
+    /*! \param s source string.
+        \param allocator Allocator for allocating copied buffer. Commonly use GenericDocument::GetAllocator().
+        \return The value itself for fluent API.
+        \post IsString() == true && GetString() != s.data() && strcmp(GetString(),s.data() == 0 && GetStringLength() == s.size()
+        \note Requires the definition of the preprocessor symbol \ref RAPIDJSON_HAS_STDSTRING.
+    */
+    GenericValue& SetString(const std::basic_string<Ch>& s, Allocator& allocator) { return SetString(StringRef(s), allocator); }
+#endif
+
+    //@}
+
+    //!@name Array
+    //@{
+
+    //! Templated version for checking whether this value is type T.
+    /*!
+        \tparam T Either \c bool, \c int, \c unsigned, \c int64_t, \c uint64_t, \c double, \c float, \c const \c char*, \c std::basic_string<Ch>
+    */
+    template <typename T>
+    bool Is() const { return internal::TypeHelper<ValueType, T>::Is(*this)
