@@ -1692,4 +1692,81 @@ public:
     /*!
         \param pos iterator to the element to remove
         \pre IsArray() == true && \ref Begin() <= \c pos < \ref End()
-        \return Iterator following the removed element. If the iterator pos refers to the last element, the End(
+        \return Iterator following the removed element. If the iterator pos refers to the last element, the End() iterator is returned.
+        \note Linear time complexity.
+    */
+    ValueIterator Erase(ConstValueIterator pos) {
+        return Erase(pos, pos + 1);
+    }
+
+    //! Remove elements in the range [first, last) of the array.
+    /*!
+        \param first iterator to the first element to remove
+        \param last  iterator following the last element to remove
+        \pre IsArray() == true && \ref Begin() <= \c first <= \c last <= \ref End()
+        \return Iterator following the last removed element.
+        \note Linear time complexity.
+    */
+    ValueIterator Erase(ConstValueIterator first, ConstValueIterator last) {
+        RAPIDJSON_ASSERT(IsArray());
+        RAPIDJSON_ASSERT(data_.a.size > 0);
+        RAPIDJSON_ASSERT(GetElementsPointer() != 0);
+        RAPIDJSON_ASSERT(first >= Begin());
+        RAPIDJSON_ASSERT(first <= last);
+        RAPIDJSON_ASSERT(last <= End());
+        ValueIterator pos = Begin() + (first - Begin());
+        for (ValueIterator itr = pos; itr != last; ++itr)
+            itr->~GenericValue();       
+        std::memmove(pos, last, static_cast<size_t>(End() - last) * sizeof(GenericValue));
+        data_.a.size -= static_cast<SizeType>(last - first);
+        return pos;
+    }
+
+    Array GetArray() { RAPIDJSON_ASSERT(IsArray()); return Array(*this); }
+    ConstArray GetArray() const { RAPIDJSON_ASSERT(IsArray()); return ConstArray(*this); }
+
+    //@}
+
+    //!@name Number
+    //@{
+
+    int GetInt() const          { RAPIDJSON_ASSERT(data_.f.flags & kIntFlag);   return data_.n.i.i;   }
+    unsigned GetUint() const    { RAPIDJSON_ASSERT(data_.f.flags & kUintFlag);  return data_.n.u.u;   }
+    int64_t GetInt64() const    { RAPIDJSON_ASSERT(data_.f.flags & kInt64Flag); return data_.n.i64; }
+    uint64_t GetUint64() const  { RAPIDJSON_ASSERT(data_.f.flags & kUint64Flag); return data_.n.u64; }
+
+    //! Get the value as double type.
+    /*! \note If the value is 64-bit integer type, it may lose precision. Use \c IsLosslessDouble() to check whether the converison is lossless.
+    */
+    double GetDouble() const {
+        RAPIDJSON_ASSERT(IsNumber());
+        if ((data_.f.flags & kDoubleFlag) != 0)                return data_.n.d;   // exact type, no conversion.
+        if ((data_.f.flags & kIntFlag) != 0)                   return data_.n.i.i; // int -> double
+        if ((data_.f.flags & kUintFlag) != 0)                  return data_.n.u.u; // unsigned -> double
+        if ((data_.f.flags & kInt64Flag) != 0)                 return static_cast<double>(data_.n.i64); // int64_t -> double (may lose precision)
+        RAPIDJSON_ASSERT((data_.f.flags & kUint64Flag) != 0);  return static_cast<double>(data_.n.u64); // uint64_t -> double (may lose precision)
+    }
+
+    //! Get the value as float type.
+    /*! \note If the value is 64-bit integer type, it may lose precision. Use \c IsLosslessFloat() to check whether the converison is lossless.
+    */
+    float GetFloat() const {
+        return static_cast<float>(GetDouble());
+    }
+
+    GenericValue& SetInt(int i)             { this->~GenericValue(); new (this) GenericValue(i);    return *this; }
+    GenericValue& SetUint(unsigned u)       { this->~GenericValue(); new (this) GenericValue(u);    return *this; }
+    GenericValue& SetInt64(int64_t i64)     { this->~GenericValue(); new (this) GenericValue(i64);  return *this; }
+    GenericValue& SetUint64(uint64_t u64)   { this->~GenericValue(); new (this) GenericValue(u64);  return *this; }
+    GenericValue& SetDouble(double d)       { this->~GenericValue(); new (this) GenericValue(d);    return *this; }
+    GenericValue& SetFloat(float f)         { this->~GenericValue(); new (this) GenericValue(static_cast<double>(f)); return *this; }
+
+    //@}
+
+    //!@name String
+    //@{
+
+    const Ch* GetString() const { RAPIDJSON_ASSERT(IsString()); return (data_.f.flags & kInlineStrFlag) ? data_.ss.str : GetStringPointer(); }
+
+    //! Get the length of string.
+    /*! Since rapidjson permits "\\u0000" in the json string, strlen(v.GetString()) may
