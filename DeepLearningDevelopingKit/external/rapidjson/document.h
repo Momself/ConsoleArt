@@ -1613,4 +1613,83 @@ public:
             SetElementsPointer(reinterpret_cast<GenericValue*>(allocator.Realloc(GetElementsPointer(), data_.a.capacity * sizeof(GenericValue), newCapacity * sizeof(GenericValue))));
             data_.a.capacity = newCapacity;
         }
-        return 
+        return *this;
+    }
+
+    //! Append a GenericValue at the end of the array.
+    /*! \param value        Value to be appended.
+        \param allocator    Allocator for reallocating memory. It must be the same one as used before. Commonly use GenericDocument::GetAllocator().
+        \pre IsArray() == true
+        \post value.IsNull() == true
+        \return The value itself for fluent API.
+        \note The ownership of \c value will be transferred to this array on success.
+        \note If the number of elements to be appended is known, calls Reserve() once first may be more efficient.
+        \note Amortized constant time complexity.
+    */
+    GenericValue& PushBack(GenericValue& value, Allocator& allocator) {
+        RAPIDJSON_ASSERT(IsArray());
+        if (data_.a.size >= data_.a.capacity)
+            Reserve(data_.a.capacity == 0 ? kDefaultArrayCapacity : (data_.a.capacity + (data_.a.capacity + 1) / 2), allocator);
+        GetElementsPointer()[data_.a.size++].RawAssign(value);
+        return *this;
+    }
+
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    GenericValue& PushBack(GenericValue&& value, Allocator& allocator) {
+        return PushBack(value, allocator);
+    }
+#endif // RAPIDJSON_HAS_CXX11_RVALUE_REFS
+
+    //! Append a constant string reference at the end of the array.
+    /*! \param value        Constant string reference to be appended.
+        \param allocator    Allocator for reallocating memory. It must be the same one used previously. Commonly use GenericDocument::GetAllocator().
+        \pre IsArray() == true
+        \return The value itself for fluent API.
+        \note If the number of elements to be appended is known, calls Reserve() once first may be more efficient.
+        \note Amortized constant time complexity.
+        \see GenericStringRef
+    */
+    GenericValue& PushBack(StringRefType value, Allocator& allocator) {
+        return (*this).template PushBack<StringRefType>(value, allocator);
+    }
+
+    //! Append a primitive value at the end of the array.
+    /*! \tparam T Either \ref Type, \c int, \c unsigned, \c int64_t, \c uint64_t
+        \param value Value of primitive type T to be appended.
+        \param allocator    Allocator for reallocating memory. It must be the same one as used before. Commonly use GenericDocument::GetAllocator().
+        \pre IsArray() == true
+        \return The value itself for fluent API.
+        \note If the number of elements to be appended is known, calls Reserve() once first may be more efficient.
+
+        \note The source type \c T explicitly disallows all pointer types,
+            especially (\c const) \ref Ch*.  This helps avoiding implicitly
+            referencing character strings with insufficient lifetime, use
+            \ref PushBack(GenericValue&, Allocator&) or \ref
+            PushBack(StringRefType, Allocator&).
+            All other pointer types would implicitly convert to \c bool,
+            use an explicit cast instead, if needed.
+        \note Amortized constant time complexity.
+    */
+    template <typename T>
+    RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (GenericValue&))
+    PushBack(T value, Allocator& allocator) {
+        GenericValue v(value);
+        return PushBack(v, allocator);
+    }
+
+    //! Remove the last element in the array.
+    /*!
+        \note Constant time complexity.
+    */
+    GenericValue& PopBack() {
+        RAPIDJSON_ASSERT(IsArray());
+        RAPIDJSON_ASSERT(!Empty());
+        GetElementsPointer()[--data_.a.size].~GenericValue();
+        return *this;
+    }
+
+    //! Remove an element of array by iterator.
+    /*!
+        \param pos iterator to the element to remove
+        \pre IsArray() == true && \ref Begin() <= \c pos < \ref End()
+        \return Iterator following the removed element. If the iterator pos refers to the last element, the End(
