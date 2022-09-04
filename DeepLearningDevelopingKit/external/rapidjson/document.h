@@ -1837,4 +1837,92 @@ public:
         \tparam T Either \c bool, \c int, \c unsigned, \c int64_t, \c uint64_t, \c double, \c float, \c const \c char*, \c std::basic_string<Ch>
     */
     template <typename T>
-    bool Is() const { return internal::TypeHelper<ValueType, T>::Is(*this)
+    bool Is() const { return internal::TypeHelper<ValueType, T>::Is(*this); }
+
+    template <typename T>
+    T Get() const { return internal::TypeHelper<ValueType, T>::Get(*this); }
+
+    template <typename T>
+    T Get() { return internal::TypeHelper<ValueType, T>::Get(*this); }
+
+    template<typename T>
+    ValueType& Set(const T& data) { return internal::TypeHelper<ValueType, T>::Set(*this, data); }
+
+    template<typename T>
+    ValueType& Set(const T& data, AllocatorType& allocator) { return internal::TypeHelper<ValueType, T>::Set(*this, data, allocator); }
+
+    //@}
+
+    //! Generate events of this value to a Handler.
+    /*! This function adopts the GoF visitor pattern.
+        Typical usage is to output this JSON value as JSON text via Writer, which is a Handler.
+        It can also be used to deep clone this value via GenericDocument, which is also a Handler.
+        \tparam Handler type of handler.
+        \param handler An object implementing concept Handler.
+    */
+    template <typename Handler>
+    bool Accept(Handler& handler) const {
+        switch(GetType()) {
+        case kNullType:     return handler.Null();
+        case kFalseType:    return handler.Bool(false);
+        case kTrueType:     return handler.Bool(true);
+
+        case kObjectType:
+            if (RAPIDJSON_UNLIKELY(!handler.StartObject()))
+                return false;
+            for (ConstMemberIterator m = MemberBegin(); m != MemberEnd(); ++m) {
+                RAPIDJSON_ASSERT(m->name.IsString()); // User may change the type of name by MemberIterator.
+                if (RAPIDJSON_UNLIKELY(!handler.Key(m->name.GetString(), m->name.GetStringLength(), (m->name.data_.f.flags & kCopyFlag) != 0)))
+                    return false;
+                if (RAPIDJSON_UNLIKELY(!m->value.Accept(handler)))
+                    return false;
+            }
+            return handler.EndObject(data_.o.size);
+
+        case kArrayType:
+            if (RAPIDJSON_UNLIKELY(!handler.StartArray()))
+                return false;
+            for (const GenericValue* v = Begin(); v != End(); ++v)
+                if (RAPIDJSON_UNLIKELY(!v->Accept(handler)))
+                    return false;
+            return handler.EndArray(data_.a.size);
+    
+        case kStringType:
+            return handler.String(GetString(), GetStringLength(), (data_.f.flags & kCopyFlag) != 0);
+    
+        default:
+            RAPIDJSON_ASSERT(GetType() == kNumberType);
+            if (IsDouble())         return handler.Double(data_.n.d);
+            else if (IsInt())       return handler.Int(data_.n.i.i);
+            else if (IsUint())      return handler.Uint(data_.n.u.u);
+            else if (IsInt64())     return handler.Int64(data_.n.i64);
+            else                    return handler.Uint64(data_.n.u64);
+        }
+    }
+
+private:
+    template <typename, typename> friend class GenericValue;
+    template <typename, typename, typename> friend class GenericDocument;
+
+    enum {
+        kBoolFlag       = 0x0008,
+        kNumberFlag     = 0x0010,
+        kIntFlag        = 0x0020,
+        kUintFlag       = 0x0040,
+        kInt64Flag      = 0x0080,
+        kUint64Flag     = 0x0100,
+        kDoubleFlag     = 0x0200,
+        kStringFlag     = 0x0400,
+        kCopyFlag       = 0x0800,
+        kInlineStrFlag  = 0x1000,
+
+        // Initial flags of different types.
+        kNullFlag = kNullType,
+        kTrueFlag = kTrueType | kBoolFlag,
+        kFalseFlag = kFalseType | kBoolFlag,
+        kNumberIntFlag = kNumberType | kNumberFlag | kIntFlag | kInt64Flag,
+        kNumberUintFlag = kNumberType | kNumberFlag | kUintFlag | kUint64Flag | kInt64Flag,
+        kNumberInt64Flag = kNumberType | kNumberFlag | kInt64Flag,
+        kNumberUint64Flag = kNumberType | kNumberFlag | kUint64Flag,
+        kNumberDoubleFlag = kNumberType | kNumberFlag | kDoubleFlag,
+        kNumberAnyFlag = kNumberType | kNumberFlag | kIntFlag | kInt64Flag | kUintFlag | kUint64Fla
