@@ -1925,4 +1925,101 @@ private:
         kNumberInt64Flag = kNumberType | kNumberFlag | kInt64Flag,
         kNumberUint64Flag = kNumberType | kNumberFlag | kUint64Flag,
         kNumberDoubleFlag = kNumberType | kNumberFlag | kDoubleFlag,
-        kNumberAnyFlag = kNumberType | kNumberFlag | kIntFlag | kInt64Flag | kUintFlag | kUint64Fla
+        kNumberAnyFlag = kNumberType | kNumberFlag | kIntFlag | kInt64Flag | kUintFlag | kUint64Flag | kDoubleFlag,
+        kConstStringFlag = kStringType | kStringFlag,
+        kCopyStringFlag = kStringType | kStringFlag | kCopyFlag,
+        kShortStringFlag = kStringType | kStringFlag | kCopyFlag | kInlineStrFlag,
+        kObjectFlag = kObjectType,
+        kArrayFlag = kArrayType,
+
+        kTypeMask = 0x07
+    };
+
+    static const SizeType kDefaultArrayCapacity = 16;
+    static const SizeType kDefaultObjectCapacity = 16;
+
+    struct Flag {
+#if RAPIDJSON_48BITPOINTER_OPTIMIZATION
+        char payload[sizeof(SizeType) * 2 + 6];     // 2 x SizeType + lower 48-bit pointer
+#elif RAPIDJSON_64BIT
+        char payload[sizeof(SizeType) * 2 + sizeof(void*) + 6]; // 6 padding bytes
+#else
+        char payload[sizeof(SizeType) * 2 + sizeof(void*) + 2]; // 2 padding bytes
+#endif
+        uint16_t flags;
+    };
+
+    struct String {
+        SizeType length;
+        SizeType hashcode;  //!< reserved
+        const Ch* str;
+    };  // 12 bytes in 32-bit mode, 16 bytes in 64-bit mode
+
+    // implementation detail: ShortString can represent zero-terminated strings up to MaxSize chars
+    // (excluding the terminating zero) and store a value to determine the length of the contained
+    // string in the last character str[LenPos] by storing "MaxSize - length" there. If the string
+    // to store has the maximal length of MaxSize then str[LenPos] will be 0 and therefore act as
+    // the string terminator as well. For getting the string length back from that value just use
+    // "MaxSize - str[LenPos]".
+    // This allows to store 13-chars strings in 32-bit mode, 21-chars strings in 64-bit mode,
+    // 13-chars strings for RAPIDJSON_48BITPOINTER_OPTIMIZATION=1 inline (for `UTF8`-encoded strings).
+    struct ShortString {
+        enum { MaxChars = sizeof(static_cast<Flag*>(0)->payload) / sizeof(Ch), MaxSize = MaxChars - 1, LenPos = MaxSize };
+        Ch str[MaxChars];
+
+        inline static bool Usable(SizeType len) { return                       (MaxSize >= len); }
+        inline void     SetLength(SizeType len) { str[LenPos] = static_cast<Ch>(MaxSize -  len); }
+        inline SizeType GetLength() const       { return  static_cast<SizeType>(MaxSize -  str[LenPos]); }
+    };  // at most as many bytes as "String" above => 12 bytes in 32-bit mode, 16 bytes in 64-bit mode
+
+    // By using proper binary layout, retrieval of different integer types do not need conversions.
+    union Number {
+#if RAPIDJSON_ENDIAN == RAPIDJSON_LITTLEENDIAN
+        struct I {
+            int i;
+            char padding[4];
+        }i;
+        struct U {
+            unsigned u;
+            char padding2[4];
+        }u;
+#else
+        struct I {
+            char padding[4];
+            int i;
+        }i;
+        struct U {
+            char padding2[4];
+            unsigned u;
+        }u;
+#endif
+        int64_t i64;
+        uint64_t u64;
+        double d;
+    };  // 8 bytes
+
+    struct ObjectData {
+        SizeType size;
+        SizeType capacity;
+        Member* members;
+    };  // 12 bytes in 32-bit mode, 16 bytes in 64-bit mode
+
+    struct ArrayData {
+        SizeType size;
+        SizeType capacity;
+        GenericValue* elements;
+    };  // 12 bytes in 32-bit mode, 16 bytes in 64-bit mode
+
+    union Data {
+        String s;
+        ShortString ss;
+        Number n;
+        ObjectData o;
+        ArrayData a;
+        Flag f;
+    };  // 16 bytes in 32-bit mode, 24 bytes in 64-bit mode, 16 bytes in 64-bit with RAPIDJSON_48BITPOINTER_OPTIMIZATION
+
+    RAPIDJSON_FORCEINLINE const Ch* GetStringPointer() const { return RAPIDJSON_GETPOINTER(Ch, data_.s.str); }
+    RAPIDJSON_FORCEINLINE const Ch* SetStringPointer(const Ch* str) { return RAPIDJSON_SETPOINTER(Ch, data_.s.str, str); }
+    RAPIDJSON_FORCEINLINE GenericValue* GetElementsPointer() const { return RAPIDJSON_GETPOINTER(GenericValue, data_.a.elements); }
+    RAPIDJSON_FORCEINL
