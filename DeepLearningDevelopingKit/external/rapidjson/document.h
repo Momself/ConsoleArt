@@ -2022,4 +2022,104 @@ private:
     RAPIDJSON_FORCEINLINE const Ch* GetStringPointer() const { return RAPIDJSON_GETPOINTER(Ch, data_.s.str); }
     RAPIDJSON_FORCEINLINE const Ch* SetStringPointer(const Ch* str) { return RAPIDJSON_SETPOINTER(Ch, data_.s.str, str); }
     RAPIDJSON_FORCEINLINE GenericValue* GetElementsPointer() const { return RAPIDJSON_GETPOINTER(GenericValue, data_.a.elements); }
-    RAPIDJSON_FORCEINL
+    RAPIDJSON_FORCEINLINE GenericValue* SetElementsPointer(GenericValue* elements) { return RAPIDJSON_SETPOINTER(GenericValue, data_.a.elements, elements); }
+    RAPIDJSON_FORCEINLINE Member* GetMembersPointer() const { return RAPIDJSON_GETPOINTER(Member, data_.o.members); }
+    RAPIDJSON_FORCEINLINE Member* SetMembersPointer(Member* members) { return RAPIDJSON_SETPOINTER(Member, data_.o.members, members); }
+
+    // Initialize this value as array with initial data, without calling destructor.
+    void SetArrayRaw(GenericValue* values, SizeType count, Allocator& allocator) {
+        data_.f.flags = kArrayFlag;
+        if (count) {
+            GenericValue* e = static_cast<GenericValue*>(allocator.Malloc(count * sizeof(GenericValue)));
+            SetElementsPointer(e);
+RAPIDJSON_DIAG_PUSH
+#if defined(__GNUC__) && __GNUC__ >= 8
+RAPIDJSON_DIAG_OFF(class-memaccess) // ignore complains from gcc that no trivial copy constructor exists.
+#endif
+            std::memcpy(e, values, count * sizeof(GenericValue));
+RAPIDJSON_DIAG_POP
+        }
+        else
+            SetElementsPointer(0);
+        data_.a.size = data_.a.capacity = count;
+    }
+
+    //! Initialize this value as object with initial data, without calling destructor.
+    void SetObjectRaw(Member* members, SizeType count, Allocator& allocator) {
+        data_.f.flags = kObjectFlag;
+        if (count) {
+            Member* m = static_cast<Member*>(allocator.Malloc(count * sizeof(Member)));
+            SetMembersPointer(m);
+RAPIDJSON_DIAG_PUSH
+#if defined(__GNUC__) && __GNUC__ >= 8
+RAPIDJSON_DIAG_OFF(class-memaccess) // ignore complains from gcc that no trivial copy constructor exists.
+#endif
+            std::memcpy(m, members, count * sizeof(Member));
+RAPIDJSON_DIAG_POP
+        }
+        else
+            SetMembersPointer(0);
+        data_.o.size = data_.o.capacity = count;
+    }
+
+    //! Initialize this value as constant string, without calling destructor.
+    void SetStringRaw(StringRefType s) RAPIDJSON_NOEXCEPT {
+        data_.f.flags = kConstStringFlag;
+        SetStringPointer(s);
+        data_.s.length = s.length;
+    }
+
+    //! Initialize this value as copy string with initial data, without calling destructor.
+    void SetStringRaw(StringRefType s, Allocator& allocator) {
+        Ch* str = 0;
+        if (ShortString::Usable(s.length)) {
+            data_.f.flags = kShortStringFlag;
+            data_.ss.SetLength(s.length);
+            str = data_.ss.str;
+        } else {
+            data_.f.flags = kCopyStringFlag;
+            data_.s.length = s.length;
+            str = static_cast<Ch *>(allocator.Malloc((s.length + 1) * sizeof(Ch)));
+            SetStringPointer(str);
+        }
+        std::memcpy(str, s, s.length * sizeof(Ch));
+        str[s.length] = '\0';
+    }
+
+    //! Assignment without calling destructor
+    void RawAssign(GenericValue& rhs) RAPIDJSON_NOEXCEPT {
+        data_ = rhs.data_;
+        // data_.f.flags = rhs.data_.f.flags;
+        rhs.data_.f.flags = kNullFlag;
+    }
+
+    template <typename SourceAllocator>
+    bool StringEqual(const GenericValue<Encoding, SourceAllocator>& rhs) const {
+        RAPIDJSON_ASSERT(IsString());
+        RAPIDJSON_ASSERT(rhs.IsString());
+
+        const SizeType len1 = GetStringLength();
+        const SizeType len2 = rhs.GetStringLength();
+        if(len1 != len2) { return false; }
+
+        const Ch* const str1 = GetString();
+        const Ch* const str2 = rhs.GetString();
+        if(str1 == str2) { return true; } // fast path for constant string
+
+        return (std::memcmp(str1, str2, sizeof(Ch) * len1) == 0);
+    }
+
+    Data data_;
+};
+
+//! GenericValue with UTF8 encoding
+typedef GenericValue<UTF8<> > Value;
+
+///////////////////////////////////////////////////////////////////////////////
+// GenericDocument 
+
+//! A document for parsing JSON text as DOM.
+/*!
+    \note implements Handler concept
+    \tparam Encoding Encoding for both parsing and string storage.
+    \tparam Allocator Allocator for all
