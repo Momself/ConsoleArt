@@ -2211,4 +2211,103 @@ public:
     */
     GenericDocument& Swap(GenericDocument& rhs) RAPIDJSON_NOEXCEPT {
         ValueType::Swap(rhs);
-        stack_.Swap(rhs
+        stack_.Swap(rhs.stack_);
+        internal::Swap(allocator_, rhs.allocator_);
+        internal::Swap(ownAllocator_, rhs.ownAllocator_);
+        internal::Swap(parseResult_, rhs.parseResult_);
+        return *this;
+    }
+
+    // Allow Swap with ValueType.
+    // Refer to Effective C++ 3rd Edition/Item 33: Avoid hiding inherited names.
+    using ValueType::Swap;
+
+    //! free-standing swap function helper
+    /*!
+        Helper function to enable support for common swap implementation pattern based on \c std::swap:
+        \code
+        void swap(MyClass& a, MyClass& b) {
+            using std::swap;
+            swap(a.doc, b.doc);
+            // ...
+        }
+        \endcode
+        \see Swap()
+     */
+    friend inline void swap(GenericDocument& a, GenericDocument& b) RAPIDJSON_NOEXCEPT { a.Swap(b); }
+
+    //! Populate this document by a generator which produces SAX events.
+    /*! \tparam Generator A functor with <tt>bool f(Handler)</tt> prototype.
+        \param g Generator functor which sends SAX events to the parameter.
+        \return The document itself for fluent API.
+    */
+    template <typename Generator>
+    GenericDocument& Populate(Generator& g) {
+        ClearStackOnExit scope(*this);
+        if (g(*this)) {
+            RAPIDJSON_ASSERT(stack_.GetSize() == sizeof(ValueType)); // Got one and only one root object
+            ValueType::operator=(*stack_.template Pop<ValueType>(1));// Move value from stack to document
+        }
+        return *this;
+    }
+
+    //!@name Parse from stream
+    //!@{
+
+    //! Parse JSON text from an input stream (with Encoding conversion)
+    /*! \tparam parseFlags Combination of \ref ParseFlag.
+        \tparam SourceEncoding Encoding of input stream
+        \tparam InputStream Type of input stream, implementing Stream concept
+        \param is Input stream to be parsed.
+        \return The document itself for fluent API.
+    */
+    template <unsigned parseFlags, typename SourceEncoding, typename InputStream>
+    GenericDocument& ParseStream(InputStream& is) {
+        GenericReader<SourceEncoding, Encoding, StackAllocator> reader(
+            stack_.HasAllocator() ? &stack_.GetAllocator() : 0);
+        ClearStackOnExit scope(*this);
+        parseResult_ = reader.template Parse<parseFlags>(is, *this);
+        if (parseResult_) {
+            RAPIDJSON_ASSERT(stack_.GetSize() == sizeof(ValueType)); // Got one and only one root object
+            ValueType::operator=(*stack_.template Pop<ValueType>(1));// Move value from stack to document
+        }
+        return *this;
+    }
+
+    //! Parse JSON text from an input stream
+    /*! \tparam parseFlags Combination of \ref ParseFlag.
+        \tparam InputStream Type of input stream, implementing Stream concept
+        \param is Input stream to be parsed.
+        \return The document itself for fluent API.
+    */
+    template <unsigned parseFlags, typename InputStream>
+    GenericDocument& ParseStream(InputStream& is) {
+        return ParseStream<parseFlags, Encoding, InputStream>(is);
+    }
+
+    //! Parse JSON text from an input stream (with \ref kParseDefaultFlags)
+    /*! \tparam InputStream Type of input stream, implementing Stream concept
+        \param is Input stream to be parsed.
+        \return The document itself for fluent API.
+    */
+    template <typename InputStream>
+    GenericDocument& ParseStream(InputStream& is) {
+        return ParseStream<kParseDefaultFlags, Encoding, InputStream>(is);
+    }
+    //!@}
+
+    //!@name Parse in-place from mutable string
+    //!@{
+
+    //! Parse JSON text from a mutable string
+    /*! \tparam parseFlags Combination of \ref ParseFlag.
+        \param str Mutable zero-terminated string to be parsed.
+        \return The document itself for fluent API.
+    */
+    template <unsigned parseFlags>
+    GenericDocument& ParseInsitu(Ch* str) {
+        GenericInsituStringStream<Encoding> s(str);
+        return ParseStream<parseFlags | kParseInsituFlag>(s);
+    }
+
+    //! Parse JSON text from a mutable string (with 
