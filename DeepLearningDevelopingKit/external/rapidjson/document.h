@@ -2412,4 +2412,101 @@ public:
      */
 #endif
     operator ParseResult() const { return parseResult_; }
+    //!@}
+
+    //! Get the allocator of this document.
+    Allocator& GetAllocator() {
+        RAPIDJSON_ASSERT(allocator_);
+        return *allocator_;
+    }
+
+    //! Get the capacity of stack in bytes.
+    size_t GetStackCapacity() const { return stack_.GetCapacity(); }
+
+private:
+    // clear stack on any exit from ParseStream, e.g. due to exception
+    struct ClearStackOnExit {
+        explicit ClearStackOnExit(GenericDocument& d) : d_(d) {}
+        ~ClearStackOnExit() { d_.ClearStack(); }
+    private:
+        ClearStackOnExit(const ClearStackOnExit&);
+        ClearStackOnExit& operator=(const ClearStackOnExit&);
+        GenericDocument& d_;
+    };
+
+    // callers of the following private Handler functions
+    // template <typename,typename,typename> friend class GenericReader; // for parsing
+    template <typename, typename> friend class GenericValue; // for deep copying
+
+public:
+    // Implementation of Handler
+    bool Null() { new (stack_.template Push<ValueType>()) ValueType(); return true; }
+    bool Bool(bool b) { new (stack_.template Push<ValueType>()) ValueType(b); return true; }
+    bool Int(int i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
+    bool Uint(unsigned i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
+    bool Int64(int64_t i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
+    bool Uint64(uint64_t i) { new (stack_.template Push<ValueType>()) ValueType(i); return true; }
+    bool Double(double d) { new (stack_.template Push<ValueType>()) ValueType(d); return true; }
+
+    bool RawNumber(const Ch* str, SizeType length, bool copy) { 
+        if (copy) 
+            new (stack_.template Push<ValueType>()) ValueType(str, length, GetAllocator());
+        else
+            new (stack_.template Push<ValueType>()) ValueType(str, length);
+        return true;
+    }
+
+    bool String(const Ch* str, SizeType length, bool copy) { 
+        if (copy) 
+            new (stack_.template Push<ValueType>()) ValueType(str, length, GetAllocator());
+        else
+            new (stack_.template Push<ValueType>()) ValueType(str, length);
+        return true;
+    }
+
+    bool StartObject() { new (stack_.template Push<ValueType>()) ValueType(kObjectType); return true; }
     
+    bool Key(const Ch* str, SizeType length, bool copy) { return String(str, length, copy); }
+
+    bool EndObject(SizeType memberCount) {
+        typename ValueType::Member* members = stack_.template Pop<typename ValueType::Member>(memberCount);
+        stack_.template Top<ValueType>()->SetObjectRaw(members, memberCount, GetAllocator());
+        return true;
+    }
+
+    bool StartArray() { new (stack_.template Push<ValueType>()) ValueType(kArrayType); return true; }
+    
+    bool EndArray(SizeType elementCount) {
+        ValueType* elements = stack_.template Pop<ValueType>(elementCount);
+        stack_.template Top<ValueType>()->SetArrayRaw(elements, elementCount, GetAllocator());
+        return true;
+    }
+
+private:
+    //! Prohibit copying
+    GenericDocument(const GenericDocument&);
+    //! Prohibit assignment
+    GenericDocument& operator=(const GenericDocument&);
+
+    void ClearStack() {
+        if (Allocator::kNeedFree)
+            while (stack_.GetSize() > 0)    // Here assumes all elements in stack array are GenericValue (Member is actually 2 GenericValue objects)
+                (stack_.template Pop<ValueType>(1))->~ValueType();
+        else
+            stack_.Clear();
+        stack_.ShrinkToFit();
+    }
+
+    void Destroy() {
+        RAPIDJSON_DELETE(ownAllocator_);
+    }
+
+    static const size_t kDefaultStackCapacity = 1024;
+    Allocator* allocator_;
+    Allocator* ownAllocator_;
+    internal::Stack<StackAllocator> stack_;
+    ParseResult parseResult_;
+};
+
+//! GenericDocument with UTF8 encoding
+typedef GenericDocume
