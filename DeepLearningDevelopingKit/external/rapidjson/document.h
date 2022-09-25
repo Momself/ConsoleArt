@@ -2509,4 +2509,78 @@ private:
 };
 
 //! GenericDocument with UTF8 encoding
-typedef GenericDocume
+typedef GenericDocument<UTF8<> > Document;
+
+//! Helper class for accessing Value of array type.
+/*!
+    Instance of this helper class is obtained by \c GenericValue::GetArray().
+    In addition to all APIs for array type, it provides range-based for loop if \c RAPIDJSON_HAS_CXX11_RANGE_FOR=1.
+*/
+template <bool Const, typename ValueT>
+class GenericArray {
+public:
+    typedef GenericArray<true, ValueT> ConstArray;
+    typedef GenericArray<false, ValueT> Array;
+    typedef ValueT PlainType;
+    typedef typename internal::MaybeAddConst<Const,PlainType>::Type ValueType;
+    typedef ValueType* ValueIterator;  // This may be const or non-const iterator
+    typedef const ValueT* ConstValueIterator;
+    typedef typename ValueType::AllocatorType AllocatorType;
+    typedef typename ValueType::StringRefType StringRefType;
+
+    template <typename, typename>
+    friend class GenericValue;
+
+    GenericArray(const GenericArray& rhs) : value_(rhs.value_) {}
+    GenericArray& operator=(const GenericArray& rhs) { value_ = rhs.value_; return *this; }
+    ~GenericArray() {}
+
+    SizeType Size() const { return value_.Size(); }
+    SizeType Capacity() const { return value_.Capacity(); }
+    bool Empty() const { return value_.Empty(); }
+    void Clear() const { value_.Clear(); }
+    ValueType& operator[](SizeType index) const {  return value_[index]; }
+    ValueIterator Begin() const { return value_.Begin(); }
+    ValueIterator End() const { return value_.End(); }
+    GenericArray Reserve(SizeType newCapacity, AllocatorType &allocator) const { value_.Reserve(newCapacity, allocator); return *this; }
+    GenericArray PushBack(ValueType& value, AllocatorType& allocator) const { value_.PushBack(value, allocator); return *this; }
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    GenericArray PushBack(ValueType&& value, AllocatorType& allocator) const { value_.PushBack(value, allocator); return *this; }
+#endif // RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    GenericArray PushBack(StringRefType value, AllocatorType& allocator) const { value_.PushBack(value, allocator); return *this; }
+    template <typename T> RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (const GenericArray&)) PushBack(T value, AllocatorType& allocator) const { value_.PushBack(value, allocator); return *this; }
+    GenericArray PopBack() const { value_.PopBack(); return *this; }
+    ValueIterator Erase(ConstValueIterator pos) const { return value_.Erase(pos); }
+    ValueIterator Erase(ConstValueIterator first, ConstValueIterator last) const { return value_.Erase(first, last); }
+
+#if RAPIDJSON_HAS_CXX11_RANGE_FOR
+    ValueIterator begin() const { return value_.Begin(); }
+    ValueIterator end() const { return value_.End(); }
+#endif
+
+private:
+    GenericArray();
+    GenericArray(ValueType& value) : value_(value) {}
+    ValueType& value_;
+};
+
+//! Helper class for accessing Value of object type.
+/*!
+    Instance of this helper class is obtained by \c GenericValue::GetObject().
+    In addition to all APIs for array type, it provides range-based for loop if \c RAPIDJSON_HAS_CXX11_RANGE_FOR=1.
+*/
+template <bool Const, typename ValueT>
+class GenericObject {
+public:
+    typedef GenericObject<true, ValueT> ConstObject;
+    typedef GenericObject<false, ValueT> Object;
+    typedef ValueT PlainType;
+    typedef typename internal::MaybeAddConst<Const,PlainType>::Type ValueType;
+    typedef GenericMemberIterator<Const, typename ValueT::EncodingType, typename ValueT::AllocatorType> MemberIterator;  // This may be const or non-const iterator
+    typedef GenericMemberIterator<true, typename ValueT::EncodingType, typename ValueT::AllocatorType> ConstMemberIterator;
+    typedef typename ValueType::AllocatorType AllocatorType;
+    typedef typename ValueType::StringRefType StringRefType;
+    typedef typename ValueType::EncodingType EncodingType;
+    typedef typename ValueType::Ch Ch;
+
+    template <type
