@@ -2310,4 +2310,106 @@ public:
         return ParseStream<parseFlags | kParseInsituFlag>(s);
     }
 
-    //! Parse JSON text from a mutable string (with 
+    //! Parse JSON text from a mutable string (with \ref kParseDefaultFlags)
+    /*! \param str Mutable zero-terminated string to be parsed.
+        \return The document itself for fluent API.
+    */
+    GenericDocument& ParseInsitu(Ch* str) {
+        return ParseInsitu<kParseDefaultFlags>(str);
+    }
+    //!@}
+
+    //!@name Parse from read-only string
+    //!@{
+
+    //! Parse JSON text from a read-only string (with Encoding conversion)
+    /*! \tparam parseFlags Combination of \ref ParseFlag (must not contain \ref kParseInsituFlag).
+        \tparam SourceEncoding Transcoding from input Encoding
+        \param str Read-only zero-terminated string to be parsed.
+    */
+    template <unsigned parseFlags, typename SourceEncoding>
+    GenericDocument& Parse(const typename SourceEncoding::Ch* str) {
+        RAPIDJSON_ASSERT(!(parseFlags & kParseInsituFlag));
+        GenericStringStream<SourceEncoding> s(str);
+        return ParseStream<parseFlags, SourceEncoding>(s);
+    }
+
+    //! Parse JSON text from a read-only string
+    /*! \tparam parseFlags Combination of \ref ParseFlag (must not contain \ref kParseInsituFlag).
+        \param str Read-only zero-terminated string to be parsed.
+    */
+    template <unsigned parseFlags>
+    GenericDocument& Parse(const Ch* str) {
+        return Parse<parseFlags, Encoding>(str);
+    }
+
+    //! Parse JSON text from a read-only string (with \ref kParseDefaultFlags)
+    /*! \param str Read-only zero-terminated string to be parsed.
+    */
+    GenericDocument& Parse(const Ch* str) {
+        return Parse<kParseDefaultFlags>(str);
+    }
+
+    template <unsigned parseFlags, typename SourceEncoding>
+    GenericDocument& Parse(const typename SourceEncoding::Ch* str, size_t length) {
+        RAPIDJSON_ASSERT(!(parseFlags & kParseInsituFlag));
+        MemoryStream ms(reinterpret_cast<const char*>(str), length * sizeof(typename SourceEncoding::Ch));
+        EncodedInputStream<SourceEncoding, MemoryStream> is(ms);
+        ParseStream<parseFlags, SourceEncoding>(is);
+        return *this;
+    }
+
+    template <unsigned parseFlags>
+    GenericDocument& Parse(const Ch* str, size_t length) {
+        return Parse<parseFlags, Encoding>(str, length);
+    }
+    
+    GenericDocument& Parse(const Ch* str, size_t length) {
+        return Parse<kParseDefaultFlags>(str, length);
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    template <unsigned parseFlags, typename SourceEncoding>
+    GenericDocument& Parse(const std::basic_string<typename SourceEncoding::Ch>& str) {
+        // c_str() is constant complexity according to standard. Should be faster than Parse(const char*, size_t)
+        return Parse<parseFlags, SourceEncoding>(str.c_str());
+    }
+
+    template <unsigned parseFlags>
+    GenericDocument& Parse(const std::basic_string<Ch>& str) {
+        return Parse<parseFlags, Encoding>(str.c_str());
+    }
+
+    GenericDocument& Parse(const std::basic_string<Ch>& str) {
+        return Parse<kParseDefaultFlags>(str);
+    }
+#endif // RAPIDJSON_HAS_STDSTRING    
+
+    //!@}
+
+    //!@name Handling parse errors
+    //!@{
+
+    //! Whether a parse error has occurred in the last parsing.
+    bool HasParseError() const { return parseResult_.IsError(); }
+
+    //! Get the \ref ParseErrorCode of last parsing.
+    ParseErrorCode GetParseError() const { return parseResult_.Code(); }
+
+    //! Get the position of last parsing error in input, 0 otherwise.
+    size_t GetErrorOffset() const { return parseResult_.Offset(); }
+
+    //! Implicit conversion to get the last parse result
+#ifndef __clang // -Wdocumentation
+    /*! \return \ref ParseResult of the last parse operation
+
+        \code
+          Document doc;
+          ParseResult ok = doc.Parse(json);
+          if (!ok)
+            printf( "JSON parse error: %s (%u)\n", GetParseError_En(ok.Code()), ok.Offset());
+        \endcode
+     */
+#endif
+    operator ParseResult() const { return parseResult_; }
+    
