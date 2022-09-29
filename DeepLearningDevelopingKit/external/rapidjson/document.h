@@ -2583,4 +2583,47 @@ public:
     typedef typename ValueType::EncodingType EncodingType;
     typedef typename ValueType::Ch Ch;
 
-    template <type
+    template <typename, typename>
+    friend class GenericValue;
+
+    GenericObject(const GenericObject& rhs) : value_(rhs.value_) {}
+    GenericObject& operator=(const GenericObject& rhs) { value_ = rhs.value_; return *this; }
+    ~GenericObject() {}
+
+    SizeType MemberCount() const { return value_.MemberCount(); }
+    SizeType MemberCapacity() const { return value_.MemberCapacity(); }
+    bool ObjectEmpty() const { return value_.ObjectEmpty(); }
+    template <typename T> ValueType& operator[](T* name) const { return value_[name]; }
+    template <typename SourceAllocator> ValueType& operator[](const GenericValue<EncodingType, SourceAllocator>& name) const { return value_[name]; }
+#if RAPIDJSON_HAS_STDSTRING
+    ValueType& operator[](const std::basic_string<Ch>& name) const { return value_[name]; }
+#endif
+    MemberIterator MemberBegin() const { return value_.MemberBegin(); }
+    MemberIterator MemberEnd() const { return value_.MemberEnd(); }
+    GenericObject MemberReserve(SizeType newCapacity, AllocatorType &allocator) const { value_.MemberReserve(newCapacity, allocator); return *this; }
+    bool HasMember(const Ch* name) const { return value_.HasMember(name); }
+#if RAPIDJSON_HAS_STDSTRING
+    bool HasMember(const std::basic_string<Ch>& name) const { return value_.HasMember(name); }
+#endif
+    template <typename SourceAllocator> bool HasMember(const GenericValue<EncodingType, SourceAllocator>& name) const { return value_.HasMember(name); }
+    MemberIterator FindMember(const Ch* name) const { return value_.FindMember(name); }
+    template <typename SourceAllocator> MemberIterator FindMember(const GenericValue<EncodingType, SourceAllocator>& name) const { return value_.FindMember(name); }
+#if RAPIDJSON_HAS_STDSTRING
+    MemberIterator FindMember(const std::basic_string<Ch>& name) const { return value_.FindMember(name); }
+#endif
+    GenericObject AddMember(ValueType& name, ValueType& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+    GenericObject AddMember(ValueType& name, StringRefType value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+#if RAPIDJSON_HAS_STDSTRING
+    GenericObject AddMember(ValueType& name, std::basic_string<Ch>& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+#endif
+    template <typename T> RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (ValueType&)) AddMember(ValueType& name, T value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+#if RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    GenericObject AddMember(ValueType&& name, ValueType&& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+    GenericObject AddMember(ValueType&& name, ValueType& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+    GenericObject AddMember(ValueType& name, ValueType&& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+    GenericObject AddMember(StringRefType name, ValueType&& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+#endif // RAPIDJSON_HAS_CXX11_RVALUE_REFS
+    GenericObject AddMember(StringRefType name, ValueType& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+    GenericObject AddMember(StringRefType name, StringRefType value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+    template <typename T> RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (GenericObject)) AddMember(StringRefType name, T value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
+    void RemoveAllMembers() { value_.RemoveAllMembers()
