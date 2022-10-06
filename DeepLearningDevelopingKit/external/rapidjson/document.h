@@ -2626,4 +2626,33 @@ public:
     GenericObject AddMember(StringRefType name, ValueType& value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
     GenericObject AddMember(StringRefType name, StringRefType value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
     template <typename T> RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (GenericObject)) AddMember(StringRefType name, T value, AllocatorType& allocator) const { value_.AddMember(name, value, allocator); return *this; }
-    void RemoveAllMembers() { value_.RemoveAllMembers()
+    void RemoveAllMembers() { value_.RemoveAllMembers(); }
+    bool RemoveMember(const Ch* name) const { return value_.RemoveMember(name); }
+#if RAPIDJSON_HAS_STDSTRING
+    bool RemoveMember(const std::basic_string<Ch>& name) const { return value_.RemoveMember(name); }
+#endif
+    template <typename SourceAllocator> bool RemoveMember(const GenericValue<EncodingType, SourceAllocator>& name) const { return value_.RemoveMember(name); }
+    MemberIterator RemoveMember(MemberIterator m) const { return value_.RemoveMember(m); }
+    MemberIterator EraseMember(ConstMemberIterator pos) const { return value_.EraseMember(pos); }
+    MemberIterator EraseMember(ConstMemberIterator first, ConstMemberIterator last) const { return value_.EraseMember(first, last); }
+    bool EraseMember(const Ch* name) const { return value_.EraseMember(name); }
+#if RAPIDJSON_HAS_STDSTRING
+    bool EraseMember(const std::basic_string<Ch>& name) const { return EraseMember(ValueType(StringRef(name))); }
+#endif
+    template <typename SourceAllocator> bool EraseMember(const GenericValue<EncodingType, SourceAllocator>& name) const { return value_.EraseMember(name); }
+
+#if RAPIDJSON_HAS_CXX11_RANGE_FOR
+    MemberIterator begin() const { return value_.MemberBegin(); }
+    MemberIterator end() const { return value_.MemberEnd(); }
+#endif
+
+private:
+    GenericObject();
+    GenericObject(ValueType& value) : value_(value) {}
+    ValueType& value_;
+};
+
+RAPIDJSON_NAMESPACE_END
+RAPIDJSON_DIAG_POP
+
+#endif // RAPIDJSON_DOCUMENT_H_
