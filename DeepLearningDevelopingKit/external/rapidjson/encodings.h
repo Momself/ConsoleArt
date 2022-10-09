@@ -51,4 +51,100 @@ concept Encoding {
     //! \param is Input stream.
     //! \param codepoint Output of the unicode codepoint.
     //! \return true if a valid codepoint can be decoded from the stream.
-    template <typename Inp
+    template <typename InputStream>
+    static bool Decode(InputStream& is, unsigned* codepoint);
+
+    //! \brief Validate one Unicode codepoint from an encoded stream.
+    //! \param is Input stream to obtain codepoint.
+    //! \param os Output for copying one codepoint.
+    //! \return true if it is valid.
+    //! \note This function just validating and copying the codepoint without actually decode it.
+    template <typename InputStream, typename OutputStream>
+    static bool Validate(InputStream& is, OutputStream& os);
+
+    // The following functions are deal with byte streams.
+
+    //! Take a character from input byte stream, skip BOM if exist.
+    template <typename InputByteStream>
+    static CharType TakeBOM(InputByteStream& is);
+
+    //! Take a character from input byte stream.
+    template <typename InputByteStream>
+    static Ch Take(InputByteStream& is);
+
+    //! Put BOM to output byte stream.
+    template <typename OutputByteStream>
+    static void PutBOM(OutputByteStream& os);
+
+    //! Put a character to output byte stream.
+    template <typename OutputByteStream>
+    static void Put(OutputByteStream& os, Ch c);
+};
+\endcode
+*/
+
+///////////////////////////////////////////////////////////////////////////////
+// UTF8
+
+//! UTF-8 encoding.
+/*! http://en.wikipedia.org/wiki/UTF-8
+    http://tools.ietf.org/html/rfc3629
+    \tparam CharType Code unit for storing 8-bit UTF-8 data. Default is char.
+    \note implements Encoding concept
+*/
+template<typename CharType = char>
+struct UTF8 {
+    typedef CharType Ch;
+
+    enum { supportUnicode = 1 };
+
+    template<typename OutputStream>
+    static void Encode(OutputStream& os, unsigned codepoint) {
+        if (codepoint <= 0x7F) 
+            os.Put(static_cast<Ch>(codepoint & 0xFF));
+        else if (codepoint <= 0x7FF) {
+            os.Put(static_cast<Ch>(0xC0 | ((codepoint >> 6) & 0xFF)));
+            os.Put(static_cast<Ch>(0x80 | ((codepoint & 0x3F))));
+        }
+        else if (codepoint <= 0xFFFF) {
+            os.Put(static_cast<Ch>(0xE0 | ((codepoint >> 12) & 0xFF)));
+            os.Put(static_cast<Ch>(0x80 | ((codepoint >> 6) & 0x3F)));
+            os.Put(static_cast<Ch>(0x80 | (codepoint & 0x3F)));
+        }
+        else {
+            RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+            os.Put(static_cast<Ch>(0xF0 | ((codepoint >> 18) & 0xFF)));
+            os.Put(static_cast<Ch>(0x80 | ((codepoint >> 12) & 0x3F)));
+            os.Put(static_cast<Ch>(0x80 | ((codepoint >> 6) & 0x3F)));
+            os.Put(static_cast<Ch>(0x80 | (codepoint & 0x3F)));
+        }
+    }
+
+    template<typename OutputStream>
+    static void EncodeUnsafe(OutputStream& os, unsigned codepoint) {
+        if (codepoint <= 0x7F) 
+            PutUnsafe(os, static_cast<Ch>(codepoint & 0xFF));
+        else if (codepoint <= 0x7FF) {
+            PutUnsafe(os, static_cast<Ch>(0xC0 | ((codepoint >> 6) & 0xFF)));
+            PutUnsafe(os, static_cast<Ch>(0x80 | ((codepoint & 0x3F))));
+        }
+        else if (codepoint <= 0xFFFF) {
+            PutUnsafe(os, static_cast<Ch>(0xE0 | ((codepoint >> 12) & 0xFF)));
+            PutUnsafe(os, static_cast<Ch>(0x80 | ((codepoint >> 6) & 0x3F)));
+            PutUnsafe(os, static_cast<Ch>(0x80 | (codepoint & 0x3F)));
+        }
+        else {
+            RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+            PutUnsafe(os, static_cast<Ch>(0xF0 | ((codepoint >> 18) & 0xFF)));
+            PutUnsafe(os, static_cast<Ch>(0x80 | ((codepoint >> 12) & 0x3F)));
+            PutUnsafe(os, static_cast<Ch>(0x80 | ((codepoint >> 6) & 0x3F)));
+            PutUnsafe(os, static_cast<Ch>(0x80 | (codepoint & 0x3F)));
+        }
+    }
+
+    template <typename InputStream>
+    static bool Decode(InputStream& is, unsigned* codepoint) {
+#define COPY() c = is.Take(); *codepoint = (*codepoint << 6) | (static_cast<unsigned char>(c) & 0x3Fu)
+#define TRANS(mask) result &= ((GetRange(static_cast<unsigned char>(c)) & mask) != 0)
+#define TAIL() COPY(); TRANS(0x70)
+        typen
