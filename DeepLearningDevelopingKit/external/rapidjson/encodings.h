@@ -147,4 +147,97 @@ struct UTF8 {
 #define COPY() c = is.Take(); *codepoint = (*codepoint << 6) | (static_cast<unsigned char>(c) & 0x3Fu)
 #define TRANS(mask) result &= ((GetRange(static_cast<unsigned char>(c)) & mask) != 0)
 #define TAIL() COPY(); TRANS(0x70)
-        typen
+        typename InputStream::Ch c = is.Take();
+        if (!(c & 0x80)) {
+            *codepoint = static_cast<unsigned char>(c);
+            return true;
+        }
+
+        unsigned char type = GetRange(static_cast<unsigned char>(c));
+        if (type >= 32) {
+            *codepoint = 0;
+        } else {
+            *codepoint = (0xFFu >> type) & static_cast<unsigned char>(c);
+        }
+        bool result = true;
+        switch (type) {
+        case 2: TAIL(); return result;
+        case 3: TAIL(); TAIL(); return result;
+        case 4: COPY(); TRANS(0x50); TAIL(); return result;
+        case 5: COPY(); TRANS(0x10); TAIL(); TAIL(); return result;
+        case 6: TAIL(); TAIL(); TAIL(); return result;
+        case 10: COPY(); TRANS(0x20); TAIL(); return result;
+        case 11: COPY(); TRANS(0x60); TAIL(); TAIL(); return result;
+        default: return false;
+        }
+#undef COPY
+#undef TRANS
+#undef TAIL
+    }
+
+    template <typename InputStream, typename OutputStream>
+    static bool Validate(InputStream& is, OutputStream& os) {
+#define COPY() os.Put(c = is.Take())
+#define TRANS(mask) result &= ((GetRange(static_cast<unsigned char>(c)) & mask) != 0)
+#define TAIL() COPY(); TRANS(0x70)
+        Ch c;
+        COPY();
+        if (!(c & 0x80))
+            return true;
+
+        bool result = true;
+        switch (GetRange(static_cast<unsigned char>(c))) {
+        case 2: TAIL(); return result;
+        case 3: TAIL(); TAIL(); return result;
+        case 4: COPY(); TRANS(0x50); TAIL(); return result;
+        case 5: COPY(); TRANS(0x10); TAIL(); TAIL(); return result;
+        case 6: TAIL(); TAIL(); TAIL(); return result;
+        case 10: COPY(); TRANS(0x20); TAIL(); return result;
+        case 11: COPY(); TRANS(0x60); TAIL(); TAIL(); return result;
+        default: return false;
+        }
+#undef COPY
+#undef TRANS
+#undef TAIL
+    }
+
+    static unsigned char GetRange(unsigned char c) {
+        // Referring to DFA of http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
+        // With new mapping 1 -> 0x10, 7 -> 0x20, 9 -> 0x40, such that AND operation can test multiple types.
+        static const unsigned char type[] = {
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+            0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,0x10,
+            0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x40,
+            0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+            0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,
+            8,8,2,2,2,2,2,2,2,2,2,2,2,2,2,2,  2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+            10,3,3,3,3,3,3,3,3,3,3,3,3,4,3,3, 11,6,6,6,5,8,8,8,8,8,8,8,8,8,8,8,
+        };
+        return type[c];
+    }
+
+    template <typename InputByteStream>
+    static CharType TakeBOM(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        typename InputByteStream::Ch c = Take(is);
+        if (static_cast<unsigned char>(c) != 0xEFu) return c;
+        c = is.Take();
+        if (static_cast<unsigned char>(c) != 0xBBu) return c;
+        c = is.Take();
+        if (static_cast<unsigned char>(c) != 0xBFu) return c;
+        c = is.Take();
+        return c;
+    }
+
+    template <typename InputByteStream>
+    static Ch Take(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        return static_cast<Ch>(is.Take());
+    }
+
+    template <typename OutputByteStream>
+    static void PutBOM(OutputByteStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename Out
