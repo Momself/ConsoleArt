@@ -240,4 +240,102 @@ struct UTF8 {
 
     template <typename OutputByteStream>
     static void PutBOM(OutputByteStream& os) {
-        RAPIDJSON_STATIC_ASSERT(sizeof(typename Out
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xEFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xBBu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xBFu));
+    }
+
+    template <typename OutputByteStream>
+    static void Put(OutputByteStream& os, Ch c) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(c));
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// UTF16
+
+//! UTF-16 encoding.
+/*! http://en.wikipedia.org/wiki/UTF-16
+    http://tools.ietf.org/html/rfc2781
+    \tparam CharType Type for storing 16-bit UTF-16 data. Default is wchar_t. C++11 may use char16_t instead.
+    \note implements Encoding concept
+
+    \note For in-memory access, no need to concern endianness. The code units and code points are represented by CPU's endianness.
+    For streaming, use UTF16LE and UTF16BE, which handle endianness.
+*/
+template<typename CharType = wchar_t>
+struct UTF16 {
+    typedef CharType Ch;
+    RAPIDJSON_STATIC_ASSERT(sizeof(Ch) >= 2);
+
+    enum { supportUnicode = 1 };
+
+    template<typename OutputStream>
+    static void Encode(OutputStream& os, unsigned codepoint) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputStream::Ch) >= 2);
+        if (codepoint <= 0xFFFF) {
+            RAPIDJSON_ASSERT(codepoint < 0xD800 || codepoint > 0xDFFF); // Code point itself cannot be surrogate pair 
+            os.Put(static_cast<typename OutputStream::Ch>(codepoint));
+        }
+        else {
+            RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+            unsigned v = codepoint - 0x10000;
+            os.Put(static_cast<typename OutputStream::Ch>((v >> 10) | 0xD800));
+            os.Put(static_cast<typename OutputStream::Ch>((v & 0x3FF) | 0xDC00));
+        }
+    }
+
+
+    template<typename OutputStream>
+    static void EncodeUnsafe(OutputStream& os, unsigned codepoint) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputStream::Ch) >= 2);
+        if (codepoint <= 0xFFFF) {
+            RAPIDJSON_ASSERT(codepoint < 0xD800 || codepoint > 0xDFFF); // Code point itself cannot be surrogate pair 
+            PutUnsafe(os, static_cast<typename OutputStream::Ch>(codepoint));
+        }
+        else {
+            RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+            unsigned v = codepoint - 0x10000;
+            PutUnsafe(os, static_cast<typename OutputStream::Ch>((v >> 10) | 0xD800));
+            PutUnsafe(os, static_cast<typename OutputStream::Ch>((v & 0x3FF) | 0xDC00));
+        }
+    }
+
+    template <typename InputStream>
+    static bool Decode(InputStream& is, unsigned* codepoint) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputStream::Ch) >= 2);
+        typename InputStream::Ch c = is.Take();
+        if (c < 0xD800 || c > 0xDFFF) {
+            *codepoint = static_cast<unsigned>(c);
+            return true;
+        }
+        else if (c <= 0xDBFF) {
+            *codepoint = (static_cast<unsigned>(c) & 0x3FF) << 10;
+            c = is.Take();
+            *codepoint |= (static_cast<unsigned>(c) & 0x3FF);
+            *codepoint += 0x10000;
+            return c >= 0xDC00 && c <= 0xDFFF;
+        }
+        return false;
+    }
+
+    template <typename InputStream, typename OutputStream>
+    static bool Validate(InputStream& is, OutputStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputStream::Ch) >= 2);
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputStream::Ch) >= 2);
+        typename InputStream::Ch c;
+        os.Put(static_cast<typename OutputStream::Ch>(c = is.Take()));
+        if (c < 0xD800 || c > 0xDFFF)
+            return true;
+        else if (c <= 0xDBFF) {
+            os.Put(c = is.Take());
+            return c >= 0xDC00 && c <= 0xDFFF;
+        }
+        return false;
+    }
+};
+
+//! UTF-16 little endian encoding.
+template<typename CharT
