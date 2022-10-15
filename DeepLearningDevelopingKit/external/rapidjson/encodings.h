@@ -430,4 +430,95 @@ struct UTF32 {
 
     template<typename OutputStream>
     static void EncodeUnsafe(OutputStream& os, unsigned codepoint) {
-        RAPIDJSON_STATIC_ASSERT(si
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputStream::Ch) >= 4);
+        RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+        PutUnsafe(os, codepoint);
+    }
+
+    template <typename InputStream>
+    static bool Decode(InputStream& is, unsigned* codepoint) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputStream::Ch) >= 4);
+        Ch c = is.Take();
+        *codepoint = c;
+        return c <= 0x10FFFF;
+    }
+
+    template <typename InputStream, typename OutputStream>
+    static bool Validate(InputStream& is, OutputStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputStream::Ch) >= 4);
+        Ch c;
+        os.Put(c = is.Take());
+        return c <= 0x10FFFF;
+    }
+};
+
+//! UTF-32 little endian enocoding.
+template<typename CharType = unsigned>
+struct UTF32LE : UTF32<CharType> {
+    template <typename InputByteStream>
+    static CharType TakeBOM(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        CharType c = Take(is);
+        return static_cast<uint32_t>(c) == 0x0000FEFFu ? Take(is) : c;
+    }
+
+    template <typename InputByteStream>
+    static CharType Take(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        unsigned c = static_cast<uint8_t>(is.Take());
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 8;
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 16;
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 24;
+        return static_cast<CharType>(c);
+    }
+
+    template <typename OutputByteStream>
+    static void PutBOM(OutputByteStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFEu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0x00u));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0x00u));
+    }
+
+    template <typename OutputByteStream>
+    static void Put(OutputByteStream& os, CharType c) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(c & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>((c >> 8) & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>((c >> 16) & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>((c >> 24) & 0xFFu));
+    }
+};
+
+//! UTF-32 big endian encoding.
+template<typename CharType = unsigned>
+struct UTF32BE : UTF32<CharType> {
+    template <typename InputByteStream>
+    static CharType TakeBOM(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        CharType c = Take(is);
+        return static_cast<uint32_t>(c) == 0x0000FEFFu ? Take(is) : c; 
+    }
+
+    template <typename InputByteStream>
+    static CharType Take(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        unsigned c = static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 24;
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 16;
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 8;
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take()));
+        return static_cast<CharType>(c);
+    }
+
+    template <typename OutputByteStream>
+    static void PutBOM(OutputByteStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(0x00u));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0x00u));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFEu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFFu));
+    }
+
+    template <typename OutputByteStream>
+    s
