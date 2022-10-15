@@ -338,4 +338,96 @@ struct UTF16 {
 };
 
 //! UTF-16 little endian encoding.
-template<typename CharT
+template<typename CharType = wchar_t>
+struct UTF16LE : UTF16<CharType> {
+    template <typename InputByteStream>
+    static CharType TakeBOM(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        CharType c = Take(is);
+        return static_cast<uint16_t>(c) == 0xFEFFu ? Take(is) : c;
+    }
+
+    template <typename InputByteStream>
+    static CharType Take(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        unsigned c = static_cast<uint8_t>(is.Take());
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 8;
+        return static_cast<CharType>(c);
+    }
+
+    template <typename OutputByteStream>
+    static void PutBOM(OutputByteStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFEu));
+    }
+
+    template <typename OutputByteStream>
+    static void Put(OutputByteStream& os, CharType c) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(static_cast<unsigned>(c) & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>((static_cast<unsigned>(c) >> 8) & 0xFFu));
+    }
+};
+
+//! UTF-16 big endian encoding.
+template<typename CharType = wchar_t>
+struct UTF16BE : UTF16<CharType> {
+    template <typename InputByteStream>
+    static CharType TakeBOM(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        CharType c = Take(is);
+        return static_cast<uint16_t>(c) == 0xFEFFu ? Take(is) : c;
+    }
+
+    template <typename InputByteStream>
+    static CharType Take(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        unsigned c = static_cast<unsigned>(static_cast<uint8_t>(is.Take())) << 8;
+        c |= static_cast<unsigned>(static_cast<uint8_t>(is.Take()));
+        return static_cast<CharType>(c);
+    }
+
+    template <typename OutputByteStream>
+    static void PutBOM(OutputByteStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFEu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(0xFFu));
+    }
+
+    template <typename OutputByteStream>
+    static void Put(OutputByteStream& os, CharType c) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>((static_cast<unsigned>(c) >> 8) & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(static_cast<unsigned>(c) & 0xFFu));
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// UTF32
+
+//! UTF-32 encoding. 
+/*! http://en.wikipedia.org/wiki/UTF-32
+    \tparam CharType Type for storing 32-bit UTF-32 data. Default is unsigned. C++11 may use char32_t instead.
+    \note implements Encoding concept
+
+    \note For in-memory access, no need to concern endianness. The code units and code points are represented by CPU's endianness.
+    For streaming, use UTF32LE and UTF32BE, which handle endianness.
+*/
+template<typename CharType = unsigned>
+struct UTF32 {
+    typedef CharType Ch;
+    RAPIDJSON_STATIC_ASSERT(sizeof(Ch) >= 4);
+
+    enum { supportUnicode = 1 };
+
+    template<typename OutputStream>
+    static void Encode(OutputStream& os, unsigned codepoint) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputStream::Ch) >= 4);
+        RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+        os.Put(codepoint);
+    }
+
+    template<typename OutputStream>
+    static void EncodeUnsafe(OutputStream& os, unsigned codepoint) {
+        RAPIDJSON_STATIC_ASSERT(si
