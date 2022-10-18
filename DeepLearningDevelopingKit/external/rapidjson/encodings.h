@@ -521,4 +521,111 @@ struct UTF32BE : UTF32<CharType> {
     }
 
     template <typename OutputByteStream>
-    s
+    static void Put(OutputByteStream& os, CharType c) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>((c >> 24) & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>((c >> 16) & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>((c >> 8) & 0xFFu));
+        os.Put(static_cast<typename OutputByteStream::Ch>(c & 0xFFu));
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// ASCII
+
+//! ASCII encoding.
+/*! http://en.wikipedia.org/wiki/ASCII
+    \tparam CharType Code unit for storing 7-bit ASCII data. Default is char.
+    \note implements Encoding concept
+*/
+template<typename CharType = char>
+struct ASCII {
+    typedef CharType Ch;
+
+    enum { supportUnicode = 0 };
+
+    template<typename OutputStream>
+    static void Encode(OutputStream& os, unsigned codepoint) {
+        RAPIDJSON_ASSERT(codepoint <= 0x7F);
+        os.Put(static_cast<Ch>(codepoint & 0xFF));
+    }
+
+    template<typename OutputStream>
+    static void EncodeUnsafe(OutputStream& os, unsigned codepoint) {
+        RAPIDJSON_ASSERT(codepoint <= 0x7F);
+        PutUnsafe(os, static_cast<Ch>(codepoint & 0xFF));
+    }
+
+    template <typename InputStream>
+    static bool Decode(InputStream& is, unsigned* codepoint) {
+        uint8_t c = static_cast<uint8_t>(is.Take());
+        *codepoint = c;
+        return c <= 0X7F;
+    }
+
+    template <typename InputStream, typename OutputStream>
+    static bool Validate(InputStream& is, OutputStream& os) {
+        uint8_t c = static_cast<uint8_t>(is.Take());
+        os.Put(static_cast<typename OutputStream::Ch>(c));
+        return c <= 0x7F;
+    }
+
+    template <typename InputByteStream>
+    static CharType TakeBOM(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        uint8_t c = static_cast<uint8_t>(Take(is));
+        return static_cast<Ch>(c);
+    }
+
+    template <typename InputByteStream>
+    static Ch Take(InputByteStream& is) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename InputByteStream::Ch) == 1);
+        return static_cast<Ch>(is.Take());
+    }
+
+    template <typename OutputByteStream>
+    static void PutBOM(OutputByteStream& os) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        (void)os;
+    }
+
+    template <typename OutputByteStream>
+    static void Put(OutputByteStream& os, Ch c) {
+        RAPIDJSON_STATIC_ASSERT(sizeof(typename OutputByteStream::Ch) == 1);
+        os.Put(static_cast<typename OutputByteStream::Ch>(c));
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// AutoUTF
+
+//! Runtime-specified UTF encoding type of a stream.
+enum UTFType {
+    kUTF8 = 0,      //!< UTF-8.
+    kUTF16LE = 1,   //!< UTF-16 little endian.
+    kUTF16BE = 2,   //!< UTF-16 big endian.
+    kUTF32LE = 3,   //!< UTF-32 little endian.
+    kUTF32BE = 4    //!< UTF-32 big endian.
+};
+
+//! Dynamically select encoding according to stream's runtime-specified UTF encoding type.
+/*! \note This class can be used with AutoUTFInputtStream and AutoUTFOutputStream, which provides GetType().
+*/
+template<typename CharType>
+struct AutoUTF {
+    typedef CharType Ch;
+
+    enum { supportUnicode = 1 };
+
+#define RAPIDJSON_ENCODINGS_FUNC(x) UTF8<Ch>::x, UTF16LE<Ch>::x, UTF16BE<Ch>::x, UTF32LE<Ch>::x, UTF32BE<Ch>::x
+
+    template<typename OutputStream>
+    static RAPIDJSON_FORCEINLINE void Encode(OutputStream& os, unsigned codepoint) {
+        typedef void (*EncodeFunc)(OutputStream&, unsigned);
+        static const EncodeFunc f[] = { RAPIDJSON_ENCODINGS_FUNC(Encode) };
+        (*f[os.GetType()])(os, codepoint);
+    }
+
+    template<typename OutputStream>
+    static RAPIDJSON_FORCEINLINE void EncodeUnsafe(OutputStream& os, unsigned codepoint) {
+        typedef void (*EncodeFunc)(Output
