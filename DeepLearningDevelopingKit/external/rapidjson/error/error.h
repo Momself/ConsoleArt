@@ -107,4 +107,55 @@ struct ParseResult {
     //!! Unspecified boolean type
     typedef bool (ParseResult::*BooleanType)() const;
 public:
-    //! Default constructor, no 
+    //! Default constructor, no error.
+    ParseResult() : code_(kParseErrorNone), offset_(0) {}
+    //! Constructor to set an error.
+    ParseResult(ParseErrorCode code, size_t offset) : code_(code), offset_(offset) {}
+
+    //! Get the error code.
+    ParseErrorCode Code() const { return code_; }
+    //! Get the error offset, if \ref IsError(), 0 otherwise.
+    size_t Offset() const { return offset_; }
+
+    //! Explicit conversion to \c bool, returns \c true, iff !\ref IsError().
+    operator BooleanType() const { return !IsError() ? &ParseResult::IsError : NULL; }
+    //! Whether the result is an error.
+    bool IsError() const { return code_ != kParseErrorNone; }
+
+    bool operator==(const ParseResult& that) const { return code_ == that.code_; }
+    bool operator==(ParseErrorCode code) const { return code_ == code; }
+    friend bool operator==(ParseErrorCode code, const ParseResult & err) { return code == err.code_; }
+
+    bool operator!=(const ParseResult& that) const { return !(*this == that); }
+    bool operator!=(ParseErrorCode code) const { return !(*this == code); }
+    friend bool operator!=(ParseErrorCode code, const ParseResult & err) { return err != code; }
+
+    //! Reset error code.
+    void Clear() { Set(kParseErrorNone); }
+    //! Update error code and offset.
+    void Set(ParseErrorCode code, size_t offset = 0) { code_ = code; offset_ = offset; }
+
+private:
+    ParseErrorCode code_;
+    size_t offset_;
+};
+
+//! Function pointer type of GetParseError().
+/*! \ingroup RAPIDJSON_ERRORS
+
+    This is the prototype for \c GetParseError_X(), where \c X is a locale.
+    User can dynamically change locale in runtime, e.g.:
+\code
+    GetParseErrorFunc GetParseError = GetParseError_En; // or whatever
+    const RAPIDJSON_ERROR_CHARTYPE* s = GetParseError(document.GetParseErrorCode());
+\endcode
+*/
+typedef const RAPIDJSON_ERROR_CHARTYPE* (*GetParseErrorFunc)(ParseErrorCode);
+
+RAPIDJSON_NAMESPACE_END
+
+#ifdef __clang__
+RAPIDJSON_DIAG_POP
+#endif
+
+#endif // RAPIDJSON_ERROR_ERROR_H_
