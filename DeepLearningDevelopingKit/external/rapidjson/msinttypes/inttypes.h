@@ -219,4 +219,98 @@ typedef struct {
 #define SCNu16       "hu"
 #define SCNx16       "hx"
 #define SCNX16       "hX"
-#defin
+#define SCNoLEAST16  "ho"
+#define SCNuLEAST16  "hu"
+#define SCNxLEAST16  "hx"
+#define SCNXLEAST16  "hX"
+#define SCNoFAST16   "ho"
+#define SCNuFAST16   "hu"
+#define SCNxFAST16   "hx"
+#define SCNXFAST16   "hX"
+
+#define SCNo32       "lo"
+#define SCNu32       "lu"
+#define SCNx32       "lx"
+#define SCNX32       "lX"
+#define SCNoLEAST32  "lo"
+#define SCNuLEAST32  "lu"
+#define SCNxLEAST32  "lx"
+#define SCNXLEAST32  "lX"
+#define SCNoFAST32   "lo"
+#define SCNuFAST32   "lu"
+#define SCNxFAST32   "lx"
+#define SCNXFAST32   "lX"
+
+#define SCNo64       "I64o"
+#define SCNu64       "I64u"
+#define SCNx64       "I64x"
+#define SCNX64       "I64X"
+#define SCNoLEAST64  "I64o"
+#define SCNuLEAST64  "I64u"
+#define SCNxLEAST64  "I64x"
+#define SCNXLEAST64  "I64X"
+#define SCNoFAST64   "I64o"
+#define SCNuFAST64   "I64u"
+#define SCNxFAST64   "I64x"
+#define SCNXFAST64   "I64X"
+
+#define SCNoMAX     "I64o"
+#define SCNuMAX     "I64u"
+#define SCNxMAX     "I64x"
+#define SCNXMAX     "I64X"
+
+#ifdef _WIN64 // [
+#  define SCNoPTR     "I64o"
+#  define SCNuPTR     "I64u"
+#  define SCNxPTR     "I64x"
+#  define SCNXPTR     "I64X"
+#else  // _WIN64 ][
+#  define SCNoPTR     "lo"
+#  define SCNuPTR     "lu"
+#  define SCNxPTR     "lx"
+#  define SCNXPTR     "lX"
+#endif  // _WIN64 ]
+
+#endif // __STDC_FORMAT_MACROS ]
+
+// 7.8.2 Functions for greatest-width integer types
+
+// 7.8.2.1 The imaxabs function
+#define imaxabs _abs64
+
+// 7.8.2.2 The imaxdiv function
+
+// This is modified version of div() function from Microsoft's div.c found
+// in %MSVC.NET%\crt\src\div.c
+#ifdef STATIC_IMAXDIV // [
+static
+#else // STATIC_IMAXDIV ][
+_inline
+#endif // STATIC_IMAXDIV ]
+imaxdiv_t __cdecl imaxdiv(intmax_t numer, intmax_t denom)
+{
+   imaxdiv_t result;
+
+   result.quot = numer / denom;
+   result.rem = numer % denom;
+
+   if (numer < 0 && result.rem > 0) {
+      // did division wrong; must fix up
+      ++result.quot;
+      result.rem -= denom;
+   }
+
+   return result;
+}
+
+// 7.8.2.3 The strtoimax and strtoumax functions
+#define strtoimax _strtoi64
+#define strtoumax _strtoui64
+
+// 7.8.2.4 The wcstoimax and wcstoumax functions
+#define wcstoimax _wcstoi64
+#define wcstoumax _wcstoui64
+
+#endif // _MSC_VER >= 1800
+
+#endif // _MSC_INTTYPES_H_ ]
