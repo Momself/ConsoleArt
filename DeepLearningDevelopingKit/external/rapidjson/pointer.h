@@ -191,4 +191,108 @@ public:
             parseErrorCode_ = rhs.parseErrorCode_;
 
             if (rhs.nameBuffer_)
-       
+                CopyFromRaw(rhs); // Normally parsed tokens.
+            else {
+                tokens_ = rhs.tokens_; // User supplied const tokens.
+                nameBuffer_ = 0;
+            }
+        }
+        return *this;
+    }
+
+    //@}
+
+    //!@name Append token
+    //@{
+
+    //! Append a token and return a new Pointer
+    /*!
+        \param token Token to be appended.
+        \param allocator Allocator for the newly return Pointer.
+        \return A new Pointer with appended token.
+    */
+    GenericPointer Append(const Token& token, Allocator* allocator = 0) const {
+        GenericPointer r;
+        r.allocator_ = allocator;
+        Ch *p = r.CopyFromRaw(*this, 1, token.length + 1);
+        std::memcpy(p, token.name, (token.length + 1) * sizeof(Ch));
+        r.tokens_[tokenCount_].name = p;
+        r.tokens_[tokenCount_].length = token.length;
+        r.tokens_[tokenCount_].index = token.index;
+        return r;
+    }
+
+    //! Append a name token with length, and return a new Pointer
+    /*!
+        \param name Name to be appended.
+        \param length Length of name.
+        \param allocator Allocator for the newly return Pointer.
+        \return A new Pointer with appended token.
+    */
+    GenericPointer Append(const Ch* name, SizeType length, Allocator* allocator = 0) const {
+        Token token = { name, length, kPointerInvalidIndex };
+        return Append(token, allocator);
+    }
+
+    //! Append a name token without length, and return a new Pointer
+    /*!
+        \param name Name (const Ch*) to be appended.
+        \param allocator Allocator for the newly return Pointer.
+        \return A new Pointer with appended token.
+    */
+    template <typename T>
+    RAPIDJSON_DISABLEIF_RETURN((internal::NotExpr<internal::IsSame<typename internal::RemoveConst<T>::Type, Ch> >), (GenericPointer))
+    Append(T* name, Allocator* allocator = 0) const {
+        return Append(name, internal::StrLen(name), allocator);
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Append a name token, and return a new Pointer
+    /*!
+        \param name Name to be appended.
+        \param allocator Allocator for the newly return Pointer.
+        \return A new Pointer with appended token.
+    */
+    GenericPointer Append(const std::basic_string<Ch>& name, Allocator* allocator = 0) const {
+        return Append(name.c_str(), static_cast<SizeType>(name.size()), allocator);
+    }
+#endif
+
+    //! Append a index token, and return a new Pointer
+    /*!
+        \param index Index to be appended.
+        \param allocator Allocator for the newly return Pointer.
+        \return A new Pointer with appended token.
+    */
+    GenericPointer Append(SizeType index, Allocator* allocator = 0) const {
+        char buffer[21];
+        char* end = sizeof(SizeType) == 4 ? internal::u32toa(index, buffer) : internal::u64toa(index, buffer);
+        SizeType length = static_cast<SizeType>(end - buffer);
+        buffer[length] = '\0';
+
+        if (sizeof(Ch) == 1) {
+            Token token = { reinterpret_cast<Ch*>(buffer), length, index };
+            return Append(token, allocator);
+        }
+        else {
+            Ch name[21];
+            for (size_t i = 0; i <= length; i++)
+                name[i] = static_cast<Ch>(buffer[i]);
+            Token token = { name, length, index };
+            return Append(token, allocator);
+        }
+    }
+
+    //! Append a token by value, and return a new Pointer
+    /*!
+        \param token token to be appended.
+        \param allocator Allocator for the newly return Pointer.
+        \return A new Pointer with appended token.
+    */
+    GenericPointer Append(const ValueType& token, Allocator* allocator = 0) const {
+        if (token.IsString())
+            return Append(token.GetString(), token.GetStringLength(), allocator);
+        else {
+            RAPIDJSON_ASSERT(token.IsUint64());
+            RAPIDJSON_ASSERT(token.GetUint64() <= SizeType(~0));
+            return Append(static
