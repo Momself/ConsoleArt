@@ -35,4 +35,80 @@ static const SizeType kPointerInvalidIndex = ~SizeType(0);  //!< Represents an i
     \see GenericPointer::GenericPointer, GenericPointer::GetParseErrorCode
 */
 enum PointerParseErrorCode {
- 
+    kPointerParseErrorNone = 0,                     //!< The parse is successful
+
+    kPointerParseErrorTokenMustBeginWithSolidus,    //!< A token must begin with a '/'
+    kPointerParseErrorInvalidEscape,                //!< Invalid escape
+    kPointerParseErrorInvalidPercentEncoding,       //!< Invalid percent encoding in URI fragment
+    kPointerParseErrorCharacterMustPercentEncode    //!< A character must percent encoded in URI fragment
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// GenericPointer
+
+//! Represents a JSON Pointer. Use Pointer for UTF8 encoding and default allocator.
+/*!
+    This class implements RFC 6901 "JavaScript Object Notation (JSON) Pointer" 
+    (https://tools.ietf.org/html/rfc6901).
+
+    A JSON pointer is for identifying a specific value in a JSON document
+    (GenericDocument). It can simplify coding of DOM tree manipulation, because it
+    can access multiple-level depth of DOM tree with single API call.
+
+    After it parses a string representation (e.g. "/foo/0" or URI fragment 
+    representation (e.g. "#/foo/0") into its internal representation (tokens),
+    it can be used to resolve a specific value in multiple documents, or sub-tree 
+    of documents.
+
+    Contrary to GenericValue, Pointer can be copy constructed and copy assigned.
+    Apart from assignment, a Pointer cannot be modified after construction.
+
+    Although Pointer is very convenient, please aware that constructing Pointer
+    involves parsing and dynamic memory allocation. A special constructor with user-
+    supplied tokens eliminates these.
+
+    GenericPointer depends on GenericDocument and GenericValue.
+    
+    \tparam ValueType The value type of the DOM tree. E.g. GenericValue<UTF8<> >
+    \tparam Allocator The allocator type for allocating memory for internal representation.
+    
+    \note GenericPointer uses same encoding of ValueType.
+    However, Allocator of GenericPointer is independent of Allocator of Value.
+*/
+template <typename ValueType, typename Allocator = CrtAllocator>
+class GenericPointer {
+public:
+    typedef typename ValueType::EncodingType EncodingType;  //!< Encoding type from Value
+    typedef typename ValueType::Ch Ch;                      //!< Character type from Value
+
+    //! A token is the basic units of internal representation.
+    /*!
+        A JSON pointer string representation "/foo/123" is parsed to two tokens: 
+        "foo" and 123. 123 will be represented in both numeric form and string form.
+        They are resolved according to the actual value type (object or array).
+
+        For token that are not numbers, or the numeric value is out of bound
+        (greater than limits of SizeType), they are only treated as string form
+        (i.e. the token's index will be equal to kPointerInvalidIndex).
+
+        This struct is public so that user can create a Pointer without parsing and 
+        allocation, using a special constructor.
+    */
+    struct Token {
+        const Ch* name;             //!< Name of the token. It has null character at the end but it can contain null character.
+        SizeType length;            //!< Length of the name.
+        SizeType index;             //!< A valid array index, if it is not equal to kPointerInvalidIndex.
+    };
+
+    //!@name Constructors and destructor.
+    //@{
+
+    //! Default constructor.
+    GenericPointer(Allocator* allocator = 0) : allocator_(allocator), ownAllocator_(), nameBuffer_(), tokens_(), tokenCount_(), parseErrorOffset_(), parseErrorCode_(kPointerParseErrorNone) {}
+
+    //! Constructor that parses a string or URI fragment representation.
+    /*!
+        \param source A null-terminated, string or URI fragment representation of JSON pointer.
+        \param allocator User supplied allocator for this pointer. If no allocator is provided, it creates a self-owned one.
+    */
+    explicit GenericPointer(const Ch* source, Allocat
