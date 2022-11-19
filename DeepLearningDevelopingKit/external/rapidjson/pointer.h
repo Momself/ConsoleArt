@@ -295,4 +295,120 @@ public:
         else {
             RAPIDJSON_ASSERT(token.IsUint64());
             RAPIDJSON_ASSERT(token.GetUint64() <= SizeType(~0));
-            return Append(static
+            return Append(static_cast<SizeType>(token.GetUint64()), allocator);
+        }
+    }
+
+    //!@name Handling Parse Error
+    //@{
+
+    //! Check whether this is a valid pointer.
+    bool IsValid() const { return parseErrorCode_ == kPointerParseErrorNone; }
+
+    //! Get the parsing error offset in code unit.
+    size_t GetParseErrorOffset() const { return parseErrorOffset_; }
+
+    //! Get the parsing error code.
+    PointerParseErrorCode GetParseErrorCode() const { return parseErrorCode_; }
+
+    //@}
+
+    //! Get the allocator of this pointer.
+    Allocator& GetAllocator() { return *allocator_; }
+
+    //!@name Tokens
+    //@{
+
+    //! Get the token array (const version only).
+    const Token* GetTokens() const { return tokens_; }
+
+    //! Get the number of tokens.
+    size_t GetTokenCount() const { return tokenCount_; }
+
+    //@}
+
+    //!@name Equality/inequality operators
+    //@{
+
+    //! Equality operator.
+    /*!
+        \note When any pointers are invalid, always returns false.
+    */
+    bool operator==(const GenericPointer& rhs) const {
+        if (!IsValid() || !rhs.IsValid() || tokenCount_ != rhs.tokenCount_)
+            return false;
+
+        for (size_t i = 0; i < tokenCount_; i++) {
+            if (tokens_[i].index != rhs.tokens_[i].index ||
+                tokens_[i].length != rhs.tokens_[i].length || 
+                (tokens_[i].length != 0 && std::memcmp(tokens_[i].name, rhs.tokens_[i].name, sizeof(Ch)* tokens_[i].length) != 0))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    //! Inequality operator.
+    /*!
+        \note When any pointers are invalid, always returns true.
+    */
+    bool operator!=(const GenericPointer& rhs) const { return !(*this == rhs); }
+
+    //@}
+
+    //!@name Stringify
+    //@{
+
+    //! Stringify the pointer into string representation.
+    /*!
+        \tparam OutputStream Type of output stream.
+        \param os The output stream.
+    */
+    template<typename OutputStream>
+    bool Stringify(OutputStream& os) const {
+        return Stringify<false, OutputStream>(os);
+    }
+
+    //! Stringify the pointer into URI fragment representation.
+    /*!
+        \tparam OutputStream Type of output stream.
+        \param os The output stream.
+    */
+    template<typename OutputStream>
+    bool StringifyUriFragment(OutputStream& os) const {
+        return Stringify<true, OutputStream>(os);
+    }
+
+    //@}
+
+    //!@name Create value
+    //@{
+
+    //! Create a value in a subtree.
+    /*!
+        If the value is not exist, it creates all parent values and a JSON Null value.
+        So it always succeed and return the newly created or existing value.
+
+        Remind that it may change types of parents according to tokens, so it 
+        potentially removes previously stored values. For example, if a document 
+        was an array, and "/foo" is used to create a value, then the document 
+        will be changed to an object, and all existing array elements are lost.
+
+        \param root Root value of a DOM subtree to be resolved. It can be any value other than document root.
+        \param allocator Allocator for creating the values if the specified value or its parents are not exist.
+        \param alreadyExist If non-null, it stores whether the resolved value is already exist.
+        \return The resolved newly created (a JSON Null value), or already exists value.
+    */
+    ValueType& Create(ValueType& root, typename ValueType::AllocatorType& allocator, bool* alreadyExist = 0) const {
+        RAPIDJSON_ASSERT(IsValid());
+        ValueType* v = &root;
+        bool exist = true;
+        for (const Token *t = tokens_; t != tokens_ + tokenCount_; ++t) {
+            if (v->IsArray() && t->name[0] == '-' && t->length == 1) {
+                v->PushBack(ValueType().Move(), allocator);
+                v = &((*v)[v->Size() - 1]);
+                exist = false;
+            }
+            els
