@@ -111,4 +111,84 @@ public:
         \param source A null-terminated, string or URI fragment representation of JSON pointer.
         \param allocator User supplied allocator for this pointer. If no allocator is provided, it creates a self-owned one.
     */
-    explicit GenericPointer(const Ch* source, Allocat
+    explicit GenericPointer(const Ch* source, Allocator* allocator = 0) : allocator_(allocator), ownAllocator_(), nameBuffer_(), tokens_(), tokenCount_(), parseErrorOffset_(), parseErrorCode_(kPointerParseErrorNone) {
+        Parse(source, internal::StrLen(source));
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Constructor that parses a string or URI fragment representation.
+    /*!
+        \param source A string or URI fragment representation of JSON pointer.
+        \param allocator User supplied allocator for this pointer. If no allocator is provided, it creates a self-owned one.
+        \note Requires the definition of the preprocessor symbol \ref RAPIDJSON_HAS_STDSTRING.
+    */
+    explicit GenericPointer(const std::basic_string<Ch>& source, Allocator* allocator = 0) : allocator_(allocator), ownAllocator_(), nameBuffer_(), tokens_(), tokenCount_(), parseErrorOffset_(), parseErrorCode_(kPointerParseErrorNone) {
+        Parse(source.c_str(), source.size());
+    }
+#endif
+
+    //! Constructor that parses a string or URI fragment representation, with length of the source string.
+    /*!
+        \param source A string or URI fragment representation of JSON pointer.
+        \param length Length of source.
+        \param allocator User supplied allocator for this pointer. If no allocator is provided, it creates a self-owned one.
+        \note Slightly faster than the overload without length.
+    */
+    GenericPointer(const Ch* source, size_t length, Allocator* allocator = 0) : allocator_(allocator), ownAllocator_(), nameBuffer_(), tokens_(), tokenCount_(), parseErrorOffset_(), parseErrorCode_(kPointerParseErrorNone) {
+        Parse(source, length);
+    }
+
+    //! Constructor with user-supplied tokens.
+    /*!
+        This constructor let user supplies const array of tokens.
+        This prevents the parsing process and eliminates allocation.
+        This is preferred for memory constrained environments.
+
+        \param tokens An constant array of tokens representing the JSON pointer.
+        \param tokenCount Number of tokens.
+
+        \b Example
+        \code
+        #define NAME(s) { s, sizeof(s) / sizeof(s[0]) - 1, kPointerInvalidIndex }
+        #define INDEX(i) { #i, sizeof(#i) - 1, i }
+
+        static const Pointer::Token kTokens[] = { NAME("foo"), INDEX(123) };
+        static const Pointer p(kTokens, sizeof(kTokens) / sizeof(kTokens[0]));
+        // Equivalent to static const Pointer p("/foo/123");
+
+        #undef NAME
+        #undef INDEX
+        \endcode
+    */
+    GenericPointer(const Token* tokens, size_t tokenCount) : allocator_(), ownAllocator_(), nameBuffer_(), tokens_(const_cast<Token*>(tokens)), tokenCount_(tokenCount), parseErrorOffset_(), parseErrorCode_(kPointerParseErrorNone) {}
+
+    //! Copy constructor.
+    GenericPointer(const GenericPointer& rhs) : allocator_(rhs.allocator_), ownAllocator_(), nameBuffer_(), tokens_(), tokenCount_(), parseErrorOffset_(), parseErrorCode_(kPointerParseErrorNone) {
+        *this = rhs;
+    }
+
+    //! Copy constructor.
+    GenericPointer(const GenericPointer& rhs, Allocator* allocator) : allocator_(allocator), ownAllocator_(), nameBuffer_(), tokens_(), tokenCount_(), parseErrorOffset_(), parseErrorCode_(kPointerParseErrorNone) {
+        *this = rhs;
+    }
+
+    //! Destructor.
+    ~GenericPointer() {
+        if (nameBuffer_)    // If user-supplied tokens constructor is used, nameBuffer_ is nullptr and tokens_ are not deallocated.
+            Allocator::Free(tokens_);
+        RAPIDJSON_DELETE(ownAllocator_);
+    }
+
+    //! Assignment operator.
+    GenericPointer& operator=(const GenericPointer& rhs) {
+        if (this != &rhs) {
+            // Do not delete ownAllcator
+            if (nameBuffer_)
+                Allocator::Free(tokens_);
+
+            tokenCount_ = rhs.tokenCount_;
+            parseErrorOffset_ = rhs.parseErrorOffset_;
+            parseErrorCode_ = rhs.parseErrorCode_;
+
+            if (rhs.nameBuffer_)
+       
