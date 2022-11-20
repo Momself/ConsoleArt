@@ -411,4 +411,104 @@ public:
                 v = &((*v)[v->Size() - 1]);
                 exist = false;
             }
-            els
+            else {
+                if (t->index == kPointerInvalidIndex) { // must be object name
+                    if (!v->IsObject())
+                        v->SetObject(); // Change to Object
+                }
+                else { // object name or array index
+                    if (!v->IsArray() && !v->IsObject())
+                        v->SetArray(); // Change to Array
+                }
+
+                if (v->IsArray()) {
+                    if (t->index >= v->Size()) {
+                        v->Reserve(t->index + 1, allocator);
+                        while (t->index >= v->Size())
+                            v->PushBack(ValueType().Move(), allocator);
+                        exist = false;
+                    }
+                    v = &((*v)[t->index]);
+                }
+                else {
+                    typename ValueType::MemberIterator m = v->FindMember(GenericStringRef<Ch>(t->name, t->length));
+                    if (m == v->MemberEnd()) {
+                        v->AddMember(ValueType(t->name, t->length, allocator).Move(), ValueType().Move(), allocator);
+                        v = &(--v->MemberEnd())->value; // Assumes AddMember() appends at the end
+                        exist = false;
+                    }
+                    else
+                        v = &m->value;
+                }
+            }
+        }
+
+        if (alreadyExist)
+            *alreadyExist = exist;
+
+        return *v;
+    }
+
+    //! Creates a value in a document.
+    /*!
+        \param document A document to be resolved.
+        \param alreadyExist If non-null, it stores whether the resolved value is already exist.
+        \return The resolved newly created, or already exists value.
+    */
+    template <typename stackAllocator>
+    ValueType& Create(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, bool* alreadyExist = 0) const {
+        return Create(document, document.GetAllocator(), alreadyExist);
+    }
+
+    //@}
+
+    //!@name Query value
+    //@{
+
+    //! Query a value in a subtree.
+    /*!
+        \param root Root value of a DOM sub-tree to be resolved. It can be any value other than document root.
+        \param unresolvedTokenIndex If the pointer cannot resolve a token in the pointer, this parameter can obtain the index of unresolved token.
+        \return Pointer to the value if it can be resolved. Otherwise null.
+
+        \note
+        There are only 3 situations when a value cannot be resolved:
+        1. A value in the path is not an array nor object.
+        2. An object value does not contain the token.
+        3. A token is out of range of an array value.
+
+        Use unresolvedTokenIndex to retrieve the token index.
+    */
+    ValueType* Get(ValueType& root, size_t* unresolvedTokenIndex = 0) const {
+        RAPIDJSON_ASSERT(IsValid());
+        ValueType* v = &root;
+        for (const Token *t = tokens_; t != tokens_ + tokenCount_; ++t) {
+            switch (v->GetType()) {
+            case kObjectType:
+                {
+                    typename ValueType::MemberIterator m = v->FindMember(GenericStringRef<Ch>(t->name, t->length));
+                    if (m == v->MemberEnd())
+                        break;
+                    v = &m->value;
+                }
+                continue;
+            case kArrayType:
+                if (t->index == kPointerInvalidIndex || t->index >= v->Size())
+                    break;
+                v = &((*v)[t->index]);
+                continue;
+            default:
+                break;
+            }
+
+            // Error: unresolved token
+            if (unresolvedTokenIndex)
+                *unresolvedTokenIndex = static_cast<size_t>(t - tokens_);
+            return 0;
+        }
+        return v;
+    }
+
+    //! Query a const value in a const subtree.
+    /*!
+        \param root Root value of a DOM sub-tree to be resolv
