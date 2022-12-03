@@ -511,4 +511,84 @@ public:
 
     //! Query a const value in a const subtree.
     /*!
-        \param root Root value of a DOM sub-tree to be resolv
+        \param root Root value of a DOM sub-tree to be resolved. It can be any value other than document root.
+        \return Pointer to the value if it can be resolved. Otherwise null.
+    */
+    const ValueType* Get(const ValueType& root, size_t* unresolvedTokenIndex = 0) const { 
+        return Get(const_cast<ValueType&>(root), unresolvedTokenIndex);
+    }
+
+    //@}
+
+    //!@name Query a value with default
+    //@{
+
+    //! Query a value in a subtree with default value.
+    /*!
+        Similar to Get(), but if the specified value do not exists, it creates all parents and clone the default value.
+        So that this function always succeed.
+
+        \param root Root value of a DOM sub-tree to be resolved. It can be any value other than document root.
+        \param defaultValue Default value to be cloned if the value was not exists.
+        \param allocator Allocator for creating the values if the specified value or its parents are not exist.
+        \see Create()
+    */
+    ValueType& GetWithDefault(ValueType& root, const ValueType& defaultValue, typename ValueType::AllocatorType& allocator) const {
+        bool alreadyExist;
+        ValueType& v = Create(root, allocator, &alreadyExist);
+        return alreadyExist ? v : v.CopyFrom(defaultValue, allocator);
+    }
+
+    //! Query a value in a subtree with default null-terminated string.
+    ValueType& GetWithDefault(ValueType& root, const Ch* defaultValue, typename ValueType::AllocatorType& allocator) const {
+        bool alreadyExist;
+        ValueType& v = Create(root, allocator, &alreadyExist);
+        return alreadyExist ? v : v.SetString(defaultValue, allocator);
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Query a value in a subtree with default std::basic_string.
+    ValueType& GetWithDefault(ValueType& root, const std::basic_string<Ch>& defaultValue, typename ValueType::AllocatorType& allocator) const {
+        bool alreadyExist;
+        ValueType& v = Create(root, allocator, &alreadyExist);
+        return alreadyExist ? v : v.SetString(defaultValue, allocator);
+    }
+#endif
+
+    //! Query a value in a subtree with default primitive value.
+    /*!
+        \tparam T Either \ref Type, \c int, \c unsigned, \c int64_t, \c uint64_t, \c bool
+    */
+    template <typename T>
+    RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (ValueType&))
+    GetWithDefault(ValueType& root, T defaultValue, typename ValueType::AllocatorType& allocator) const {
+        return GetWithDefault(root, ValueType(defaultValue).Move(), allocator);
+    }
+
+    //! Query a value in a document with default value.
+    template <typename stackAllocator>
+    ValueType& GetWithDefault(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, const ValueType& defaultValue) const {
+        return GetWithDefault(document, defaultValue, document.GetAllocator());
+    }
+
+    //! Query a value in a document with default null-terminated string.
+    template <typename stackAllocator>
+    ValueType& GetWithDefault(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, const Ch* defaultValue) const {
+        return GetWithDefault(document, defaultValue, document.GetAllocator());
+    }
+    
+#if RAPIDJSON_HAS_STDSTRING
+    //! Query a value in a document with default std::basic_string.
+    template <typename stackAllocator>
+    ValueType& GetWithDefault(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, const std::basic_string<Ch>& defaultValue) const {
+        return GetWithDefault(document, defaultValue, document.GetAllocator());
+    }
+#endif
+
+    //! Query a value in a document with default primitive value.
+    /*!
+        \tparam T Either \ref Type, \c int, \c unsigned, \c int64_t, \c uint64_t, \c bool
+    */
+    template <typename T, typename stackAllocator>
+    RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (ValueType&))
+    GetWithDefault(GenericDocument<EncodingType, typename Val
