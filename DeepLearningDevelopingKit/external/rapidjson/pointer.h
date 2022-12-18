@@ -591,4 +591,88 @@ public:
     */
     template <typename T, typename stackAllocator>
     RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (ValueType&))
-    GetWithDefault(GenericDocument<EncodingType, typename Val
+    GetWithDefault(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, T defaultValue) const {
+        return GetWithDefault(document, defaultValue, document.GetAllocator());
+    }
+
+    //@}
+
+    //!@name Set a value
+    //@{
+
+    //! Set a value in a subtree, with move semantics.
+    /*!
+        It creates all parents if they are not exist or types are different to the tokens.
+        So this function always succeeds but potentially remove existing values.
+
+        \param root Root value of a DOM sub-tree to be resolved. It can be any value other than document root.
+        \param value Value to be set.
+        \param allocator Allocator for creating the values if the specified value or its parents are not exist.
+        \see Create()
+    */
+    ValueType& Set(ValueType& root, ValueType& value, typename ValueType::AllocatorType& allocator) const {
+        return Create(root, allocator) = value;
+    }
+
+    //! Set a value in a subtree, with copy semantics.
+    ValueType& Set(ValueType& root, const ValueType& value, typename ValueType::AllocatorType& allocator) const {
+        return Create(root, allocator).CopyFrom(value, allocator);
+    }
+
+    //! Set a null-terminated string in a subtree.
+    ValueType& Set(ValueType& root, const Ch* value, typename ValueType::AllocatorType& allocator) const {
+        return Create(root, allocator) = ValueType(value, allocator).Move();
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Set a std::basic_string in a subtree.
+    ValueType& Set(ValueType& root, const std::basic_string<Ch>& value, typename ValueType::AllocatorType& allocator) const {
+        return Create(root, allocator) = ValueType(value, allocator).Move();
+    }
+#endif
+
+    //! Set a primitive value in a subtree.
+    /*!
+        \tparam T Either \ref Type, \c int, \c unsigned, \c int64_t, \c uint64_t, \c bool
+    */
+    template <typename T>
+    RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (ValueType&))
+    Set(ValueType& root, T value, typename ValueType::AllocatorType& allocator) const {
+        return Create(root, allocator) = ValueType(value).Move();
+    }
+
+    //! Set a value in a document, with move semantics.
+    template <typename stackAllocator>
+    ValueType& Set(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, ValueType& value) const {
+        return Create(document) = value;
+    }
+
+    //! Set a value in a document, with copy semantics.
+    template <typename stackAllocator>
+    ValueType& Set(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, const ValueType& value) const {
+        return Create(document).CopyFrom(value, document.GetAllocator());
+    }
+
+    //! Set a null-terminated string in a document.
+    template <typename stackAllocator>
+    ValueType& Set(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, const Ch* value) const {
+        return Create(document) = ValueType(value, document.GetAllocator()).Move();
+    }
+
+#if RAPIDJSON_HAS_STDSTRING
+    //! Sets a std::basic_string in a document.
+    template <typename stackAllocator>
+    ValueType& Set(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, const std::basic_string<Ch>& value) const {
+        return Create(document) = ValueType(value, document.GetAllocator()).Move();
+    }
+#endif
+
+    //! Set a primitive value in a document.
+    /*!
+    \tparam T Either \ref Type, \c int, \c unsigned, \c int64_t, \c uint64_t, \c bool
+    */
+    template <typename T, typename stackAllocator>
+    RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (ValueType&))
+        Set(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, T value) const {
+            return Create(document) = value;
+  
