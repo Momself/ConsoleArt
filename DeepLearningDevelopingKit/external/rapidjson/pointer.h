@@ -675,4 +675,103 @@ public:
     RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T>, internal::IsGenericValue<T> >), (ValueType&))
         Set(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, T value) const {
             return Create(document) = value;
-  
+    }
+
+    //@}
+
+    //!@name Swap a value
+    //@{
+
+    //! Swap a value with a value in a subtree.
+    /*!
+        It creates all parents if they are not exist or types are different to the tokens.
+        So this function always succeeds but potentially remove existing values.
+
+        \param root Root value of a DOM sub-tree to be resolved. It can be any value other than document root.
+        \param value Value to be swapped.
+        \param allocator Allocator for creating the values if the specified value or its parents are not exist.
+        \see Create()
+    */
+    ValueType& Swap(ValueType& root, ValueType& value, typename ValueType::AllocatorType& allocator) const {
+        return Create(root, allocator).Swap(value);
+    }
+
+    //! Swap a value with a value in a document.
+    template <typename stackAllocator>
+    ValueType& Swap(GenericDocument<EncodingType, typename ValueType::AllocatorType, stackAllocator>& document, ValueType& value) const {
+        return Create(document).Swap(value);
+    }
+
+    //@}
+
+    //! Erase a value in a subtree.
+    /*!
+        \param root Root value of a DOM sub-tree to be resolved. It can be any value other than document root.
+        \return Whether the resolved value is found and erased.
+
+        \note Erasing with an empty pointer \c Pointer(""), i.e. the root, always fail and return false.
+    */
+    bool Erase(ValueType& root) const {
+        RAPIDJSON_ASSERT(IsValid());
+        if (tokenCount_ == 0) // Cannot erase the root
+            return false;
+
+        ValueType* v = &root;
+        const Token* last = tokens_ + (tokenCount_ - 1);
+        for (const Token *t = tokens_; t != last; ++t) {
+            switch (v->GetType()) {
+            case kObjectType:
+                {
+                    typename ValueType::MemberIterator m = v->FindMember(GenericStringRef<Ch>(t->name, t->length));
+                    if (m == v->MemberEnd())
+                        return false;
+                    v = &m->value;
+                }
+                break;
+            case kArrayType:
+                if (t->index == kPointerInvalidIndex || t->index >= v->Size())
+                    return false;
+                v = &((*v)[t->index]);
+                break;
+            default:
+                return false;
+            }
+        }
+
+        switch (v->GetType()) {
+        case kObjectType:
+            return v->EraseMember(GenericStringRef<Ch>(last->name, last->length));
+        case kArrayType:
+            if (last->index == kPointerInvalidIndex || last->index >= v->Size())
+                return false;
+            v->Erase(v->Begin() + last->index);
+            return true;
+        default:
+            return false;
+        }
+    }
+
+private:
+    //! Clone the content from rhs to this.
+    /*!
+        \param rhs Source pointer.
+        \param extraToken Extra tokens to be allocated.
+        \param extraNameBufferSize Extra name buffer size (in number of Ch) to be allocated.
+        \return Start of non-occupied name buffer, for storing extra names.
+    */
+    Ch* CopyFromRaw(const GenericPointer& rhs, size_t extraToken = 0, size_t extraNameBufferSize = 0) {
+        if (!allocator_) // allocator is independently owned.
+            ownAllocator_ = allocator_ = RAPIDJSON_NEW(Allocator)();
+
+        size_t nameBufferSize = rhs.tokenCount_; // null terminators for tokens
+        for (Token *t = rhs.tokens_; t != rhs.tokens_ + rhs.tokenCount_; ++t)
+            nameBufferSize += t->length;
+
+        tokenCount_ = rhs.tokenCount_ + extraToken;
+        tokens_ = static_cast<Token *>(allocator_->Malloc(tokenCount_ * sizeof(Token) + (nameBufferSize + extraNameBufferSize) * sizeof(Ch)));
+        nameBuffer_ = reinterpret_cast<Ch *>(tokens_ + tokenCount_);
+        if (rhs.tokenCount_ > 0) {
+            std::memcpy(tokens_, rhs.tokens_, rhs.tokenCount_ * sizeof(Token));
+        }
+        if (nameBufferSize > 0) {
+            std::memcpy(nameBuffer_, rhs.
