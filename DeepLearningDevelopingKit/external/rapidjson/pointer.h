@@ -875,4 +875,115 @@ private:
                 if (c == '~') {
                     if (i < length) {
                         c = source[i];
-            
+                        if (c == '0')       c = '~';
+                        else if (c == '1')  c = '/';
+                        else {
+                            parseErrorCode_ = kPointerParseErrorInvalidEscape;
+                            goto error;
+                        }
+                        i++;
+                    }
+                    else {
+                        parseErrorCode_ = kPointerParseErrorInvalidEscape;
+                        goto error;
+                    }
+                }
+
+                // First check for index: all of characters are digit
+                if (c < '0' || c > '9')
+                    isNumber = false;
+
+                *name++ = c;
+            }
+            token->length = static_cast<SizeType>(name - token->name);
+            if (token->length == 0)
+                isNumber = false;
+            *name++ = '\0'; // Null terminator
+
+            // Second check for index: more than one digit cannot have leading zero
+            if (isNumber && token->length > 1 && token->name[0] == '0')
+                isNumber = false;
+
+            // String to SizeType conversion
+            SizeType n = 0;
+            if (isNumber) {
+                for (size_t j = 0; j < token->length; j++) {
+                    SizeType m = n * 10 + static_cast<SizeType>(token->name[j] - '0');
+                    if (m < n) {   // overflow detection
+                        isNumber = false;
+                        break;
+                    }
+                    n = m;
+                }
+            }
+
+            token->index = isNumber ? n : kPointerInvalidIndex;
+            token++;
+        }
+
+        RAPIDJSON_ASSERT(name <= nameBuffer_ + length); // Should not overflow buffer
+        parseErrorCode_ = kPointerParseErrorNone;
+        return;
+
+    error:
+        Allocator::Free(tokens_);
+        nameBuffer_ = 0;
+        tokens_ = 0;
+        tokenCount_ = 0;
+        parseErrorOffset_ = i;
+        return;
+    }
+
+    //! Stringify to string or URI fragment representation.
+    /*!
+        \tparam uriFragment True for stringifying to URI fragment representation. False for string representation.
+        \tparam OutputStream type of output stream.
+        \param os The output stream.
+    */
+    template<bool uriFragment, typename OutputStream>
+    bool Stringify(OutputStream& os) const {
+        RAPIDJSON_ASSERT(IsValid());
+
+        if (uriFragment)
+            os.Put('#');
+
+        for (Token *t = tokens_; t != tokens_ + tokenCount_; ++t) {
+            os.Put('/');
+            for (size_t j = 0; j < t->length; j++) {
+                Ch c = t->name[j];
+                if (c == '~') {
+                    os.Put('~');
+                    os.Put('0');
+                }
+                else if (c == '/') {
+                    os.Put('~');
+                    os.Put('1');
+                }
+                else if (uriFragment && NeedPercentEncode(c)) { 
+                    // Transcode to UTF8 sequence
+                    GenericStringStream<typename ValueType::EncodingType> source(&t->name[j]);
+                    PercentEncodeStream<OutputStream> target(os);
+                    if (!Transcoder<EncodingType, UTF8<> >().Validate(source, target))
+                        return false;
+                    j += source.Tell() - 1;
+                }
+                else
+                    os.Put(c);
+            }
+        }
+        return true;
+    }
+
+    //! A helper stream for decoding a percent-encoded sequence into code unit.
+    /*!
+        This stream decodes %XY triplet into code unit (0-255).
+        If it encounters invalid characters, it sets output code unit as 0 and 
+        mark invalid, and to be checked by IsValid().
+    */
+    class PercentDecodeStream {
+    public:
+        typedef typename ValueType::Ch Ch;
+
+        //! Constructor
+        /*!
+            \param source Start of the s
