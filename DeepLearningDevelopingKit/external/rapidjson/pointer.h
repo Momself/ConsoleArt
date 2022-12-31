@@ -774,4 +774,105 @@ private:
             std::memcpy(tokens_, rhs.tokens_, rhs.tokenCount_ * sizeof(Token));
         }
         if (nameBufferSize > 0) {
-            std::memcpy(nameBuffer_, rhs.
+            std::memcpy(nameBuffer_, rhs.nameBuffer_, nameBufferSize * sizeof(Ch));
+        }
+
+        // Adjust pointers to name buffer
+        std::ptrdiff_t diff = nameBuffer_ - rhs.nameBuffer_;
+        for (Token *t = tokens_; t != tokens_ + rhs.tokenCount_; ++t)
+            t->name += diff;
+
+        return nameBuffer_ + nameBufferSize;
+    }
+
+    //! Check whether a character should be percent-encoded.
+    /*!
+        According to RFC 3986 2.3 Unreserved Characters.
+        \param c The character (code unit) to be tested.
+    */
+    bool NeedPercentEncode(Ch c) const {
+        return !((c >= '0' && c <= '9') || (c >= 'A' && c <='Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '.' || c == '_' || c =='~');
+    }
+
+    //! Parse a JSON String or its URI fragment representation into tokens.
+#ifndef __clang__ // -Wdocumentation
+    /*!
+        \param source Either a JSON Pointer string, or its URI fragment representation. Not need to be null terminated.
+        \param length Length of the source string.
+        \note Source cannot be JSON String Representation of JSON Pointer, e.g. In "/\u0000", \u0000 will not be unescaped.
+    */
+#endif
+    void Parse(const Ch* source, size_t length) {
+        RAPIDJSON_ASSERT(source != NULL);
+        RAPIDJSON_ASSERT(nameBuffer_ == 0);
+        RAPIDJSON_ASSERT(tokens_ == 0);
+
+        // Create own allocator if user did not supply.
+        if (!allocator_)
+            ownAllocator_ = allocator_ = RAPIDJSON_NEW(Allocator)();
+
+        // Count number of '/' as tokenCount
+        tokenCount_ = 0;
+        for (const Ch* s = source; s != source + length; s++) 
+            if (*s == '/')
+                tokenCount_++;
+
+        Token* token = tokens_ = static_cast<Token *>(allocator_->Malloc(tokenCount_ * sizeof(Token) + length * sizeof(Ch)));
+        Ch* name = nameBuffer_ = reinterpret_cast<Ch *>(tokens_ + tokenCount_);
+        size_t i = 0;
+
+        // Detect if it is a URI fragment
+        bool uriFragment = false;
+        if (source[i] == '#') {
+            uriFragment = true;
+            i++;
+        }
+
+        if (i != length && source[i] != '/') {
+            parseErrorCode_ = kPointerParseErrorTokenMustBeginWithSolidus;
+            goto error;
+        }
+
+        while (i < length) {
+            RAPIDJSON_ASSERT(source[i] == '/');
+            i++; // consumes '/'
+
+            token->name = name;
+            bool isNumber = true;
+
+            while (i < length && source[i] != '/') {
+                Ch c = source[i];
+                if (uriFragment) {
+                    // Decoding percent-encoding for URI fragment
+                    if (c == '%') {
+                        PercentDecodeStream is(&source[i], source + length);
+                        GenericInsituStringStream<EncodingType> os(name);
+                        Ch* begin = os.PutBegin();
+                        if (!Transcoder<UTF8<>, EncodingType>().Validate(is, os) || !is.IsValid()) {
+                            parseErrorCode_ = kPointerParseErrorInvalidPercentEncoding;
+                            goto error;
+                        }
+                        size_t len = os.PutEnd(begin);
+                        i += is.Tell() - 1;
+                        if (len == 1)
+                            c = *name;
+                        else {
+                            name += len;
+                            isNumber = false;
+                            i++;
+                            continue;
+                        }
+                    }
+                    else if (NeedPercentEncode(c)) {
+                        parseErrorCode_ = kPointerParseErrorCharacterMustPercentEncode;
+                        goto error;
+                    }
+                }
+
+                i++;
+                
+                // Escaping "~0" -> '~', "~1" -> '/'
+                if (c == '~') {
+                    if (i < length) {
+                        c = source[i];
+            
