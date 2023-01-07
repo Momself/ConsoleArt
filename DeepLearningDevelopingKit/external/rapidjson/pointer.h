@@ -986,4 +986,96 @@ private:
 
         //! Constructor
         /*!
-            \param source Start of the s
+            \param source Start of the stream
+            \param end Past-the-end of the stream.
+        */
+        PercentDecodeStream(const Ch* source, const Ch* end) : src_(source), head_(source), end_(end), valid_(true) {}
+
+        Ch Take() {
+            if (*src_ != '%' || src_ + 3 > end_) { // %XY triplet
+                valid_ = false;
+                return 0;
+            }
+            src_++;
+            Ch c = 0;
+            for (int j = 0; j < 2; j++) {
+                c = static_cast<Ch>(c << 4);
+                Ch h = *src_;
+                if      (h >= '0' && h <= '9') c = static_cast<Ch>(c + h - '0');
+                else if (h >= 'A' && h <= 'F') c = static_cast<Ch>(c + h - 'A' + 10);
+                else if (h >= 'a' && h <= 'f') c = static_cast<Ch>(c + h - 'a' + 10);
+                else {
+                    valid_ = false;
+                    return 0;
+                }
+                src_++;
+            }
+            return c;
+        }
+
+        size_t Tell() const { return static_cast<size_t>(src_ - head_); }
+        bool IsValid() const { return valid_; }
+
+    private:
+        const Ch* src_;     //!< Current read position.
+        const Ch* head_;    //!< Original head of the string.
+        const Ch* end_;     //!< Past-the-end position.
+        bool valid_;        //!< Whether the parsing is valid.
+    };
+
+    //! A helper stream to encode character (UTF-8 code unit) into percent-encoded sequence.
+    template <typename OutputStream>
+    class PercentEncodeStream {
+    public:
+        PercentEncodeStream(OutputStream& os) : os_(os) {}
+        void Put(char c) { // UTF-8 must be byte
+            unsigned char u = static_cast<unsigned char>(c);
+            static const char hexDigits[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+            os_.Put('%');
+            os_.Put(static_cast<typename OutputStream::Ch>(hexDigits[u >> 4]));
+            os_.Put(static_cast<typename OutputStream::Ch>(hexDigits[u & 15]));
+        }
+    private:
+        OutputStream& os_;
+    };
+
+    Allocator* allocator_;                  //!< The current allocator. It is either user-supplied or equal to ownAllocator_.
+    Allocator* ownAllocator_;               //!< Allocator owned by this Pointer.
+    Ch* nameBuffer_;                        //!< A buffer containing all names in tokens.
+    Token* tokens_;                         //!< A list of tokens.
+    size_t tokenCount_;                     //!< Number of tokens in tokens_.
+    size_t parseErrorOffset_;               //!< Offset in code unit when parsing fail.
+    PointerParseErrorCode parseErrorCode_;  //!< Parsing error code.
+};
+
+//! GenericPointer for Value (UTF-8, default allocator).
+typedef GenericPointer<Value> Pointer;
+
+//!@name Helper functions for GenericPointer
+//@{
+
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+typename T::ValueType& CreateValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, typename T::AllocatorType& a) {
+    return pointer.Create(root, a);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& CreateValueByPointer(T& root, const CharType(&source)[N], typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Create(root, a);
+}
+
+// No allocator parameter
+
+template <typename DocumentType>
+typename DocumentType::ValueType& CreateValueByPointer(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer) {
+    return pointer.Create(document);
+}
+
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& CreateValueByPointer(DocumentType& document, const CharType(&source)[N]) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Create(document);
+}
+
+/////////////////////////////////////////////////////////////////////////////
