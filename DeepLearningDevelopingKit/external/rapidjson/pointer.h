@@ -1078,4 +1078,77 @@ typename DocumentType::ValueType& CreateValueByPointer(DocumentType& document, c
     return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Create(document);
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+typename T::ValueType* GetValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, size_t* unresolvedTokenIndex = 0) {
+    return pointer.Get(root, unresolvedTokenIndex);
+}
+
+template <typename T>
+const typename T::ValueType* GetValueByPointer(const T& root, const GenericPointer<typename T::ValueType>& pointer, size_t* unresolvedTokenIndex = 0) {
+    return pointer.Get(root, unresolvedTokenIndex);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType* GetValueByPointer(T& root, const CharType (&source)[N], size_t* unresolvedTokenIndex = 0) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Get(root, unresolvedTokenIndex);
+}
+
+template <typename T, typename CharType, size_t N>
+const typename T::ValueType* GetValueByPointer(const T& root, const CharType(&source)[N], size_t* unresolvedTokenIndex = 0) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Get(root, unresolvedTokenIndex);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+typename T::ValueType& GetValueByPointerWithDefault(T& root, const GenericPointer<typename T::ValueType>& pointer, const typename T::ValueType& defaultValue, typename T::AllocatorType& a) {
+    return pointer.GetWithDefault(root, defaultValue, a);
+}
+
+template <typename T>
+typename T::ValueType& GetValueByPointerWithDefault(T& root, const GenericPointer<typename T::ValueType>& pointer, const typename T::Ch* defaultValue, typename T::AllocatorType& a) {
+    return pointer.GetWithDefault(root, defaultValue, a);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename T>
+typename T::ValueType& GetValueByPointerWithDefault(T& root, const GenericPointer<typename T::ValueType>& pointer, const std::basic_string<typename T::Ch>& defaultValue, typename T::AllocatorType& a) {
+    return pointer.GetWithDefault(root, defaultValue, a);
+}
+#endif
+
+template <typename T, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename T::ValueType&))
+GetValueByPointerWithDefault(T& root, const GenericPointer<typename T::ValueType>& pointer, T2 defaultValue, typename T::AllocatorType& a) {
+    return pointer.GetWithDefault(root, defaultValue, a);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& GetValueByPointerWithDefault(T& root, const CharType(&source)[N], const typename T::ValueType& defaultValue, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).GetWithDefault(root, defaultValue, a);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& GetValueByPointerWithDefault(T& root, const CharType(&source)[N], const typename T::Ch* defaultValue, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).GetWithDefault(root, defaultValue, a);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& GetValueByPointerWithDefault(T& root, const CharType(&source)[N], const std::basic_string<typename T::Ch>& defaultValue, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).GetWithDefault(root, defaultValue, a);
+}
+#endif
+
+template <typename T, typename CharType, size_t N, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename T::ValueType&))
+GetValueByPointerWithDefault(T& root, const CharType(&source)[N], T2 defaultValue, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).GetWithDefault(root, defaultValue, a);
+}
+
+// No allocator parameter
+
+template <typename DocumentType>
+typename DocumentType::ValueT
