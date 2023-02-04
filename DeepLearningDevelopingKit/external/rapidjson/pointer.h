@@ -1151,4 +1151,73 @@ GetValueByPointerWithDefault(T& root, const CharType(&source)[N], T2 defaultValu
 // No allocator parameter
 
 template <typename DocumentType>
-typename DocumentType::ValueT
+typename DocumentType::ValueType& GetValueByPointerWithDefault(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, const typename DocumentType::ValueType& defaultValue) {
+    return pointer.GetWithDefault(document, defaultValue);
+}
+
+template <typename DocumentType>
+typename DocumentType::ValueType& GetValueByPointerWithDefault(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, const typename DocumentType::Ch* defaultValue) {
+    return pointer.GetWithDefault(document, defaultValue);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename DocumentType>
+typename DocumentType::ValueType& GetValueByPointerWithDefault(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, const std::basic_string<typename DocumentType::Ch>& defaultValue) {
+    return pointer.GetWithDefault(document, defaultValue);
+}
+#endif
+
+template <typename DocumentType, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename DocumentType::ValueType&))
+GetValueByPointerWithDefault(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, T2 defaultValue) {
+    return pointer.GetWithDefault(document, defaultValue);
+}
+
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& GetValueByPointerWithDefault(DocumentType& document, const CharType(&source)[N], const typename DocumentType::ValueType& defaultValue) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).GetWithDefault(document, defaultValue);
+}
+
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& GetValueByPointerWithDefault(DocumentType& document, const CharType(&source)[N], const typename DocumentType::Ch* defaultValue) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).GetWithDefault(document, defaultValue);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& GetValueByPointerWithDefault(DocumentType& document, const CharType(&source)[N], const std::basic_string<typename DocumentType::Ch>& defaultValue) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).GetWithDefault(document, defaultValue);
+}
+#endif
+
+template <typename DocumentType, typename CharType, size_t N, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename DocumentType::ValueType&))
+GetValueByPointerWithDefault(DocumentType& document, const CharType(&source)[N], T2 defaultValue) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).GetWithDefault(document, defaultValue);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+typename T::ValueType& SetValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, typename T::ValueType& value, typename T::AllocatorType& a) {
+    return pointer.Set(root, value, a);
+}
+
+template <typename T>
+typename T::ValueType& SetValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, const typename T::ValueType& value, typename T::AllocatorType& a) {
+    return pointer.Set(root, value, a);
+}
+
+template <typename T>
+typename T::ValueType& SetValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, const typename T::Ch* value, typename T::AllocatorType& a) {
+    return pointer.Set(root, value, a);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename T>
+typename T::ValueType& SetValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, const std::basic_string<typename T::Ch>& value, typename T::AllocatorType& a) {
+    return pointer.Set(root, value, a);
+}
+#endif
+
+template <typename T, typename T2>
