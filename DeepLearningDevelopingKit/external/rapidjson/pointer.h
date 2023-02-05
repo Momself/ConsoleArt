@@ -1221,3 +1221,74 @@ typename T::ValueType& SetValueByPointer(T& root, const GenericPointer<typename 
 #endif
 
 template <typename T, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename T::ValueType&))
+SetValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, T2 value, typename T::AllocatorType& a) {
+    return pointer.Set(root, value, a);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& SetValueByPointer(T& root, const CharType(&source)[N], typename T::ValueType& value, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Set(root, value, a);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& SetValueByPointer(T& root, const CharType(&source)[N], const typename T::ValueType& value, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Set(root, value, a);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& SetValueByPointer(T& root, const CharType(&source)[N], const typename T::Ch* value, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Set(root, value, a);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& SetValueByPointer(T& root, const CharType(&source)[N], const std::basic_string<typename T::Ch>& value, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Set(root, value, a);
+}
+#endif
+
+template <typename T, typename CharType, size_t N, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename T::ValueType&))
+SetValueByPointer(T& root, const CharType(&source)[N], T2 value, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Set(root, value, a);
+}
+
+// No allocator parameter
+
+template <typename DocumentType>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, typename DocumentType::ValueType& value) {
+    return pointer.Set(document, value);
+}
+
+template <typename DocumentType>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, const typename DocumentType::ValueType& value) {
+    return pointer.Set(document, value);
+}
+
+template <typename DocumentType>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, const typename DocumentType::Ch* value) {
+    return pointer.Set(document, value);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename DocumentType>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, const std::basic_string<typename DocumentType::Ch>& value) {
+    return pointer.Set(document, value);
+}
+#endif
+
+template <typename DocumentType, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename DocumentType::ValueType&))
+SetValueByPointer(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, T2 value) {
+    return pointer.Set(document, value);
+}
+
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const CharType(&source)[N], typename DocumentType::ValueType& value) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Set(document, value);
+}
+
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const CharType(&source)[N], const typename DocumentType::ValueType& value) {
+    return GenericPointer<typename
