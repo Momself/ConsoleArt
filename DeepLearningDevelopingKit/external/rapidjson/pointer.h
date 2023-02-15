@@ -1291,4 +1291,67 @@ typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, cons
 
 template <typename DocumentType, typename CharType, size_t N>
 typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const CharType(&source)[N], const typename DocumentType::ValueType& value) {
-    return GenericPointer<typename
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Set(document, value);
+}
+
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const CharType(&source)[N], const typename DocumentType::Ch* value) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Set(document, value);
+}
+
+#if RAPIDJSON_HAS_STDSTRING
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& SetValueByPointer(DocumentType& document, const CharType(&source)[N], const std::basic_string<typename DocumentType::Ch>& value) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Set(document, value);
+}
+#endif
+
+template <typename DocumentType, typename CharType, size_t N, typename T2>
+RAPIDJSON_DISABLEIF_RETURN((internal::OrExpr<internal::IsPointer<T2>, internal::IsGenericValue<T2> >), (typename DocumentType::ValueType&))
+SetValueByPointer(DocumentType& document, const CharType(&source)[N], T2 value) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Set(document, value);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+typename T::ValueType& SwapValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer, typename T::ValueType& value, typename T::AllocatorType& a) {
+    return pointer.Swap(root, value, a);
+}
+
+template <typename T, typename CharType, size_t N>
+typename T::ValueType& SwapValueByPointer(T& root, const CharType(&source)[N], typename T::ValueType& value, typename T::AllocatorType& a) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Swap(root, value, a);
+}
+
+template <typename DocumentType>
+typename DocumentType::ValueType& SwapValueByPointer(DocumentType& document, const GenericPointer<typename DocumentType::ValueType>& pointer, typename DocumentType::ValueType& value) {
+    return pointer.Swap(document, value);
+}
+
+template <typename DocumentType, typename CharType, size_t N>
+typename DocumentType::ValueType& SwapValueByPointer(DocumentType& document, const CharType(&source)[N], typename DocumentType::ValueType& value) {
+    return GenericPointer<typename DocumentType::ValueType>(source, N - 1).Swap(document, value);
+}
+
+//////////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+bool EraseValueByPointer(T& root, const GenericPointer<typename T::ValueType>& pointer) {
+    return pointer.Erase(root);
+}
+
+template <typename T, typename CharType, size_t N>
+bool EraseValueByPointer(T& root, const CharType(&source)[N]) {
+    return GenericPointer<typename T::ValueType>(source, N - 1).Erase(root);
+}
+
+//@}
+
+RAPIDJSON_NAMESPACE_END
+
+#if defined(__clang__) || defined(_MSC_VER)
+RAPIDJSON_DIAG_POP
+#endif
+
+#endif // RAPIDJSON_POINTER_H_
