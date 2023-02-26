@@ -324,4 +324,123 @@
 #define RAPIDJSON_GETPOINTER(type, p) (p)
 #endif
 
-/////////////
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_SSE2/RAPIDJSON_SSE42/RAPIDJSON_NEON/RAPIDJSON_SIMD
+
+/*! \def RAPIDJSON_SIMD
+    \ingroup RAPIDJSON_CONFIG
+    \brief Enable SSE2/SSE4.2/Neon optimization.
+
+    RapidJSON supports optimized implementations for some parsing operations
+    based on the SSE2, SSE4.2 or NEon SIMD extensions on modern Intel
+    or ARM compatible processors.
+
+    To enable these optimizations, three different symbols can be defined;
+    \code
+    // Enable SSE2 optimization.
+    #define RAPIDJSON_SSE2
+
+    // Enable SSE4.2 optimization.
+    #define RAPIDJSON_SSE42
+    \endcode
+
+    // Enable ARM Neon optimization.
+    #define RAPIDJSON_NEON
+    \endcode
+
+    \c RAPIDJSON_SSE42 takes precedence over SSE2, if both are defined.
+
+    If any of these symbols is defined, RapidJSON defines the macro
+    \c RAPIDJSON_SIMD to indicate the availability of the optimized code.
+*/
+#if defined(RAPIDJSON_SSE2) || defined(RAPIDJSON_SSE42) \
+    || defined(RAPIDJSON_NEON) || defined(RAPIDJSON_DOXYGEN_RUNNING)
+#define RAPIDJSON_SIMD
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_NO_SIZETYPEDEFINE
+
+#ifndef RAPIDJSON_NO_SIZETYPEDEFINE
+/*! \def RAPIDJSON_NO_SIZETYPEDEFINE
+    \ingroup RAPIDJSON_CONFIG
+    \brief User-provided \c SizeType definition.
+
+    In order to avoid using 32-bit size types for indexing strings and arrays,
+    define this preprocessor symbol and provide the type rapidjson::SizeType
+    before including RapidJSON:
+    \code
+    #define RAPIDJSON_NO_SIZETYPEDEFINE
+    namespace rapidjson { typedef ::std::size_t SizeType; }
+    #include "rapidjson/..."
+    \endcode
+
+    \see rapidjson::SizeType
+*/
+#ifdef RAPIDJSON_DOXYGEN_RUNNING
+#define RAPIDJSON_NO_SIZETYPEDEFINE
+#endif
+RAPIDJSON_NAMESPACE_BEGIN
+//! Size type (for string lengths, array sizes, etc.)
+/*! RapidJSON uses 32-bit array/string indices even on 64-bit platforms,
+    instead of using \c size_t. Users may override the SizeType by defining
+    \ref RAPIDJSON_NO_SIZETYPEDEFINE.
+*/
+typedef unsigned SizeType;
+RAPIDJSON_NAMESPACE_END
+#endif
+
+// always import std::size_t to rapidjson namespace
+RAPIDJSON_NAMESPACE_BEGIN
+using std::size_t;
+RAPIDJSON_NAMESPACE_END
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_ASSERT
+
+//! Assertion.
+/*! \ingroup RAPIDJSON_CONFIG
+    By default, rapidjson uses C \c assert() for internal assertions.
+    User can override it by defining RAPIDJSON_ASSERT(x) macro.
+
+    \note Parsing errors are handled and can be customized by the
+          \ref RAPIDJSON_ERRORS APIs.
+*/
+#ifndef RAPIDJSON_ASSERT
+#include <cassert>
+#define RAPIDJSON_ASSERT(x) assert(x)
+#endif // RAPIDJSON_ASSERT
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_STATIC_ASSERT
+
+// Prefer C++11 static_assert, if available
+#ifndef RAPIDJSON_STATIC_ASSERT
+#if __cplusplus >= 201103L || ( defined(_MSC_VER) && _MSC_VER >= 1800 )
+#define RAPIDJSON_STATIC_ASSERT(x) \
+   static_assert(x, RAPIDJSON_STRINGIFY(x))
+#endif // C++11
+#endif // RAPIDJSON_STATIC_ASSERT
+
+// Adopt C++03 implementation from boost
+#ifndef RAPIDJSON_STATIC_ASSERT
+#ifndef __clang__
+//!@cond RAPIDJSON_HIDDEN_FROM_DOXYGEN
+#endif
+RAPIDJSON_NAMESPACE_BEGIN
+template <bool x> struct STATIC_ASSERTION_FAILURE;
+template <> struct STATIC_ASSERTION_FAILURE<true> { enum { value = 1 }; };
+template <size_t x> struct StaticAssertTest {};
+RAPIDJSON_NAMESPACE_END
+
+#if defined(__GNUC__) || defined(__clang__)
+#define RAPIDJSON_STATIC_ASSERT_UNUSED_ATTRIBUTE __attribute__((unused))
+#else
+#define RAPIDJSON_STATIC_ASSERT_UNUSED_ATTRIBUTE 
+#endif
+#ifndef __clang__
+//!@endcond
+#endif
+
+/*! \def RAPIDJSON_STATIC_ASSERT
+    \brief (Internal) macro to check f
