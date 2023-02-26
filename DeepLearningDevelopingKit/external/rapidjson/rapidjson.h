@@ -443,4 +443,120 @@ RAPIDJSON_NAMESPACE_END
 #endif
 
 /*! \def RAPIDJSON_STATIC_ASSERT
-    \brief (Internal) macro to check f
+    \brief (Internal) macro to check for conditions at compile-time
+    \param x compile-time condition
+    \hideinitializer
+ */
+#define RAPIDJSON_STATIC_ASSERT(x) \
+    typedef ::RAPIDJSON_NAMESPACE::StaticAssertTest< \
+      sizeof(::RAPIDJSON_NAMESPACE::STATIC_ASSERTION_FAILURE<bool(x) >)> \
+    RAPIDJSON_JOIN(StaticAssertTypedef, __LINE__) RAPIDJSON_STATIC_ASSERT_UNUSED_ATTRIBUTE
+#endif // RAPIDJSON_STATIC_ASSERT
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_LIKELY, RAPIDJSON_UNLIKELY
+
+//! Compiler branching hint for expression with high probability to be true.
+/*!
+    \ingroup RAPIDJSON_CONFIG
+    \param x Boolean expression likely to be true.
+*/
+#ifndef RAPIDJSON_LIKELY
+#if defined(__GNUC__) || defined(__clang__)
+#define RAPIDJSON_LIKELY(x) __builtin_expect(!!(x), 1)
+#else
+#define RAPIDJSON_LIKELY(x) (x)
+#endif
+#endif
+
+//! Compiler branching hint for expression with low probability to be true.
+/*!
+    \ingroup RAPIDJSON_CONFIG
+    \param x Boolean expression unlikely to be true.
+*/
+#ifndef RAPIDJSON_UNLIKELY
+#if defined(__GNUC__) || defined(__clang__)
+#define RAPIDJSON_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#define RAPIDJSON_UNLIKELY(x) (x)
+#endif
+#endif
+
+///////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+//!@cond RAPIDJSON_HIDDEN_FROM_DOXYGEN
+
+#define RAPIDJSON_MULTILINEMACRO_BEGIN do {  
+#define RAPIDJSON_MULTILINEMACRO_END \
+} while((void)0, 0)
+
+// adopted from Boost
+#define RAPIDJSON_VERSION_CODE(x,y,z) \
+  (((x)*100000) + ((y)*100) + (z))
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_DIAG_PUSH/POP, RAPIDJSON_DIAG_OFF
+
+#if defined(__GNUC__)
+#define RAPIDJSON_GNUC \
+    RAPIDJSON_VERSION_CODE(__GNUC__,__GNUC_MINOR__,__GNUC_PATCHLEVEL__)
+#endif
+
+#if defined(__clang__) || (defined(RAPIDJSON_GNUC) && RAPIDJSON_GNUC >= RAPIDJSON_VERSION_CODE(4,2,0))
+
+#define RAPIDJSON_PRAGMA(x) _Pragma(RAPIDJSON_STRINGIFY(x))
+#define RAPIDJSON_DIAG_PRAGMA(x) RAPIDJSON_PRAGMA(GCC diagnostic x)
+#define RAPIDJSON_DIAG_OFF(x) \
+    RAPIDJSON_DIAG_PRAGMA(ignored RAPIDJSON_STRINGIFY(RAPIDJSON_JOIN(-W,x)))
+
+// push/pop support in Clang and GCC>=4.6
+#if defined(__clang__) || (defined(RAPIDJSON_GNUC) && RAPIDJSON_GNUC >= RAPIDJSON_VERSION_CODE(4,6,0))
+#define RAPIDJSON_DIAG_PUSH RAPIDJSON_DIAG_PRAGMA(push)
+#define RAPIDJSON_DIAG_POP  RAPIDJSON_DIAG_PRAGMA(pop)
+#else // GCC >= 4.2, < 4.6
+#define RAPIDJSON_DIAG_PUSH /* ignored */
+#define RAPIDJSON_DIAG_POP /* ignored */
+#endif
+
+#elif defined(_MSC_VER)
+
+// pragma (MSVC specific)
+#define RAPIDJSON_PRAGMA(x) __pragma(x)
+#define RAPIDJSON_DIAG_PRAGMA(x) RAPIDJSON_PRAGMA(warning(x))
+
+#define RAPIDJSON_DIAG_OFF(x) RAPIDJSON_DIAG_PRAGMA(disable: x)
+#define RAPIDJSON_DIAG_PUSH RAPIDJSON_DIAG_PRAGMA(push)
+#define RAPIDJSON_DIAG_POP  RAPIDJSON_DIAG_PRAGMA(pop)
+
+#else
+
+#define RAPIDJSON_DIAG_OFF(x) /* ignored */
+#define RAPIDJSON_DIAG_PUSH   /* ignored */
+#define RAPIDJSON_DIAG_POP    /* ignored */
+
+#endif // RAPIDJSON_DIAG_*
+
+///////////////////////////////////////////////////////////////////////////////
+// C++11 features
+
+#ifndef RAPIDJSON_HAS_CXX11_RVALUE_REFS
+#if defined(__clang__)
+#if __has_feature(cxx_rvalue_references) && \
+    (defined(_MSC_VER) || defined(_LIBCPP_VERSION) || defined(__GLIBCXX__) && __GLIBCXX__ >= 20080306)
+#define RAPIDJSON_HAS_CXX11_RVALUE_REFS 1
+#else
+#define RAPIDJSON_HAS_CXX11_RVALUE_REFS 0
+#endif
+#elif (defined(RAPIDJSON_GNUC) && (RAPIDJSON_GNUC >= RAPIDJSON_VERSION_CODE(4,3,0)) && defined(__GXX_EXPERIMENTAL_CXX0X__)) || \
+      (defined(_MSC_VER) && _MSC_VER >= 1600)
+
+#define RAPIDJSON_HAS_CXX11_RVALUE_REFS 1
+#else
+#define RAPIDJSON_HAS_CXX11_RVALUE_REFS 0
+#endif
+#endif // RAPIDJSON_HAS_CXX11_RVALUE_REFS
+
+#ifndef RAPIDJSON_HAS_CXX11_NOEXCEPT
+#if defined(__clang__)
+#define RAPIDJSO
