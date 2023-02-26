@@ -129,4 +129,112 @@
 
 #ifndef RAPIDJSON_HAS_STDSTRING
 #ifdef RAPIDJSON_DOXYGEN_RUNNING
-#def
+#define RAPIDJSON_HAS_STDSTRING 1 // force generation of documentation
+#else
+#define RAPIDJSON_HAS_STDSTRING 0 // no std::string support by default
+#endif
+/*! \def RAPIDJSON_HAS_STDSTRING
+    \ingroup RAPIDJSON_CONFIG
+    \brief Enable RapidJSON support for \c std::string
+
+    By defining this preprocessor symbol to \c 1, several convenience functions for using
+    \ref rapidjson::GenericValue with \c std::string are enabled, especially
+    for construction and comparison.
+
+    \hideinitializer
+*/
+#endif // !defined(RAPIDJSON_HAS_STDSTRING)
+
+#if RAPIDJSON_HAS_STDSTRING
+#include <string>
+#endif // RAPIDJSON_HAS_STDSTRING
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_NO_INT64DEFINE
+
+/*! \def RAPIDJSON_NO_INT64DEFINE
+    \ingroup RAPIDJSON_CONFIG
+    \brief Use external 64-bit integer types.
+
+    RapidJSON requires the 64-bit integer types \c int64_t and  \c uint64_t types
+    to be available at global scope.
+
+    If users have their own definition, define RAPIDJSON_NO_INT64DEFINE to
+    prevent RapidJSON from defining its own types.
+*/
+#ifndef RAPIDJSON_NO_INT64DEFINE
+//!@cond RAPIDJSON_HIDDEN_FROM_DOXYGEN
+#if defined(_MSC_VER) && (_MSC_VER < 1800)	// Visual Studio 2013
+#include "msinttypes/stdint.h"
+#include "msinttypes/inttypes.h"
+#else
+// Other compilers should have this.
+#include <stdint.h>
+#include <inttypes.h>
+#endif
+//!@endcond
+#ifdef RAPIDJSON_DOXYGEN_RUNNING
+#define RAPIDJSON_NO_INT64DEFINE
+#endif
+#endif // RAPIDJSON_NO_INT64TYPEDEF
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_FORCEINLINE
+
+#ifndef RAPIDJSON_FORCEINLINE
+//!@cond RAPIDJSON_HIDDEN_FROM_DOXYGEN
+#if defined(_MSC_VER) && defined(NDEBUG)
+#define RAPIDJSON_FORCEINLINE __forceinline
+#elif defined(__GNUC__) && __GNUC__ >= 4 && defined(NDEBUG)
+#define RAPIDJSON_FORCEINLINE __attribute__((always_inline))
+#else
+#define RAPIDJSON_FORCEINLINE
+#endif
+//!@endcond
+#endif // RAPIDJSON_FORCEINLINE
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_ENDIAN
+#define RAPIDJSON_LITTLEENDIAN  0   //!< Little endian machine
+#define RAPIDJSON_BIGENDIAN     1   //!< Big endian machine
+
+//! Endianness of the machine.
+/*!
+    \def RAPIDJSON_ENDIAN
+    \ingroup RAPIDJSON_CONFIG
+
+    GCC 4.6 provided macro for detecting endianness of the target machine. But other
+    compilers may not have this. User can define RAPIDJSON_ENDIAN to either
+    \ref RAPIDJSON_LITTLEENDIAN or \ref RAPIDJSON_BIGENDIAN.
+
+    Default detection implemented with reference to
+    \li https://gcc.gnu.org/onlinedocs/gcc-4.6.0/cpp/Common-Predefined-Macros.html
+    \li http://www.boost.org/doc/libs/1_42_0/boost/detail/endian.hpp
+*/
+#ifndef RAPIDJSON_ENDIAN
+// Detect with GCC 4.6's macro
+#  ifdef __BYTE_ORDER__
+#    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#      define RAPIDJSON_ENDIAN RAPIDJSON_LITTLEENDIAN
+#    elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#      define RAPIDJSON_ENDIAN RAPIDJSON_BIGENDIAN
+#    else
+#      error Unknown machine endianness detected. User needs to define RAPIDJSON_ENDIAN.
+#    endif // __BYTE_ORDER__
+// Detect with GLIBC's endian.h
+#  elif defined(__GLIBC__)
+#    include <endian.h>
+#    if (__BYTE_ORDER == __LITTLE_ENDIAN)
+#      define RAPIDJSON_ENDIAN RAPIDJSON_LITTLEENDIAN
+#    elif (__BYTE_ORDER == __BIG_ENDIAN)
+#      define RAPIDJSON_ENDIAN RAPIDJSON_BIGENDIAN
+#    else
+#      error Unknown machine endianness detected. User needs to define RAPIDJSON_ENDIAN.
+#   endif // __GLIBC__
+// Detect with _LITTLE_ENDIAN and _BIG_ENDIAN macro
+#  elif defined(_LITTLE_ENDIAN) && !defined(_BIG_ENDIAN)
+#    define RAPIDJSON_ENDIAN RAPIDJSON_LITTLEENDIAN
+#  elif defined(_BIG_ENDIAN) && !defined(_LITTLE_ENDIAN)
+#    define RAPIDJSON_ENDIAN RAPIDJSON_BIGENDIAN
+// Detect with architecture macros
+#  el
