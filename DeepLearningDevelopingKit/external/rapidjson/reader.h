@@ -1897,3 +1897,321 @@ private:
                 IterativeParsingErrorState,             // Right curly bracket
                 IterativeParsingErrorState,             // Comma
                 IterativeParsingErrorState,             // Colon
+                IterativeParsingElementState,           // String
+                IterativeParsingElementState,           // False
+                IterativeParsingElementState,           // True
+                IterativeParsingElementState,           // Null
+                IterativeParsingElementState            // Number
+            },
+            // Element
+            {
+                IterativeParsingErrorState,             // Left bracket
+                IterativeParsingArrayFinishState,       // Right bracket
+                IterativeParsingErrorState,             // Left curly bracket
+                IterativeParsingErrorState,             // Right curly bracket
+                IterativeParsingElementDelimiterState,  // Comma
+                IterativeParsingErrorState,             // Colon
+                IterativeParsingErrorState,             // String
+                IterativeParsingErrorState,             // False
+                IterativeParsingErrorState,             // True
+                IterativeParsingErrorState,             // Null
+                IterativeParsingErrorState              // Number
+            },
+            // ArrayFinish(sink state)
+            {
+                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+                IterativeParsingErrorState
+            },
+            // Single Value (sink state)
+            {
+                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+                IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState, IterativeParsingErrorState,
+                IterativeParsingErrorState
+            },
+            // ElementDelimiter
+            {
+                IterativeParsingArrayInitialState,      // Left bracket(push Element state)
+                IterativeParsingArrayFinishState,       // Right bracket
+                IterativeParsingObjectInitialState,     // Left curly bracket(push Element state)
+                IterativeParsingErrorState,             // Right curly bracket
+                IterativeParsingErrorState,             // Comma
+                IterativeParsingErrorState,             // Colon
+                IterativeParsingElementState,           // String
+                IterativeParsingElementState,           // False
+                IterativeParsingElementState,           // True
+                IterativeParsingElementState,           // Null
+                IterativeParsingElementState            // Number
+            },
+            // MemberDelimiter
+            {
+                IterativeParsingErrorState,         // Left bracket
+                IterativeParsingErrorState,         // Right bracket
+                IterativeParsingErrorState,         // Left curly bracket
+                IterativeParsingObjectFinishState,  // Right curly bracket
+                IterativeParsingErrorState,         // Comma
+                IterativeParsingErrorState,         // Colon
+                IterativeParsingMemberKeyState,     // String
+                IterativeParsingErrorState,         // False
+                IterativeParsingErrorState,         // True
+                IterativeParsingErrorState,         // Null
+                IterativeParsingErrorState          // Number
+            },
+            // KeyValueDelimiter
+            {
+                IterativeParsingArrayInitialState,      // Left bracket(push MemberValue state)
+                IterativeParsingErrorState,             // Right bracket
+                IterativeParsingObjectInitialState,     // Left curly bracket(push MemberValue state)
+                IterativeParsingErrorState,             // Right curly bracket
+                IterativeParsingErrorState,             // Comma
+                IterativeParsingErrorState,             // Colon
+                IterativeParsingMemberValueState,       // String
+                IterativeParsingMemberValueState,       // False
+                IterativeParsingMemberValueState,       // True
+                IterativeParsingMemberValueState,       // Null
+                IterativeParsingMemberValueState        // Number
+            },
+        }; // End of G
+
+        return static_cast<IterativeParsingState>(G[state][token]);
+    }
+
+    // Make an advance in the token stream and state based on the candidate destination state which was returned by Transit().
+    // May return a new state on state pop.
+    template <unsigned parseFlags, typename InputStream, typename Handler>
+    RAPIDJSON_FORCEINLINE IterativeParsingState Transit(IterativeParsingState src, Token token, IterativeParsingState dst, InputStream& is, Handler& handler) {
+        (void)token;
+
+        switch (dst) {
+        case IterativeParsingErrorState:
+            return dst;
+
+        case IterativeParsingObjectInitialState:
+        case IterativeParsingArrayInitialState:
+        {
+            // Push the state(Element or MemeberValue) if we are nested in another array or value of member.
+            // In this way we can get the correct state on ObjectFinish or ArrayFinish by frame pop.
+            IterativeParsingState n = src;
+            if (src == IterativeParsingArrayInitialState || src == IterativeParsingElementDelimiterState)
+                n = IterativeParsingElementState;
+            else if (src == IterativeParsingKeyValueDelimiterState)
+                n = IterativeParsingMemberValueState;
+            // Push current state.
+            *stack_.template Push<SizeType>(1) = n;
+            // Initialize and push the member/element count.
+            *stack_.template Push<SizeType>(1) = 0;
+            // Call handler
+            bool hr = (dst == IterativeParsingObjectInitialState) ? handler.StartObject() : handler.StartArray();
+            // On handler short circuits the parsing.
+            if (!hr) {
+                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+                return IterativeParsingErrorState;
+            }
+            else {
+                is.Take();
+                return dst;
+            }
+        }
+
+        case IterativeParsingMemberKeyState:
+            ParseString<parseFlags>(is, handler, true);
+            if (HasParseError())
+                return IterativeParsingErrorState;
+            else
+                return dst;
+
+        case IterativeParsingKeyValueDelimiterState:
+            RAPIDJSON_ASSERT(token == ColonToken);
+            is.Take();
+            return dst;
+
+        case IterativeParsingMemberValueState:
+            // Must be non-compound value. Or it would be ObjectInitial or ArrayInitial state.
+            ParseValue<parseFlags>(is, handler);
+            if (HasParseError()) {
+                return IterativeParsingErrorState;
+            }
+            return dst;
+
+        case IterativeParsingElementState:
+            // Must be non-compound value. Or it would be ObjectInitial or ArrayInitial state.
+            ParseValue<parseFlags>(is, handler);
+            if (HasParseError()) {
+                return IterativeParsingErrorState;
+            }
+            return dst;
+
+        case IterativeParsingMemberDelimiterState:
+        case IterativeParsingElementDelimiterState:
+            is.Take();
+            // Update member/element count.
+            *stack_.template Top<SizeType>() = *stack_.template Top<SizeType>() + 1;
+            return dst;
+
+        case IterativeParsingObjectFinishState:
+        {
+            // Transit from delimiter is only allowed when trailing commas are enabled
+            if (!(parseFlags & kParseTrailingCommasFlag) && src == IterativeParsingMemberDelimiterState) {
+                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorObjectMissName, is.Tell());
+                return IterativeParsingErrorState;
+            }
+            // Get member count.
+            SizeType c = *stack_.template Pop<SizeType>(1);
+            // If the object is not empty, count the last member.
+            if (src == IterativeParsingMemberValueState)
+                ++c;
+            // Restore the state.
+            IterativeParsingState n = static_cast<IterativeParsingState>(*stack_.template Pop<SizeType>(1));
+            // Transit to Finish state if this is the topmost scope.
+            if (n == IterativeParsingStartState)
+                n = IterativeParsingFinishState;
+            // Call handler
+            bool hr = handler.EndObject(c);
+            // On handler short circuits the parsing.
+            if (!hr) {
+                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+                return IterativeParsingErrorState;
+            }
+            else {
+                is.Take();
+                return n;
+            }
+        }
+
+        case IterativeParsingArrayFinishState:
+        {
+            // Transit from delimiter is only allowed when trailing commas are enabled
+            if (!(parseFlags & kParseTrailingCommasFlag) && src == IterativeParsingElementDelimiterState) {
+                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorValueInvalid, is.Tell());
+                return IterativeParsingErrorState;
+            }
+            // Get element count.
+            SizeType c = *stack_.template Pop<SizeType>(1);
+            // If the array is not empty, count the last element.
+            if (src == IterativeParsingElementState)
+                ++c;
+            // Restore the state.
+            IterativeParsingState n = static_cast<IterativeParsingState>(*stack_.template Pop<SizeType>(1));
+            // Transit to Finish state if this is the topmost scope.
+            if (n == IterativeParsingStartState)
+                n = IterativeParsingFinishState;
+            // Call handler
+            bool hr = handler.EndArray(c);
+            // On handler short circuits the parsing.
+            if (!hr) {
+                RAPIDJSON_PARSE_ERROR_NORETURN(kParseErrorTermination, is.Tell());
+                return IterativeParsingErrorState;
+            }
+            else {
+                is.Take();
+                return n;
+            }
+        }
+
+        default:
+            // This branch is for IterativeParsingValueState actually.
+            // Use `default:` rather than
+            // `case IterativeParsingValueState:` is for code coverage.
+
+            // The IterativeParsingStartState is not enumerated in this switch-case.
+            // It is impossible for that case. And it can be caught by following assertion.
+
+            // The IterativeParsingFinishState is not enumerated in this switch-case either.
+            // It is a "derivative" state which cannot triggered from Predict() directly.
+            // Therefore it cannot happen here. And it can be caught by following assertion.
+            RAPIDJSON_ASSERT(dst == IterativeParsingValueState);
+
+            // Must be non-compound value. Or it would be ObjectInitial or ArrayInitial state.
+            ParseValue<parseFlags>(is, handler);
+            if (HasParseError()) {
+                return IterativeParsingErrorState;
+            }
+            return IterativeParsingFinishState;
+        }
+    }
+
+    template <typename InputStream>
+    void HandleError(IterativeParsingState src, InputStream& is) {
+        if (HasParseError()) {
+            // Error flag has been set.
+            return;
+        }
+
+        switch (src) {
+        case IterativeParsingStartState:            RAPIDJSON_PARSE_ERROR(kParseErrorDocumentEmpty, is.Tell()); return;
+        case IterativeParsingFinishState:           RAPIDJSON_PARSE_ERROR(kParseErrorDocumentRootNotSingular, is.Tell()); return;
+        case IterativeParsingObjectInitialState:
+        case IterativeParsingMemberDelimiterState:  RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissName, is.Tell()); return;
+        case IterativeParsingMemberKeyState:        RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissColon, is.Tell()); return;
+        case IterativeParsingMemberValueState:      RAPIDJSON_PARSE_ERROR(kParseErrorObjectMissCommaOrCurlyBracket, is.Tell()); return;
+        case IterativeParsingKeyValueDelimiterState:
+        case IterativeParsingArrayInitialState:
+        case IterativeParsingElementDelimiterState: RAPIDJSON_PARSE_ERROR(kParseErrorValueInvalid, is.Tell()); return;
+        default: RAPIDJSON_ASSERT(src == IterativeParsingElementState); RAPIDJSON_PARSE_ERROR(kParseErrorArrayMissCommaOrSquareBracket, is.Tell()); return;
+        }
+    }
+
+    RAPIDJSON_FORCEINLINE bool IsIterativeParsingDelimiterState(IterativeParsingState s) {
+        return s >= IterativeParsingElementDelimiterState;
+    }
+    
+    RAPIDJSON_FORCEINLINE bool IsIterativeParsingCompleteState(IterativeParsingState s) {
+        return s <= IterativeParsingErrorState;
+    }
+    
+    template <unsigned parseFlags, typename InputStream, typename Handler>
+    ParseResult IterativeParse(InputStream& is, Handler& handler) {
+        parseResult_.Clear();
+        ClearStackOnExit scope(*this);
+        IterativeParsingState state = IterativeParsingStartState;
+        
+        SkipWhitespaceAndComments<parseFlags>(is);
+        RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        while (is.Peek() != '\0') {
+            Token t = Tokenize(is.Peek());
+            IterativeParsingState n = Predict(state, t);
+            IterativeParsingState d = Transit<parseFlags>(state, t, n, is, handler);
+            
+            if (d == IterativeParsingErrorState) {
+                HandleError(state, is);
+                break;
+            }
+            
+            state = d;
+            
+            // Do not further consume streams if a root JSON has been parsed.
+            if ((parseFlags & kParseStopWhenDoneFlag) && state == IterativeParsingFinishState)
+                break;
+            
+            SkipWhitespaceAndComments<parseFlags>(is);
+            RAPIDJSON_PARSE_ERROR_EARLY_RETURN(parseResult_);
+        }
+        
+        // Handle the end of file.
+        if (state != IterativeParsingFinishState)
+            HandleError(state, is);
+        
+        return parseResult_;
+    }
+
+    static const size_t kDefaultStackCapacity = 256;    //!< Default stack capacity in bytes for storing a single decoded string.
+    internal::Stack<StackAllocator> stack_;  //!< A stack for storing decoded string temporarily during non-destructive parsing.
+    ParseResult parseResult_;
+    IterativeParsingState state_;
+}; // class GenericReader
+
+//! Reader with UTF8 encoding and default allocator.
+typedef GenericReader<UTF8<>, UTF8<> > Reader;
+
+RAPIDJSON_NAMESPACE_END
+
+#if defined(__clang__) || defined(_MSC_VER)
+RAPIDJSON_DIAG_POP
+#endif
+
+
+#ifdef __GNUC__
+RAPIDJSON_DIAG_POP
+#endif
+
+#endif // RAPIDJSON_READER_H_
