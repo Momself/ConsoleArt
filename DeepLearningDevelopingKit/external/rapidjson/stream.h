@@ -160,4 +160,64 @@ struct GenericStringStream {
     Ch Take() { return *src_++; }
     size_t Tell() const { return static_cast<size_t>(src_ - head_); }
 
-    Ch* PutBegin() { RAPIDJSON_ASSERT(false); ret
+    Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
+    void Put(Ch) { RAPIDJSON_ASSERT(false); }
+    void Flush() { RAPIDJSON_ASSERT(false); }
+    size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+
+    const Ch* src_;     //!< Current read position.
+    const Ch* head_;    //!< Original head of the string.
+};
+
+template <typename Encoding>
+struct StreamTraits<GenericStringStream<Encoding> > {
+    enum { copyOptimization = 1 };
+};
+
+//! String stream with UTF8 encoding.
+typedef GenericStringStream<UTF8<> > StringStream;
+
+///////////////////////////////////////////////////////////////////////////////
+// InsituStringStream
+
+//! A read-write string stream.
+/*! This string stream is particularly designed for in-situ parsing.
+    \note implements Stream concept
+*/
+template <typename Encoding>
+struct GenericInsituStringStream {
+    typedef typename Encoding::Ch Ch;
+
+    GenericInsituStringStream(Ch *src) : src_(src), dst_(0), head_(src) {}
+
+    // Read
+    Ch Peek() { return *src_; }
+    Ch Take() { return *src_++; }
+    size_t Tell() { return static_cast<size_t>(src_ - head_); }
+
+    // Write
+    void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
+
+    Ch* PutBegin() { return dst_ = src_; }
+    size_t PutEnd(Ch* begin) { return static_cast<size_t>(dst_ - begin); }
+    void Flush() {}
+
+    Ch* Push(size_t count) { Ch* begin = dst_; dst_ += count; return begin; }
+    void Pop(size_t count) { dst_ -= count; }
+
+    Ch* src_;
+    Ch* dst_;
+    Ch* head_;
+};
+
+template <typename Encoding>
+struct StreamTraits<GenericInsituStringStream<Encoding> > {
+    enum { copyOptimization = 1 };
+};
+
+//! Insitu string stream with UTF8 encoding.
+typedef GenericInsituStringStream<UTF8<> > InsituStringStream;
+
+RAPIDJSON_NAMESPACE_END
+
+#endif // RAPIDJSON_STREAM_H_
