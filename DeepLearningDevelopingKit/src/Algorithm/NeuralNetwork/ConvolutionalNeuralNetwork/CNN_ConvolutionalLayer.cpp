@@ -213,3 +213,12 @@ MathLib::Matrix<Neural::ElemType> Neural::ConvolutionalLayer::Rot180(const MathL
 	size_t sizeM = _mat.ColumeSize();
 	size_t sizeN = _mat.RowSize();
 	MathLib::Matrix<ElemType>temp(sizeM, sizeN);
+	for (size_t i = 0; i < sizeM; i++)
+	{
+		for (size_t j = 0; j < sizeN; j++)
+		{
+			temp(i, j) = _mat(sizeM - 1 - i, sizeN - 1 - j);
+		}
+	}
+	return temp;
+}
