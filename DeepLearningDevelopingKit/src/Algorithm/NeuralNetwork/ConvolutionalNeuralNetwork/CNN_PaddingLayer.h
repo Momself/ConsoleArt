@@ -120,3 +120,32 @@ namespace Neural
 					for (size_t j = 0; j < inputSizeN; j++)
 						output(i + paddingSizeM, j + paddingSizeN) = _input(i, j);
 
+				break;
+			default:
+				break;
+			}
+
+			return output;
+		}
+
+	private:
+		static ElemType PaddingNum(const PaddingNum _num)
+		{
+			switch (_num)
+			{
+			case Neural::PaddingNum::ZeroPadding:
+				return 0;
+				break;
+			case Neural::PaddingNum::OnePadding:
+				return 1;
+				break;
+			case Neural::PaddingNum::RandomPadding:
+				return MathLib::Random();
+				break;
+			default:
+				return 0;
+				break;
+			}
+		}
+	};
+}
