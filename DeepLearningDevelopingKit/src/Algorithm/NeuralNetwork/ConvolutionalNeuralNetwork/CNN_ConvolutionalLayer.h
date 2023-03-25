@@ -104,4 +104,100 @@ namespace Neural
 			return features;
 		}
 
-		inline const ConvKernel GetKernel(c
+		inline const ConvKernel GetKernel(const size_t _index) const { return _convNodes.at(_index).kernel; }
+		inline const std::vector<ConvKernel> GetKernelAll(void) const {
+			std::vector<ConvKernel> kernels;
+			for (const ConvNode & node : _convNodes)
+				kernels.push_back(node.kernel);
+			return kernels;
+		}
+
+		inline const std::vector<MathLib::Matrix<ElemType>> GetDelta(void) const { return _derivative; }
+
+
+	public: // Setter
+
+		// Set the input of the ConvLayer.
+		void SetInput(const std::vector<MathLib::Matrix<ElemType>> &  _input);
+		// Set the delta propagate back from next layer.
+		void SetDelta(const std::vector<MathLib::Matrix<ElemType>> & _delta);
+		// Set the learn rate of the ConvLayer.
+		void SetLearnRate(const double _learnRate);
+
+	public: // BackPropagation Algorithm
+
+		// ForwardPropagation function
+		void ForwardPropagation(void);
+		// BackwardPropagation function
+		void BackwardPropagation(void);
+		// Update function
+		void Update(void);
+		// Sum up the delta of a batch.
+		void BatchDeltaSumUpdate(const size_t _batchSize);
+		// Clear the deltaSum of a batch.
+		void BatchDeltaSumClear(void);
+
+	private: //  Inner working function
+
+		// Set the activation function of the layer.
+		void SetActivationFunction(const ActivationFunction _function);
+		// ConvolutionCal
+		MathLib::Matrix<ElemType> ConvolutionCal(const MathLib::Matrix<ElemType> & _mat1, const MathLib::Matrix<ElemType> &  _mat2);
+
+	private: //  Math stuff you know
+
+		// Convolution of two matrix.
+		MathLib::Matrix<ElemType> Convolution(const MathLib::Matrix<ElemType> &  _mat1, const MathLib::Matrix<ElemType> &  _mat2);
+		ElemType ConvolutionSum(const MathLib::Matrix<ElemType> &  _mat1, const MathLib::Matrix<ElemType> &  _mat2, const size_t _m, const size_t _n);
+		// Cross-correlation of two matrix.
+		MathLib::Matrix<ElemType> Correlation(const MathLib::Matrix<ElemType> &  _mat1, const MathLib::Matrix<ElemType> &  _mat2);
+		// Sum of all elements of the Cross-correlation of two matrix.
+		ElemType CorrelationSum(const MathLib::Matrix<ElemType> &  _mat1, const MathLib::Matrix<ElemType> &  _mat2, const size_t _m, const size_t _n);
+
+		// Rotate a Matrix with 180° 
+		/// Cross-correlation(A, B) = rot180°(A * rot180°(B))
+		MathLib::Matrix<ElemType> Rot180(const MathLib::Matrix<ElemType> & _mat);
+
+		// Hadamard Product of two matrix.
+		MathLib::Matrix<Neural::ElemType> Hadamard(const MathLib::Matrix<ElemType>& _mat1, const MathLib::Matrix<ElemType>& _mat2);
+
+		public:
+
+		// Input of convolutional layer.
+		std::vector<MathLib::Matrix<ElemType>> _input;
+		std::vector<MathLib::Matrix<ElemType>> _paddedInput;
+
+		// Input size.
+		MathLib::Size _inputSize;
+		// Output size.
+		MathLib::Size _outputSize;
+
+		// Convolutional Node in the Layer.
+		/// Contains a kernal, a bias and features extracted by the node.
+		std::vector<ConvNode> _convNodes;
+		// The num of ConvNodes in the layer.
+		size_t _convNodeNum;
+		// The size of kernal.
+		MathLib::Size _kernelSize;
+		// The size of stride.
+		size_t _stride;
+
+		// Padding method
+		PaddingMethod _paddingMethod;
+		PaddingNum _paddingNum;
+		// Padding size
+		size_t _paddingM;
+		size_t _paddingN;
+
+		std::vector<MathLib::Matrix<ElemType>> _derivative;
+		std::vector<MathLib::Matrix<ElemType>> _derivativeLastLayer;
+
+		// Learning rate
+		/// Default value is 1
+		double learnRate = 1;
+
+		// Activation Function
+		ElemType(*activationFunction)(ElemType x);
+		ElemType(*activationFunctionDerivative)(ElemType x);
+	};
+}
