@@ -115,4 +115,9 @@ void Neural::PoolingLayer::UpSampling(void)
 void Neural::PoolingLayer::Padding(void)
 {
 	_paddedInput.clear();
-	for (size_t i = 0; i < _input.si
+	for (size_t i = 0; i < _input.size(); i++)
+	{
+		MathLib::Matrix<ElemType> newMatrix = Pad::Padding(_input.at(i), _paddingMethod, _paddingNum, _paddingM, _paddingN);
+		_paddedInput.push_back(newMatrix);
+	}
+}
