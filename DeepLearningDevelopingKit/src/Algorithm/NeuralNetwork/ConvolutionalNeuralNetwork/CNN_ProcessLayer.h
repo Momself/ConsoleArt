@@ -42,4 +42,24 @@ namespace Neural
 		// Set the input of the ProcessLayer.
 		void SetInput(const std::vector<MathLib::Matrix<ElemType>> &  _data);
 
-		
+		// Processing the data.
+		void Process(void);
+		// Deprocessing the data.
+		void Deprocess(void);
+
+		inline const MathLib::Matrix<ElemType> GetOutput(const size_t _index) const { return _data.at(_index); }
+		inline const std::vector<MathLib::Matrix<ElemType>> GetOutputAll(void) const { return _data; }
+
+	private:
+
+		// Input of the layer.
+		std::vector<MathLib::Matrix<ElemType>> _data;
+
+		// Input size.
+		MathLib::Size _dataSize;
+
+		// Process Function
+		ElemType(*processFunction)(ElemType x);
+		ElemType(*processFunctionDerivative)(ElemType x);
+	};
+}
