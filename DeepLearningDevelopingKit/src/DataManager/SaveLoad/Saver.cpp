@@ -1,12 +1,12 @@
-﻿#include "SupportedVectorMachine.h"
-/***************************************************************************************************/
+﻿/***************************************************************************************************/
 /*                                               Deep Learning Developing Kit                                                   */
-/*								        		 	  Support Vector Machine     	                                               */
+/*								        		 			    Data Saver                                                                  */
 /*                                                   www.tianshicangxie.com                                                        */
 /*                                      Copyright © 2015-2018 Celestial Tech Inc.                                          */
 /***************************************************************************************************/
+#include "Saver.h"
 
-SVM::SVM::SVM()
+void Save::SaveNode(const std::string & _filePath, const InputNode & _node)
 {
-
+	// VectorParser::Serialize(_filePath, );
 }
