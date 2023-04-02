@@ -146,4 +146,85 @@ static void trainThreadFunc(
 			// poolLayer 1
 			poolLayer1.SetDelta(deprocess1output);
 			poolLayer1.BackwardPropagation();
-			std::vector<MathLib::Matrix<doubl
+			std::vector<MathLib::Matrix<double>> pool1Delta = poolLayer1.GetDelta();
+			// convLayer 1
+			convLayer1.SetDelta(pool1Delta);
+			convLayer1.BackwardPropagation();
+			std::vector<MathLib::Matrix<double>> conv1Delta = convLayer1.GetDelta();
+			/***************************************************************************************************/
+
+
+			/***************************************************************************************************/
+			// Updating
+
+			//plotMutex.lock();
+			//std::cout << "ID : " << ID << std::endl;
+			////Visual::Plot2D::Plot2DMatrixVec(input, "input", Visual::Plot2DMode::RB, 0, 0, false);
+			////Visual::Plot2D::Plot2DMatrixVec(conv1kernals, "conv1kernals", Visual::Plot2DMode::RB, 350, 0, false);
+			////Visual::Plot2D::Plot2DMatrixVec(conv1features, "conv1features", Visual::Plot2DMode::RB, 400, 0, false);
+			////Visual::Plot2D::Plot2DMatrixVec(pool1features, "pool1features", Visual::Plot2DMode::RB, 750, 0, true);
+			////Visual::Plot2D::Plot2DMatrixVec(conv2kernals, "conv2kernals", Visual::Plot2DMode::RB, 900, 0, false);
+			////Visual::Plot2D::Plot2DMatrixVec(conv2features, "conv2features", Visual::Plot2DMode::RB, 1100, 0, false);
+			////Visual::Plot2D::Plot2DMatrixVec(pool2features, "pool2features", Visual::Plot2DMode::RB, 1300, 0, true);
+			//plotMutex.unlock();
+			workFlag = false;
+		}
+	}
+}
+
+
+
+int main(int argc, char ** argv)
+{
+	// Visualization
+	const bool visualWhileTraining = true;
+	// Logging
+	const bool detailLoggingWhileTraining = true;
+
+	// Randomize the seed
+	srand((unsigned)time(NULL));
+
+	/***************************************************************************************************/
+	// Initializing Train Set
+	Data::ImageSet TrainSet;
+	TrainSet.LoadFromJson("F:\\Software\\Top Peoject\\DeepLearningProject\\DeepLearningDevelopingKit\\DeepLearningDevelopingKit\\DeepLearningDevelopingKit\\data\\Example\\ImageRecognization\\TrainSet");
+
+	/***************************************************************************************************/
+	// Initializing Test Set
+	Data::ImageSet TestSet;
+	TestSet.LoadFromJson("F:\\Software\\Top Peoject\\DeepLearningProject\\DeepLearningDevelopingKit\\DeepLearningDevelopingKit\\DeepLearningDevelopingKit\\data\\Example\\ImageRecognization\\TestSet");
+
+	/***************************************************************************************************/
+	// Initializing Convolutional Layer 1
+	Neural::ConvLayerInitor convInitor1;
+	convInitor1.InputSize = MathLib::Size(32, 32);
+	convInitor1.KernelSize = MathLib::Size(5, 5);
+	convInitor1.Stride = 1;
+	convInitor1.KernelNum = 5;
+	convInitor1.ActivationFunction = ActivationFunction::Linear;
+	convInitor1.PaddingMethod = Neural::PaddingMethod::Surround;
+	convInitor1.PaddingNum = Neural::PaddingNum::ZeroPadding;
+	Neural::ConvolutionalLayer convLayer1(convInitor1);
+
+	/***************************************************************************************************/
+	// Initializing Pooling Layer 1
+	Neural::PoolLayerInitor poolInitor1;
+	poolInitor1.InputSize = MathLib::Size(32, 32);
+	poolInitor1.Stride = 4;
+	poolInitor1.PoolSize = MathLib::Size(4, 4);
+	poolInitor1.PoolingMethod = Neural::PoolingMethod::MaxPooling;
+	poolInitor1.PaddingMethod = Neural::PaddingMethod::Surround;
+	poolInitor1.PaddingNum = Neural::PaddingNum::ZeroPadding;
+	Neural::PoolingLayer poolLayer1(poolInitor1);
+
+	/***************************************************************************************************/
+	// Initializing Process Layer 1
+	Neural::ProcessLayerInitor processInitor1;
+	processInitor1.InputSize = MathLib::Size(8, 8);
+	processInitor1.ProcessFunction = ReLU;
+	processInitor1.ProcessFunctionDerivative = ReLUDerivative;
+	Neural::ProcessLayer processLayer1(processInitor1);
+
+	/***************************************************************************************************/
+	// Initializing Convolutional Layer 2
+	Neural::ConvLayerInitor convInitor2;
