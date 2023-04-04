@@ -228,3 +228,106 @@ int main(int argc, char ** argv)
 	/***************************************************************************************************/
 	// Initializing Convolutional Layer 2
 	Neural::ConvLayerInitor convInitor2;
+	convInitor2.InputSize = MathLib::Size(8, 8);
+	convInitor2.KernelSize = MathLib::Size(3, 3);
+	convInitor2.Stride = 1;
+	convInitor2.KernelNum = 10;
+	convInitor2.ActivationFunction = ActivationFunction::Linear;
+	convInitor2.PaddingMethod = Neural::PaddingMethod::Surround;
+	convInitor2.PaddingNum = Neural::PaddingNum::ZeroPadding;
+	Neural::ConvolutionalLayer convLayer2(convInitor2);
+
+	/***************************************************************************************************/
+	// Initializing Pooling Layer 2
+	Neural::PoolLayerInitor poolInitor2;
+	poolInitor2.InputSize = MathLib::Size(8, 8);
+	poolInitor2.Stride = 4;
+	poolInitor2.PoolSize = MathLib::Size(4, 4);
+	poolInitor2.PoolingMethod = Neural::PoolingMethod::MaxPooling;
+	poolInitor2.PaddingMethod = Neural::PaddingMethod::Surround;
+	poolInitor2.PaddingNum = Neural::PaddingNum::ZeroPadding;
+	Neural::PoolingLayer poolLayer2(poolInitor2);
+
+	/***************************************************************************************************/
+	// Initializing Process Layer 2
+	Neural::ProcessLayerInitor processInitor2;
+	processInitor2.InputSize = MathLib::Size(2, 2);
+	processInitor2.ProcessFunction = ReLU;
+	processInitor2.ProcessFunctionDerivative = ReLUDerivative;
+	Neural::ProcessLayer processLayer2(processInitor2);
+
+	/***************************************************************************************************/
+	// Initializing Serialize Layer
+	Neural::SerializeLayerInitor serialInitor;
+	serialInitor.SerializeSize = MathLib::Size(2 * 2 * 10, 1);
+	serialInitor.DeserializeSize = MathLib::Size(2, 2);
+	Neural::SerializeLayer serialLayer(serialInitor);
+
+	/***************************************************************************************************/
+	// Initializing FullConnect Layer
+	Neural::InputLayer inputLayer(2 * 2 * 10, 2 * 2 * 10);
+	inputLayer.SetActivationFunction(ActivationFunction::Sigmoid);
+	inputLayer.SetLossFunction(LossFunction::MES);
+
+	Neural::HiddenLayer hiddenLayer1(2 * 2 * 10, 2 * 2 * 10);
+	hiddenLayer1.SetActivationFunction(ActivationFunction::ReLU);
+	hiddenLayer1.SetLossFunction(LossFunction::MES);
+
+	Neural::HiddenLayer hiddenLayer2(2 * 2 * 20, 2 * 2 * 5);
+	hiddenLayer2.SetActivationFunction(ActivationFunction::ReLU);
+	hiddenLayer2.SetLossFunction(LossFunction::MES);
+
+	Neural::OutputLayer outputLayer(2 * 2 * 5, 4);
+	outputLayer.SetActivationFunction(ActivationFunction::Sigmoid);
+	outputLayer.SetLossFunction(LossFunction::MES);
+
+	/***************************************************************************************************/
+	// Setting Learning Rate
+	const double globalRate = 0.001 * 0.001 * 0.01;
+	convLayer1.SetLearnRate(globalRate);
+	convLayer2.SetLearnRate(globalRate);
+	hiddenLayer1.SetLearnRate(globalRate);
+	hiddenLayer2.SetLearnRate(globalRate);
+
+	std::vector<Neural::ConvKernel> kernel1DeltaSum;
+	std::vector<Neural::ConvKernel> kernel2DeltaSum;
+	std::vector<double> biasDeltaSum;
+
+	/***************************************************************************************************/
+	// Start Training
+	int totalTrainIteration = 100;
+	for (size_t iteration = 0; iteration < totalTrainIteration; iteration++)
+	{
+		std::queue<size_t> workQueue;
+
+		std::vector<std::thread *> threadpool;
+		threadLifeFlag = true;
+		for (size_t i = 0; i < 8; i++)
+		{
+			std::thread * tempthread = new std::thread(
+				trainThreadFunc,
+				convLayer1,
+				poolLayer1,
+				processLayer1,
+				convLayer2,
+				poolLayer2,
+				processLayer2,
+				serialLayer,
+				inputLayer,
+				hiddenLayer1,
+				hiddenLayer2,
+				outputLayer,
+				std::ref(TrainSet),
+				std::ref(workQueue)
+			);
+			threadpool.push_back(tempthread);
+		}
+
+		for (size_t i = 0; i < TrainSet.GetSampleSize(); i++)
+			workQueue.push(i);
+
+		while (!workQueue.empty())
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+		threadLifeFlag = false;
+		for (std::thread * thr : threa
