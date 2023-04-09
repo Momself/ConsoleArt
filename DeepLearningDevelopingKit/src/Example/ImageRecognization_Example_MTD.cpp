@@ -330,4 +330,46 @@ int main(int argc, char ** argv)
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
 		threadLifeFlag = false;
-		for (std::thread * thr : threa
+		for (std::thread * thr : threadpool)
+			thr->join();
+
+		/***************************************************************************************************/
+		// Updating
+		convLayer1.Update();
+		MathLib::Matrix<double> temp = convLayer1.GetKernel(0);
+		std::cout << temp << std::endl;
+		poolLayer1.Update();
+		convLayer2.Update();
+		poolLayer2.Update();
+		inputLayer.Update();
+		hiddenLayer1.Update();
+		hiddenLayer2.Update();
+		outputLayer.Update();
+
+		convLayer1.BatchDeltaSumClear();
+		convLayer2.BatchDeltaSumClear();
+		hiddenLayer1.BatchDeltaSumClear();
+		hiddenLayer2.BatchDeltaSumClear();
+		outputLayer.BatchDeltaSumClear();
+	}
+	system("pause");
+	return 0;
+}
+
+
+Vector<double> Matrix2Vector(const Matrix<double> & _mat) {
+	Vector<double> vec(_mat.ColumeSize(), VectorType::Zero);
+	for (size_t i = 0; i < _mat.ColumeSize(); i++)
+		vec(i) = _mat(i, 0);
+	return vec;
+}
+
+Matrix<double> Vector2Matrix(const Vector<double> & _vec) {
+	Matrix<double> mat(_vec.Size(), 1, MatrixType::Zero);
+	for (size_t i = 0; i < _vec.Size(); i++)
+		mat(i, 0) = _vec(i);
+	return mat;
+}
+
+#endif // CNNImageRecognization
+
