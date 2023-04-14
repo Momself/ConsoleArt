@@ -146,4 +146,153 @@ namespace MathLib
 
 		// Pointer
 		T * Data() { return this->_data[0]; }
-		// Const
+		// Const pointer
+		const T * Data() const { return this->_data[0]; }
+
+	public: // Operator Overloading 
+
+		// "( )" operator
+		/// Used for accessing the element in the Matrix.
+		inline T operator()(size_t _i, size_t _j) const
+		{
+			return this->_data[_i][_j];
+		}
+
+		/// Used for referencing the element in the Matrix.
+		inline T & operator()(size_t _i, size_t _j)
+		{
+			return this->_data[_i][_j];
+		}
+
+		// "<<" operator
+		/// Used for streaming in format.
+		friend std::ostream& operator<<(std::ostream& _outstream, Matrix<T>& _mat)
+		{
+			_outstream << typeid(_mat).name() << std::endl;
+			_outstream << std::fixed << std::setprecision(3);
+			for (size_t i = 0; i < _mat.m; i++)
+			{
+				_outstream << "|";
+				for (size_t j = 0; j < _mat.n; j++)
+				{
+					_outstream << _mat(i, j);
+					if (j != _mat.n - 1)	_outstream << " ";
+				}
+				_outstream << "|" << std::endl;
+			}
+			return _outstream;
+		}
+
+		// "=" operator
+		Matrix<T> & operator = (const Matrix<T> & _other)
+		{
+			if (this != &_other)
+			{
+				_data = _other._data;
+				size = _other.size;
+				m = _other.m;
+				n = _other.n;
+			}
+			return (*this);
+		}
+
+		// "+" operator
+		/// Addition of two Matrixs.
+		Matrix<T> operator + (const Matrix<T> & _other) const
+		{
+			const Matrix<T> & self = *this;
+			Matrix<T> temp(m, n);
+			if (self.m != _other.m || self.n != _other.n)
+			{
+				std::cerr << "ERROR : Invalid Matrix Addtion!" << std::endl;
+				return temp;
+			}
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					temp(i, j) = self(i, j) + _other(i, j);
+			return temp;
+		}
+
+		/// Addition of a matrix and a scalar.
+		/// Add scalar to each element in the Matrix.
+		Matrix<T> operator + (const T & _other) const
+		{
+			const Matrix<T> & self = *this;
+			Matrix<T> temp(m, n);
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					temp(i, j) = self(i, j) + _other;
+			return temp;
+		}
+
+		// "+=" operator
+		/// Add another Matrix to this Matrix.
+		void operator += (const Matrix<T> & _other)
+		{
+			Matrix<T> & self = *this;
+			if (self.m != _other.m || self.n != _other.n)
+			{
+				std::cerr << "ERROR : Invalid Matrix Addtion!" << std::endl;
+			}
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					self(i, j) = self(i, j) + _other(i, j);
+		}
+
+		/// Add another scalar to this Matrix.
+		void operator += (const T & _other)
+		{
+			Matrix<T> & self = *this;
+			if (self.m != _other.m || self.n != _other.n)
+			{
+				std::cerr << "ERROR : Invalid Matrix Addtion!" << std::endl;
+			}
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					self(i, j) = self(i, j) + _other;
+		}
+
+		// "-" operator
+		/// Substraction of two Matrixs.
+		Matrix<T> operator - (const Matrix<T> & _other) const
+		{
+			const Matrix<T> & self = *this;
+			Matrix<T> temp(m, n);
+			if (self.m != _other.m || self.n != _other.n)
+			{
+				cerr << "ERROR : Invalid Matrix Substraction!" << endl;
+				return temp;
+			}
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					temp(i, j) = self(i, j) - _other(i, j);
+			return temp;
+		}
+
+		/// Substraction of a matrix and a scalar.
+		/// Substract a scalar to each element in the matrix.
+		Matrix operator - (const T & _other) const
+		{
+			const Matrix<T> & self = *this;
+			Matrix<T> temp(m, n);
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					temp(i, j) = self(i, j) - _other;
+			return temp;
+		}
+
+		// "-=" operator
+		/// Substract another matrix to this matrix.
+		void operator -= (const Matrix<T> & _other)
+		{
+			Matrix<T> & self = *this;
+			if (self.m != _other.m || self.n != _other.n)
+			{
+				std::cerr << "ERROR : Invalid Matrix Addtion!" << std::endl;
+			}
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					self(i, j) = self(i, j) - _other(i, j);
+		}
+
+		/// Substract scalar to each element
