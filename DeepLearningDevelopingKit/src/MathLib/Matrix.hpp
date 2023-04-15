@@ -295,4 +295,189 @@ namespace MathLib
 					self(i, j) = self(i, j) - _other(i, j);
 		}
 
-		/// Substract scalar to each element
+		/// Substract scalar to each element in this matrix.
+		void operator -= (const T & _other)
+		{
+			Matrix<T> & self = *this;
+			Matrix<T> temp(m, n);
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					self(i, j) = self(i, j) - _other;
+		}
+
+		// "*" operator
+		/// Multiplication of two matrixs.
+		Matrix<T> operator * (const Matrix<T> & _other) const
+		{
+			const Matrix<T> &self = *this;
+			Matrix<T> temp(self.m, _other.n);
+			if (self.n != _other.m)
+			{
+				std::cerr << "ERROR : Invalid Matrix Addtion!" << std::endl;
+				return temp;
+			}
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t k = 0; k < _other.n; k++)
+					for (size_t j = 0; j < self.n; j++)
+						temp(i, k) += self(i, j) * _other(j, k);
+			return temp;
+		}
+
+		// "*" operator
+		/// Multiply a scalar to each element in the matrix.
+		Matrix<T> operator * (const T & _other) const
+		{
+			const Matrix<T> &self = *this;
+			Matrix<T> temp(self.m, self.n);
+			for (size_t i = 0; i < self.m; i++)
+				for (size_t j = 0; j < self.n; j++)
+					temp(i, j) += self(i, j) * _other;
+			return temp;
+		}
+
+	private:
+		std::vector<std::vector<T>> _data;
+		size_t m, n;
+		Size size;
+	};
+}
+
+namespace MathLib
+{
+	// Default constructor
+	/// Take no parameters.
+	/// After default constructor and before use the Matrix object, Init() should be involked.
+	template<class T>
+	inline Matrix<T>::Matrix(void)
+	{
+
+	}
+
+	// Constructor (Using Size and Type)
+	/// Specified the size of Matrix.
+	template<class T>
+	inline Matrix<T>::Matrix(const size_t _m, const size_t _n, const MatrixType _type)
+	{
+		Init(_m, _n, _type);
+	}
+
+	// Constructor (Using given Data)
+	/// Using data from a given pointer, which is pointed to a 2D array, to initialize the Matrix.
+	template<class T>
+	inline Matrix<T>::Matrix(const std::initializer_list<int>& _list)
+	{
+	}
+
+	// Copy constructor
+	template<class T>
+	inline Matrix<T>::Matrix(const Matrix & _mat)
+	{
+		this->_data = _mat._data;
+		this->size = _mat.size;
+		this->m = _mat.m;
+		this->n = _mat.n;
+	}
+
+	// Initializing function
+	/// Initializing the Matrix after defined by default constructor.
+	template<class T>
+	inline void Matrix<T>::Init(const size_t _m, const size_t _n, const MatrixType _type)
+	{
+		switch (_type)
+		{
+		case MatrixType::Zero:
+			for (size_t i = 0; i < _m; i++)
+			{
+				std::vector<T> tempVec;
+				for (size_t j = 0; j < _n; j++)
+				{
+					T tempElem = 0.f;
+					tempVec.push_back(tempElem);
+				}
+				_data.push_back(tempVec);
+			}
+			break;
+		case MatrixType::Ones:
+			for (size_t i = 0; i < _m; i++)
+			{
+				std::vector<T> tempVec;
+				for (size_t j = 0; j < _n; j++)
+				{
+					T tempElem = 1.f;
+					tempVec.push_back(tempElem);
+				}
+				_data.push_back(tempVec);
+			}
+			break;
+		case MatrixType::Random:
+			for (size_t i = 0; i < _m; i++)
+			{
+				std::vector<T> tempVec;
+				for (size_t j = 0; j < _n; j++)
+				{
+					T tempElem = Random();
+					tempVec.push_back(tempElem);
+				}
+				_data.push_back(tempVec);
+			}
+			break;
+		case MatrixType::Identity:
+			for (size_t i = 0; i < _m; i++)
+			{
+				std::vector<T> tempVec;
+				for (size_t j = 0; j < _n; j++)
+				{
+					T tempElem;
+					if (i == j)
+						tempElem = 1.f;
+					else
+						tempElem = 0.f;
+					tempVec.push_back(tempElem);
+				}
+				_data.push_back(tempVec);
+			}
+			break;
+		default:
+			break;
+		}
+		m = _m;
+		n = _n;
+		size.m = _m;
+		size.n = _n;
+	}
+
+	template<class T>
+	inline const T Matrix<T>::Sum(void) const
+	{
+		const Matrix<T> & self = *this;
+		T Sum = 0;
+		for (size_t i = 0; i < m; i++)
+		{
+			for (size_t j = 0; j < n; j++)
+			{
+				Sum += self(i, j);
+			}
+		}
+		return Sum;
+	}
+
+	template<class T>
+	inline const T Matrix<T>::Average(void) const
+	{
+		return Sum() / (m*n);
+	}
+
+	template<class T>
+	inline const T Matrix<T>::Max(void) const
+	{
+		const Matrix<T> & self = *this;
+		T temp = 0;
+		for (size_t i = 0; i < m; i++)
+			for (size_t j = 0; j < n; j++)
+				if (self(i, j) > temp)
+					temp = self(i, j);
+		return temp;
+	}
+
+	template<class T>
+	inline const T Matr
