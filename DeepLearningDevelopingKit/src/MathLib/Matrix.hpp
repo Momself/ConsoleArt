@@ -480,4 +480,200 @@ namespace MathLib
 	}
 
 	template<class T>
-	inline const T Matr
+	inline const T Matrix<T>::Min(void) const
+	{
+		const Matrix<T> & self = *this;
+		T temp = 0;
+		for (size_t i = 0; i < m; i++)
+			for (size_t j = 0; j < n; j++)
+				if (self(i, j) > temp)
+					temp = self(i, j);
+		return temp;
+	}
+
+	template<class T>
+	inline const T Matrix<T>::Determinant(void) const
+	{
+		Matrix<T> tempMat = *this;
+		int iter = 0;
+		T det = 1, multiple;
+
+		for (size_t i = 0; i < n; i++)
+		{
+			if (tempMat(i, i) == 0)
+			{
+				for (size_t j = i; j < n; j++)
+				{ 
+					if (tempMat(j, i) != 0)
+					{
+						tempMat.SwapColumn(i, j);
+						iter++;
+					}
+				}
+			}
+			else
+			{
+				for (size_t k = i + 1; k < n; k++)
+				{
+					multiple = -1 * tempMat(k, i) / tempMat(i, i);
+					for (size_t u = 0; u < n; u++)
+						tempMat(k, u) += tempMat(i, u) * multiple;
+				}
+			}
+		}
+
+		det = tempMat.Trace();
+		if (iter % 2)
+			det = -det;
+		return det;
+	}
+
+	template<class T>
+	inline const T Matrix<T>::Trace(void) const
+	{
+		const Matrix<T> & self = *this;
+		T trace = 1;
+		for (size_t i = 0; i < n; i++)
+		{
+			trace = trace * self(i, i);
+		}
+		return trace;
+	}
+
+	template<class T>
+	inline void Matrix<T>::Clear(void)
+	{
+		Matrix<T> & self = *this;
+		for (size_t i = 0; i < m; i++)
+		{
+			for (size_t j = 0; j < n; j++)
+			{
+				self(i, j) = 0.f;
+			}
+		}
+	}
+
+	template<class T>
+	inline const Matrix<T> Matrix<T>::GaussianElimination(void) const
+	{
+		Matrix<T> tempMat = *this;
+		T multiple;
+
+		for (size_t i = 0; i < n; i++)
+		{
+			if (tempMat(i, i) == 0)
+			{
+				for (size_t j = i; j < n; j++)
+				{
+					if (tempMat(j, i) != 0)
+					{
+						tempMat.SwapColumn(i, j);
+					}
+				}
+			}
+			else
+			{
+				for (size_t k = i + 1; k < n; k++)
+				{
+					multiple = -1 * tempMat(k, i) / tempMat(i, i);
+					for (size_t u = 0; u < n; u++)
+						tempMat(k, u) += tempMat(i, u) * multiple;
+				}
+			}
+		}
+		return tempMat;
+	}
+
+	template<class T>
+	inline const Matrix<T> Matrix<T>::Transpostion(void) const
+	{
+		const Matrix<T> & self = *this;
+		Matrix<T> tempMat(n, n);
+		for (size_t i = 0; i < n; i++)
+			for (size_t j = 0; j < n; j++)
+				tempMat(i, j) = self(j, i);
+		return tempMat;
+	}
+
+	template<class T>
+	inline const Matrix<T> Matrix<T>::Adjoint(void) const
+	{
+		Matrix<T> self = *this;
+		Matrix<T> tempMat(n, n);
+		for (size_t i = 0; i < n; i++)
+			for (size_t j = 0; j < n; j++)
+				tempMat(i, j) = self.AlgebraicCofactor(j, i);
+		return tempMat;
+	}
+
+	template<class T>
+	inline const Matrix<T> Matrix<T>::Inverse(void) const
+	{
+		Matrix<T> self = *this;
+		Matrix<T> tempMat(n, n);
+		tempMat = self.Adjoint() * (1 / self.Determinant());
+		return tempMat;
+	}
+
+	template<class T>
+	inline const T MathLib::Matrix<T>::Cofactor(const size_t _i, const size_t _j) const
+	{
+		Matrix<T> tempMat = *this;
+		auto iter1 = tempMat._data.begin() + _i;
+		tempMat._data.erase(iter1);
+		for (size_t i = 0; i < m - 1; i++)
+		{
+			auto iter2 = tempMat._data.at(i).begin() + _j;
+			tempMat._data.at(i).erase(iter2);
+		}
+		tempMat.Resize(m - 1, n - 1);
+		return tempMat.Determinant();
+	}
+
+	template<class T>
+	inline const T MathLib::Matrix<T>::AlgebraicCofactor(const size_t _i, const size_t _j) const
+	{
+		T temp = Cofactor(_i, _j);
+		if (temp<DBL_EPSILON && temp >(-1)*DBL_EPSILON)
+			return 0.f;
+		else if ((_i + _j) % 2 == 0)
+			return temp;
+		else
+			return (-1) * temp;
+	}
+
+	template<class T>
+	inline const unsigned int Matrix<T>::Rank(void) const
+	{
+		Matrix<T> tempMat = *this;
+		tempMat = tempMat.GaussianElimination();
+		int rank = 0;
+		for (size_t i = 0; i < n; i++)
+			if (tempMat(i, i)!=0)
+				rank++;
+
+		return rank;
+	}
+
+	template<class T>
+	inline const T Matrix<T>::OneNorm(void) const
+	{
+		const Matrix<T> & self = *this;
+		T tempMax{0.f}, sum{0.f};
+		for (size_t i = 0; i < n; i++)
+		{
+			for (size_t j = 0; j < n; j++)
+				sum += self(i, j);
+			if (sum>tempMax)
+				tempMax = sum;
+			sum = 0;
+		}
+		return tempMax;
+	}
+
+	template<class T>
+	inline const T Matrix<T>::ForbenivsNorm(void) const
+	{
+		const Matrix<T> & self = *this;
+		T sum{ 0.f };
+		for (size_t i = 0; i < n; i++)
