@@ -677,3 +677,32 @@ namespace MathLib
 		const Matrix<T> & self = *this;
 		T sum{ 0.f };
 		for (size_t i = 0; i < n; i++)
+			for (size_t j = 0; j < n; j++)
+				sum += self(i, j) * self(i, j);
+		return std::sqrtf(sum);
+	}
+
+	template<class T>
+	inline const T Matrix<T>::PNorm(const unsigned int _p) const
+	{
+		const Matrix<T> & self = *this;
+		T sum{ 0.f };
+		for (size_t i = 0; i < n; i++)
+			for (size_t j = 0; j < n; j++)
+				sum += std::powf(self(i, j), _p);
+		return std::powf(sum, 1 / _p);
+	}
+
+	template<class T>
+	inline void Matrix<T>::SwapColumn(const size_t _i, const size_t _j)
+	{
+		swap(_data.at(_i), _data.at(_j));
+	}
+
+	template<class T>
+	inline void Matrix<T>::Resize(const size_t _m, const size_t _n)
+	{
+		m = _m;
+		n = _n;
+	}
+}
