@@ -390,4 +390,60 @@ namespace MathLib
 	T Vector<T>::Sum(void) const
 	{
 		const Vector<T> & self = *this;
-		T Sum
+		T Sum = 0;
+		for (size_t i = 0; i < n; i++)
+		{
+			Sum += self(i);
+		}
+		return Sum;
+	}
+
+	// Average function
+	/// Calculate the average value of all the element in the Vector.
+	template<class T>
+	inline T Vector<T>::Average(void) const
+	{
+		return Sum() / n;
+	}
+
+	// Max function
+	/// Get the value of the max element in the Vector.
+	template<class T>
+	inline T Vector<T>::Max(void) const
+	{
+		const Vector<T> & self = *this;
+		T temp = 0;
+		for (size_t i = 0; i < n; i++)
+			if (self(i) > temp)
+				temp = self(i);
+		return temp;
+	}
+
+	// Min function
+	/// Get the value of the min element in the Vector.
+	template<class T>
+	inline T Vector<T>::Min(void) const
+	{
+		const Vector<T> & self = *this;
+		T temp = 0;
+		for (size_t i = 0; i < n; i++)
+			if (self(i) < temp)
+				temp = self(i);
+		return temp;
+	}
+
+	//// Represent a Vector in form of Matrix.
+	///// A Vector is interpreted as a 1xn Martix.
+	//template<class T>
+	//inline Matrix<T> Vector<T>::Matrixfy(void)
+	//{
+	//	const Vector<T> & self = *this;
+	//	Matrix<T> temp(n, 1);
+	//	for (size_t i = 0; i < n; i++)
+	//	{
+	//		temp(i, 0) = self(i);
+	//	}
+	//	return temp;
+	//}
+}
+
