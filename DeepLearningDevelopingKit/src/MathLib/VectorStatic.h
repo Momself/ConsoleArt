@@ -89,4 +89,55 @@ namespace MathLibStatic
 			const Vector<T, M> &self = *this;
 			Vector<T, M> temp;
 			for (size_t i = 0; i < M; i++)
-				tem
+				temp(i) = self(i) * _other(i);
+			return temp;
+		}
+
+		/***************************************************************************************************/
+		// Used for debugging
+	public:
+		void PrintToConsole(void);
+
+	private:
+	};
+}
+
+/***************************************************************************************************/
+// Namespace : MathLib
+/// Provide mathematic support and calculation tools for different algorithms.
+namespace MathLibStatic
+{
+	template<class T, size_t M>
+	inline Vector<T, M>::Vector(void)
+	{
+		for (size_t i = 0; i < M; i++)
+			this->_data[i][0] = 0;
+	}
+
+	template<class T, size_t M>
+	inline Vector<T, M>::Vector(Type _type)
+	{
+		for (size_t i = 0; i < M; i++)
+			this->_data[i][0] = 0;
+	}
+
+	template<class T, size_t M>
+	inline Vector<T, M>::Vector(const T _data[M])
+	{
+		for (size_t i = 0; i < M; i++)
+			this->_data[i][0] = _data[i];
+	}
+
+	template<class T, size_t M>
+	inline void Vector<T, M>::PrintToConsole(void)
+	{
+		const Matrix<T, M, 1> &v = *this;
+		for (size_t i = 0; i < M; i++)
+		{
+			cout << "|";
+			cout << v(i, 0) << " ";
+			cout << "|" << endl;
+		}
+		cout << endl;
+	}
+}
