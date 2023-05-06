@@ -137,4 +137,44 @@ for iter in range(num_epoch):
         grad_2_part_3 = l1A
         grad_2=  np.rot90( convolve2d(grad_2_part_3,np.rot90(grad_2_part_1 * grad_2_part_2,2),mode='valid')     ,2)
         
-        grad_1_part_IN
+        grad_1_part_IN_pad_weight = np.pad(w2,1,mode='constant')
+        grad_1_part_IN = np.rot90(grad_2_part_1 * grad_2_part_2,2)
+
+        grad_1_part_1 = convolve2d(grad_1_part_IN_pad_weight,grad_1_part_IN,mode='valid')
+        grad_1_part_2 = d_tanh(l1)
+        grad_1_part_3 = current_image
+        grad_1 =  np.rot90( convolve2d(grad_1_part_3,np.rot90(grad_1_part_1 * grad_1_part_2,2),mode='valid')     ,2)
+
+        w1 = w1 - learning_rate * grad_1
+        w2 = w2 - learning_rate * grad_2
+        w3 = w3 - learning_rate * grad_3
+        
+    #print('Current iter:  ', iter, ' current cost: ', cost, end='\r')
+    total_error = 0
+
+        
+print('\n\n')
+print('Prediction After Training')
+predictions = np.array([])
+for image_index in range(len(image_matrix)):
+    current_image  = image_matrix[image_index]
+
+    l1 = convolve2d(current_image,w1,mode='valid')
+    l1A = tanh(l1)
+
+    l2 = convolve2d(l1A,w2,mode='valid')
+    l2A = arctan(l2)
+
+    l3IN = np.expand_dims(l2A.ravel(),0)
+
+    l3 = l3IN.dot(w3)
+    l3A = arctan(l3)
+
+    predictions = np.append(predictions,l3A)
+print('---Groud Truth----')
+print(image_label.T)
+print('--Prediction-----')
+print(predictions.T)
+print('--Prediction Rounded-----')
+print(np.round(predictions).T)
+print("\n")
