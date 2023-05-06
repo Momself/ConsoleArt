@@ -123,4 +123,105 @@ int main(int argc, char ** argv)
 			std::vector<Neural::ConvFeature> conv2features = convLayer2.GetFeatureAll();
 
 			poolLayer2.SetInput(conv2features);
-			poolLayer2.ForwardProp
+			poolLayer2.ForwardPropagation();
+			std::vector<Neural::Feature> pool2features = poolLayer2.GetFeatureAll();
+
+			process.SetInput(pool2features);
+			process.Process();
+			std::vector<Neural::Feature> processOutput = process.GetOutputAll();
+
+			serial.SetDeserializedMat(processOutput);
+			MathLib::Matrix<double> serializedMat = serial.Serialize();
+
+			MathLib::Vector<double> serializedVec(serializedMat.ColumeSize());
+			MathLib::Matrix<float> CNNout(serializedMat.ColumeSize(), 1);
+			for (size_t i = 0; i < serializedMat.ColumeSize(); i++)
+			{
+				serializedVec(i) = serializedMat(i, 0);
+				CNNout(i, 0) = serializedMat(i, 0);
+			}
+
+			inputLayer.SetInput(serializedVec);
+			inputLayer.ForwardPropagation();
+
+			hiddenLayer.SetInput(inputLayer.GetOutput());
+			hiddenLayer.ForwardPropagation();
+
+			outputLayer.SetInput(hiddenLayer.GetOutput());
+			outputLayer.ForwardPropagation();
+
+			/***************************************************************************************************/
+			// Backward Propagation
+			MathLib::Vector<double> lable(2);
+			for (size_t i = 0; i < 2; i++)
+				lable(i) = sample.second.at(i);
+			MathLib::Vector<double> error(2);
+			error = outputLayer.GetOutput() - lable;
+			MathLib::Vector<double> outputLayerDelta = outputLayer.BackwardPropagation(lable);
+
+			MathLib::Vector<double> hiddenLayerDelta = hiddenLayer.BackwardPropagation(outputLayerDelta);
+
+			MathLib::Vector<double> inputLayerDelta = inputLayer.BackwardPropagation(hiddenLayerDelta);
+
+			MathLib::Matrix<double> inputLayerDeltaMat(inputLayerDelta.Size(), 1);
+			for (size_t i = 0; i < serializedMat.ColumeSize(); i++)
+			{
+				inputLayerDeltaMat(i, 0) = inputLayerDelta(i);
+			}
+
+			serial.SetSerializedMat(inputLayerDeltaMat);
+			std::vector<MathLib::Matrix<double>> deserialized = serial.Deserialize();
+
+			process.SetInput(deserialized);
+			process.Deprocess();
+			std::vector<MathLib::Matrix<double>> deprocessOutput = process.GetOutputAll();
+
+			poolLayer2.SetDelta(deprocessOutput);
+			poolLayer2.BackwardPropagation();
+			std::vector<MathLib::Matrix<double>> pool2Delta = poolLayer2.GetDelta();
+
+			convLayer2.SetDelta(pool2Delta);
+			convLayer2.BackwardPropagation();
+			std::vector<MathLib::Matrix<double>> conv2Delta = convLayer2._derivative;
+
+			poolLayer1.SetDelta(conv2Delta);
+			poolLayer1.BackwardPropagation();
+			std::vector<MathLib::Matrix<double>> pool1Delta = poolLayer1.GetDelta();
+
+			convLayer1.SetDelta(pool1Delta);
+			convLayer1.BackwardPropagation();
+			std::vector<MathLib::Matrix<double>> conv1Delta = convLayer1._derivative;
+
+			/***************************************************************************************************/
+			// Updating
+			int batchsize = 1;
+			inputLayer.BatchDeltaSumUpdate(batchsize);
+			outputLayer.BatchDeltaSumUpdate(batchsize);
+			hiddenLayer.BatchDeltaSumUpdate(batchsize);
+
+			outputLayer.LossSumUpdate();
+
+			convLayer1.Update();
+			poolLayer1.Update();
+			convLayer2.Update();
+			poolLayer2.Update();
+			inputLayer.Update();
+			hiddenLayer.Update();
+			outputLayer.Update();
+
+			inputLayer.BatchDeltaSumClear();
+			outputLayer.BatchDeltaSumClear();
+			hiddenLayer.BatchDeltaSumClear();
+
+			auto loss = outputLayer.GetLoss();
+			outputLayer.LossSumClear();
+			std::cout << "Iteration : " << std::setw(3) << std::setfill('0') << iteration << " | "
+				<< "ID : " << std::setw(3) << std::setfill('0') << ID << " | "
+				<< "Predict : " << std::fixed << std::setprecision(3) << outputLayer.GetOutput()(0) << " , " << outputLayer.GetOutput()(1) << " | "
+				<< "Lable : " << lable(0) << " , " << lable(1) << " | "
+				<< "Error : " << error(0) << " , " << error(1)
+				<< std::endl;
+
+			Visual::Plot2D::Plot2DMatrixVec(input, "input", Visual::Plot2DMode::RB, 100, 200, false);
+			Visual::Plot2D::Plot2DMatrixVec(conv1kernals, "conv1kernals", Visual::Plot2DMode::RB, 300, 200, false);
+			Visual::Plot2D::Plot2DMatrixVec(conv1f
