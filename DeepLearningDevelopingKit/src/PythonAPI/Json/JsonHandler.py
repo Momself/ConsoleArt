@@ -62,4 +62,7 @@ class JsonHandler:
         else:
             raise Exception('Invalid file path!')
 
-    # Open
+    # Open a Json file and cache it in json_data.
+    @staticmethod
+    def open_with_cache(file_path):
+        JsonHandler.json_data = JsonHandler.open_json(file_path)
