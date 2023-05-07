@@ -224,4 +224,76 @@ int main(int argc, char ** argv)
 
 			Visual::Plot2D::Plot2DMatrixVec(input, "input", Visual::Plot2DMode::RB, 100, 200, false);
 			Visual::Plot2D::Plot2DMatrixVec(conv1kernals, "conv1kernals", Visual::Plot2DMode::RB, 300, 200, false);
-			Visual::Plot2D::Plot2DMatrixVec(conv1f
+			Visual::Plot2D::Plot2DMatrixVec(conv1features, "conv1features", Visual::Plot2DMode::RB, 500, 200, false);
+			Visual::Plot2D::Plot2DMatrixVec(pool1features, "pool1features", Visual::Plot2DMode::RB, 700, 200, true);
+			Visual::Plot2D::Plot2DMatrixVec(conv2kernals, "conv2kernals", Visual::Plot2DMode::RB, 900, 200, false);
+			Visual::Plot2D::Plot2DMatrixVec(conv2features, "conv2features", Visual::Plot2DMode::RB, 1100, 200, false);
+			Visual::Plot2D::Plot2DMatrixVec(pool2features, "pool2features", Visual::Plot2DMode::RB, 1300, 200, true);
+		}
+	}
+
+	std::cout << "Testing : " << std::endl;
+	std::cout << "Total Iteration : " << totalIteration << std::endl;
+	for (size_t ID = 0; ID < XOImageTestSet.GetSampleSize(); ID++)
+	{
+		auto sample = XOImageTestSet.GetBatch();
+
+		std::vector<MathLib::Matrix<double>> input;
+		input.clear();
+		input.push_back(sample.first);
+
+		/***************************************************************************************************/
+		// Forward Propagation
+		convLayer1.SetInput(input);
+		convLayer1.ForwardPropagation();
+		std::vector<Neural::ConvKernel> conv1kernals = convLayer1.GetKernelAll();
+		std::vector<Neural::ConvFeature> conv1features = convLayer1.GetFeatureAll();
+
+		poolLayer1.SetInput(conv1features);
+		poolLayer1.ForwardPropagation();
+		std::vector<Neural::Feature> pool1features = poolLayer1.GetFeatureAll();
+
+		convLayer2.SetInput(pool1features);
+		convLayer2.ForwardPropagation();
+		std::vector<Neural::ConvKernel> conv2kernals = convLayer2.GetKernelAll();
+		std::vector<Neural::ConvFeature> conv2features = convLayer2.GetFeatureAll();
+
+		poolLayer2.SetInput(conv2features);
+		poolLayer2.ForwardPropagation();
+		std::vector<Neural::Feature> pool2features = poolLayer2.GetFeatureAll();
+
+		process.SetInput(pool2features);
+		process.Process();
+		std::vector<Neural::Feature> processOutput = process.GetOutputAll();
+
+		serial.SetDeserializedMat(processOutput);
+		MathLib::Matrix<double> serializedMat = serial.Serialize();
+
+		MathLib::Vector<double> serializedVec(serializedMat.ColumeSize());
+		MathLib::Matrix<float> CNNout(serializedMat.ColumeSize(), 1);
+		for (size_t i = 0; i < serializedMat.ColumeSize(); i++)
+		{
+			serializedVec(i) = serializedMat(i, 0);
+			CNNout(i, 0) = serializedMat(i, 0);
+		}
+
+		inputLayer.SetInput(serializedVec);
+		inputLayer.ForwardPropagation();
+
+		hiddenLayer.SetInput(inputLayer.GetOutput());
+		hiddenLayer.ForwardPropagation();
+
+		outputLayer.SetInput(hiddenLayer.GetOutput());
+		outputLayer.ForwardPropagation();
+
+		std::cout << "ID : " << std::setw(3) << std::setfill('0') << ID << " | "
+			<< "Predict : " << std::fixed << std::setprecision(3) << outputLayer.GetOutput()(0) << " , " << outputLayer.GetOutput()(1) << " | "
+			<< "Lable : " << sample.second.at(0) << " , " << sample.second.at(1) << " | "
+			<< std::endl;
+	}
+
+	system("pause");
+	return 0;
+}
+#endif // CNNImageRecognization
+
