@@ -88,4 +88,7 @@ int main()
 	Vector<double> test(5, VectorType::Random);
 	cout << test<< test.Sum();
 	system("pause");
-	
+	return 0;
+}
+#endif // MathDynamicDebug
+
